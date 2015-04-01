@@ -1,24 +1,10 @@
 <?php
 
-require_once('lib/vendor/gettext/gettext.inc.php');
-
 if( !function_exists('__') ){
 	function __($str = '') {
 		return t($str);
 	}
 }
-
-/*
-function set_current_lang($iso) {
-	if( sql_table_exists('language') ){
-		$lang = data('language', array('where' => sql_where(array('iso' => $iso, 'iso3' => $iso), 'OR')));
-		if( !$lang ){
-			$lang = data('language', array('where' => array('iso' => 'en')));
-		}
-		session_var_set('i18n/lang', $lang);
-	}
-}
-*/
 
 function set_locale($locales) {
 	if( !is_array($locales) ){
@@ -101,59 +87,6 @@ function detect_languages($forceDetection = true) {
 	var_set('i18n/userLanguages', $langs);
 	return array_keys($langs);
 }
-
-/*
-function detect_lang() {
-	$langs = detect_langs();
-	$localeName = key($langs);
-	
-	$lang = null;
-	if (sql_table_exists('language') ){
-		$localeName = explode('-', $localeName);
-		$localeName = $localeName[0];
-		$lang = data('language', array('where' => sql_where(array('iso' => $localeName, 'iso3' => $localeName), 'OR')));
-		if( !$lang ){
-			$lang = data('language', array('where' => array('iso' => 'en')));
-		}
-	}
-	
-	return $lang;
-}
-
-function current_lang() {
-	if( ($lang = session_var_get('i18n/lang')) !== null ){
-		return $lang;
-	}else{
-		if( ($lang = detect_lang()) !== null ){
-			session_var_set('i18n/lang', $lang);
-		} 
-		return $lang;
-	}
-}
-*/
-
-
-/*
-function detect_country() {
-	$langs = detect_langs();
-	$localeName = key($langs);
-	$localeName = explode('-', $localeName);
-	
-	$country = isset($localeName[1]) ? $localeName[1] : '';
-	return $country;
-}
-
-
-function detect_locale() {
-	$lang = current_lang();
-	$locale = '';
-	if( $lang ) {
-		$locale = $lang['iso'] . ($country ? '_' . $country . '.UTF-8' : '');
-	}
-	return $locale;
-}
-*/
-
 function load_gettext_translations($dir, $file = null) {
 	if( is_dir($dir) ){
 		$lang = current_locale();
@@ -192,7 +125,6 @@ function t($str, $lang = null, $castTo = 'string'){
 	if( var_get('i18n/domain') !== null ){
 		return gettext($str);
 	}
-	//var_dump("get translation for " . $str);
 	if( $castTo == 'bool' ){
 		return mb_strtolower($string) === 'true';
 	}
@@ -206,8 +138,6 @@ function t($str, $lang = null, $castTo = 'string'){
 		return null;
 	}elseif ( is_string($str) ) {
 		$translations = var_get('i18n/translations', array());
-
-		//var_dump($translations);
 		if( isset($translations[$str]['version']) ){
 			return $translations[$str]['version'];
 		}/*elseif (sql_table_exists('translation')){

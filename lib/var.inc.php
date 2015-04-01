@@ -1,7 +1,6 @@
 <?php
 
 require_once('core.inc.php');
-require_once('session.inc.php');
 require_once('array.inc.php');
 require_once('crypto.inc.php');
 
