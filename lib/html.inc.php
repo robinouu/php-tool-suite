@@ -57,6 +57,7 @@ function html5($args) {
 	'webfonts' => ''), $args));
 	return $page->using();
 }
+
 function current_url() {
 	$url = var_get('site/url/full');
 	if( !$url ){
@@ -107,9 +108,10 @@ function text_vars($text, $vars) {
 }
 
 
-function route($route = '', $callback = null){
-	$url = current_url();
+function route($route = '/', $callback = null){
+	current_url();
 	$url = var_get('site/url/path', '/');
+
 	if( preg_match("#^" . $route . "$#ui", $url, $m) ){
 		ob_start();
 		$callback($m);
@@ -117,11 +119,18 @@ function route($route = '', $callback = null){
 		ob_end_clean();
 		//var_push("route/headers", '');
 		print $content;
+		var_set('routeFound', true);
 		return true;
 	}
-	return false;
+
+	return false;	
 }
 
+function no_route($callback) {
+	if( !var_get('routeFound', false) ){
+		$callback();
+	}
+}
 
 function menu($items = array(), $attrs = array()) {
 
@@ -223,21 +232,28 @@ function tag($tag, $content, $attrs = array(), $inline = false) {
 	}
 }
 
-function search($id = 'search') {
-	return form(fieldset('Rechercher', field(array(
-		'name' => 'search',
-		'type' => 'search',
-		'placeholder' => ''
-	)) . button_submit('GO')), array('role' => 'search', 'id' => $id));
+function search($options = array()) {
+	$options = array_merge([
+		'title' => t('Search for'),
+		'form' => array('role' => 'search', 'id' => 'search'),
+		'searchField' => array('name' => 'search', 'type' => 'search', 'placeholder' => ''),
+		'button.label' => t('Search'),
+		'button.field' => array('name' => 'search_submit')
+		], $options);
+
+	return form(
+		fieldset($options['title'], field($options['searchField']) . button_submit($options['button.label'], $options['button.field'])),
+		array($options['form'])
+	);
 }
 
+// tiny version of sanitize_title from WP
 function slug( $str ) {
 	$str = strip_tags($str);
 	$str = mb_strtolower($str, 'UTF-8');
 	$str = strtolower($str);
 	$str = preg_replace('/&.+?;/', '', $str); // kill entities
 	$str = str_replace('.', '-', $str);
-
 
 	// Convert nbsp, ndash and mdash to hyphens
 	$str = str_replace( array( '%c2%a0', '%e2%80%93', '%e2%80%94' ), '-', $str );
@@ -291,10 +307,12 @@ function button($content = '', $attrs = array()) {
 }
 
 function button_submit($label = 'Submit', $attrs = array()) {
-	static $ids = 0;
-	$slug = slug($label);
-	$attrs = array_merge(array('type' => 'submit', 'name' => $slug, 'id' => $slug . '_' . $ids, 'value' => $label), $attrs);
-	++$ids;
+	//static $ids = 0;
+	if( !isset($attrs['name']) ){
+		$attrs['name'] = slug($label);
+	}
+	$attrs = array_merge(array('type' => 'submit', 'value' => $label), $attrs);
+	//++$ids;
 	return tag('input', '', $attrs, true);
 }
 
