@@ -20,34 +20,36 @@ function set_current_lang($iso) {
 }
 */
 
-function set_locale($locale) {
-	if( !is_array($locale) ){
-		$locale = array($locale);
+function set_locale($locales) {
+	if( !is_array($locales) ){
+		$locales = array($locales);
 	}
-	foreach ($locale as $key => $value) {
+
+	$locales[] = 'en_US';
+
+	foreach ($locales as $key => $value) {
 		if( is_string($key) ){
-			$l = $key;
+			$locale = $key;
 		}
 		elseif( is_numeric($key) && is_string($value) ){
-			$l = $value;
+			$locale = $value;
 		}
-		putenv("LC_ALL={$l}"); // windows
-		if (!setlocale(LC_ALL, $l) ) {
-			
-			if( !setlocale(LC_ALL, 'en_US') ){
-				LOG_ERROR('Could not find locale for the current user : "' . $l . '"');
-			}
 
-			putenv('LC_ALL=en_US');
-
-			session_var_set('i18n/locale', $l);
-
-			
-		}else{
-			session_var_set('i18n/locale', $l);
-			return true;
+		$windowsLocale = str_replace('_', '-', str_replace('.UTF-8', '', $locale));
+		$finalLocale = setlocale(LC_ALL, $locale, $windowsLocale);
+		if( $finalLocale ){
+			break;
 		}
 	}
+
+	if( !$finalLocale ) {
+		return false;
+	}else{
+		putenv('LC_ALL=' . $finalLocale);
+		session_var_set('i18n/locale', $finalLocale);
+		return true;
+	}
+
 	return false;
 }
 
@@ -155,14 +157,12 @@ function detect_locale() {
 function load_gettext_translations($dir, $file = null) {
 	if( is_dir($dir) ){
 		$lang = current_locale();
-		if( preg_match('/(.*)\.UTF\-8/i', $lang, $m) ){
-			$file = "messages";
-			bindtextdomain($file, $dir);
-			bind_textdomain_codeset($file, 'UTF-8');
-			textdomain($file);
-			var_set('i18n/domain', $file);
-			return true;
-		}
+		$file = "messages";
+		bindtextdomain($file, $dir);
+		bind_textdomain_codeset($file, 'UTF-8');
+		textdomain($file);
+		var_set('i18n/domain', $file);
+		return true;
 	}
 	return false;
 }
