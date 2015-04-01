@@ -167,6 +167,10 @@ function load_gettext_translations($dir, $file = null) {
 	return false;
 }
 
+function load_translations($translations) {
+	var_set('i18n/translations', $translations);
+}
+
 function load_sql_translations($lang = null) {
 	$lang = current_lang();
 	if( $lang ){
