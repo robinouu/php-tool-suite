@@ -1,9 +1,6 @@
 <?php
 
 class MinimalTest extends PHPUnit_Framework_TestCase {
-    public function test_minimal() {
-    	$this->test_core();
-    }
 
     public function test_core() {
     	require_once('lib/core.inc.php');
@@ -58,5 +55,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertNotContains('arrayPath2', $GLOBALS['arrayPath']['arrayPath2']);
     }
 
+    public function test_sanitize() {
+    	require_once('lib/sanitize.inc.php');
+
+    	$this->assertEquals(slug('éàç'), 'eac');
+    	$this->assertEquals(slug('éàç éàç éàç'), 'eac-eac-eac');
+    	$this->assertEquals(slug('&~#{[|`\^@-_*$^!:;,\'()./§?'), '');
+    }
 }
 
