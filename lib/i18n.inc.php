@@ -1,5 +1,7 @@
 <?php
 
+require_once('var.inc.php');
+
 if( !function_exists('__') ){
 	function __($str = '') {
 		return t($str);

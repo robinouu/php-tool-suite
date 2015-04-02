@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 require_once('core.inc.php');
 require_once('array.inc.php');
@@ -51,7 +51,6 @@ function cookie_var_get($options){
 
 	if( is_string($options['encryptionKey']) ){
 		decrypt(stripslashes($value), $options['encryptionKey']);
-		var_dump($value, $options['encryptionKey']);
 	}
 
 	$asArray = @unserialize(stripslashes($value));

@@ -36,8 +36,12 @@ function array_set(&$arr, $path, $value)
 	$cur =& $arr;
 
 	foreach ($segments as $segment) {
-		if (!isset($cur[$segment]))
+		if (!isset($cur[$segment])){
+			if( !is_array($cur) ){
+				$cur = array();
+			}
 			$cur[$segment] = array();
+		}
 		$cur =& $cur[$segment];
 	}
 	$cur = $value;
