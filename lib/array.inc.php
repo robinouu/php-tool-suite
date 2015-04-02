@@ -44,6 +44,28 @@ function array_set(&$arr, $path, $value)
 	return true;
 }
 
+function array_append(&$arr, $path, $value)
+{
+	if (!$path)
+		return null;
+
+	$segments = is_array($path) ? $path : explode('/', $path);
+	$cur =& $arr;
+
+	foreach ($segments as $segment) {
+		if (!isset($cur[$segment]))
+			$cur[$segment] = array();
+		$cur =& $cur[$segment];
+	}
+
+	if( !is_array($cur) ){
+		$cur = array($value);
+	}else{
+		$cur[] = $value;
+	}
+	return true;
+}
+
 function array_unset(&$arr, $path)
 {
 	if (!$path)

@@ -80,6 +80,13 @@ function var_set($path = array(), $value = null, $context = null) {
 	return array_set($context, $path, $value);
 }
 
+function var_append($path = array(), $value = null, $context = null) {
+	if( !$context ){
+		$context = $GLOBALS;
+	}
+	return array_append($context, $path, $value);
+}
+
 function var_unset($path, $context = null) {
 	if( !$context ){
 		$context = $GLOBALS;
