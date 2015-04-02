@@ -1,9 +1,1 @@
-Features :
- * Routes
- * HTML helpers (valid W3C/WCAG)
- * Variable accessors (cookies, sessions, global vars, arrays)
- * Localization (sql, gettext, php)
- * Data validation and edition
- * Data cache
- * Hooks
- * (mcrypt) AES256 encryption
+<h1>Features</h1><nav role="navigation"><ul class="menu"><li class="item item-link">Routes</li><li class="item item-link">HTML helpers (valid W3C/WCAG)</li><li class="item item-link">Variable accessors (cookies, sessions, global vars, arrays)</li><li class="item item-link">Localization (sql, gettext, php)</li><li class="item item-link">Data validation and edition</li><li class="item item-link">Data cache</li><li class="item item-link">Hooks</li><li class="item item-link">(mcrypt) AES256 encryption</li></ul></nav>
