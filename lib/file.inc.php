@@ -1,8 +1,16 @@
 <?php
 
-function csv_import($filepath, $callback, $ignoreFirstLine = false, $colSep = ","){
-	$opened = false;
+function csv_write($filepath, $data, $colSep = ','){
+	$lines = array();
+	foreach ($data as $d) {
+		$lines[] = implode($colSep, $d);
+	}
+	return file_put_contents($filepath, implode("\r\n", $lines));
+}
 
+function csv_load($filepath, $callback = null, $ignoreFirstLine = false, $colSep = ","){
+	$opened = false;
+	$all_data = array();
 	if (($handle = fopen($filepath, "r")) !== FALSE) {
 		$opened = true;
 		$l = 0;
@@ -16,8 +24,12 @@ function csv_import($filepath, $callback, $ignoreFirstLine = false, $colSep = ",
 			}elseif (is_string($callback) ){
 				call_user_func_array($callback, array($data, $l));
 			}
+			$all_data[] = $data;
 		}
 		fclose($handle);
 	}
-	return $opened;
+	if( !$opened ){
+		return false;
+	}
+	return $all_data;
 }

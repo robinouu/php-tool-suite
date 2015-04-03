@@ -5,7 +5,7 @@ require_once('var.inc.php');
 var_set('sql/defaultField', array(
 	'type' => 'text',
 	'maxlength' => 255,
-	'default' => '',
+	'default' => null,
 	'unique' => false,
 	'required' => false,
 	'formatter' => null,
@@ -13,31 +13,37 @@ var_set('sql/defaultField', array(
 	'searchable' => true
 ));
 
-function sql_connect() {
+function sql_connect($options = array()) {
 	//LOG_ARRAY($GLOBALS);
-	$options = var_get('sql');
-
-	if( isset($options['dbConnection']) ){
-		return $options['dbConnection'];
-	}
-
-	if( !isset($options['database']) ){
-		return false;
-	}
+	$options = array_merge(array(
+		'host' => var_get('sql/host', '127.0.0.1'),
+		'db' => var_get('sql/database', 'datas'),
+		'user' => var_get('sql/user', 'root'),
+		'pass' => var_get('sql/pass', '')
+	), $options);
 
 	try {
 		//var_dump('mysql:host='.var_get('sql/host', '127.0.0.1').';dbname='.var_get('sql/database', 'cms'));
-		$sql = new PDO('mysql:host='.var_get('sql/host', '127.0.0.1').';dbname='.var_get('sql/database'), var_get('sql/user', 'root'), var_get('sql/pass', '') );	
+		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass'] );	
 	}catch (Exception $e){
 		LOG_ERROR($e->getMessage());
 		die;
 	}
+
 	var_set('sql/dbConnection', $sql);
+
 	$sql->exec('SET NAMES utf8;');
-	$sql->exec('USE ' . var_get('sql/database', 'cms') . ';');
+	$sql->exec('USE ' . $options['db'] . ';');
  	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+
     return $sql;
+}
+
+function sql_disconnect() {
+	if( ($sql = var_set('sql/dbConnection')) !== null ){
+		var_unset('sql/dbConnection');
+	}
 }
 
 function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC, $transactional = false) {
