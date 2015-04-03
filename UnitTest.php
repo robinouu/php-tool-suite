@@ -113,7 +113,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	require_once('lib/form.inc.php');
 
     	// Required fields
-		$requiredField = ['type' => 'text', 'required' => true];
+		$requiredField = array('type' => 'text', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
@@ -123,7 +123,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(field_validate($requiredField));
 
 		// Basic email check, but should support all the major RFC specifications
-		$emailField = ['type' => 'email', 'value' => 'user@example.com'];
+		$emailField = array('type' => 'email', 'value' => 'user@example.com');
 		$this->assertTrue(field_validate($emailField));
 		$emailField['value'] = '';
 		$this->assertTrue(field_validate($emailField));

@@ -37,7 +37,7 @@ function array_set(&$arr, $path, $value)
 
 	foreach ($segments as $segment) {
 		if (!isset($cur[$segment])){
-			if( !is_array($cur) ){
+			if( !is_array($cur) )	{
 				$cur = array();
 			}
 			$cur[$segment] = array();
@@ -48,26 +48,28 @@ function array_set(&$arr, $path, $value)
 	return true;
 }
 
-function array_append(&$arr, $path, $value)
+function array_append(&$arr, $path, $key, $value = null)
 {
 	if (!$path)
 		return null;
 
 	$segments = is_array($path) ? $path : explode('/', $path);
-	$cur =& $arr;
-
+	$cur = &$arr;
+	$i = 0;
 	foreach ($segments as $segment) {
-		if (!isset($cur[$segment]))
+		if( !is_array($cur[$segment]) ) {
 			$cur[$segment] = array();
+		}
+		if( $i == sizeof($segments) - 1){
+			if( is_null($value) ){
+				$cur[$segment][] = $key;
+			}else{
+				$cur[$segment][$key] = $value;
+			}
+		}
 		$cur =& $cur[$segment];
+		++$i;
 	}
-
-	if( !is_array($cur) ){
-		$cur = array($value);
-	}else{
-		$cur[] = $value;
-	}
-	return true;
 }
 
 function array_unset(&$arr, $path)
@@ -78,10 +80,21 @@ function array_unset(&$arr, $path)
 	$segments = is_array($path) ? $path : explode('/', $path);
 	$cur =& $arr;
 
+
+	$i = 0;
+	$size = sizeof($segments);
 	foreach ($segments as $segment) {
+		if( !isset($cur[$segment]) ){
+			return $arr;
+		}
+		if( $i == $size - 1) {
+			unset($cur[$segment]);
+			return $arr;
+		}
 		$cur =& $cur[$segment];
+		++$i;
 	}
-	unset($cur);
+	
 	return $arr;
 }
 
