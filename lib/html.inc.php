@@ -233,13 +233,13 @@ function tag($tag, $content, $attrs = array(), $inline = false) {
 }
 
 function search($options = array()) {
-	$options = array_merge([
+	$options = array_merge(array(
 		'title' => t('Search for'),
 		'form' => array('role' => 'search', 'id' => 'search'),
 		'searchField' => array('name' => 'search', 'type' => 'search', 'placeholder' => ''),
 		'button.label' => t('Search'),
 		'button.field' => array('name' => 'search_submit')
-		], $options);
+		), $options);
 
 	return form(
 		fieldset($options['title'], field($options['searchField']) . button_submit($options['button.label'], $options['button.field'])),
