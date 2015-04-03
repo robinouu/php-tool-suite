@@ -4,7 +4,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
     public function test_core() {
     	require_once('lib/core.inc.php');
-
+    	print 'core : ';
+    	
     	// Is secured server connection ?
 		unset($_SERVER['HTTPS']);
     	$this->assertEquals(server_is_secure(), false);
@@ -20,10 +21,14 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		$_SERVER['SERVER_PORT'] = 443;
     	$this->assertEquals(server_is_secure(), true);
+
+    	print 'done' . "\r\n";
     }
 
     public function test_var() {
     	require_once('lib/var.inc.php');
+    	print 'var : ';
+
 		$this->assertNull(var_get('path'));
 
 		// Check string path accessors
@@ -52,18 +57,25 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		// Array unset
 		var_unset('arrayPath/arrayPath2');
 		$this->assertArrayNotHasKey('arrayPath2', $GLOBALS['arrayPath']);
+
+		print 'done' . "\r\n";
     }
 
     public function test_sanitize() {
     	require_once('lib/sanitize.inc.php');
 
+    	print 'sanitize : ';
+
     	$this->assertEquals(slug('éàç'), 'eac');
     	$this->assertEquals(slug('éàç éàç éàç'), 'eac-eac-eac');
     	$this->assertEquals(slug('&~#{[|`\^@-_*$^!:;,\'()./§?'), '');
+    	print 'done' . "\r\n";
     }
 
     public function test_sql() {
     	require_once('lib/sql.inc.php');
+
+		print 'sql : ';
 
     	$sql = sql_connect();
     	$this->assertNotNull($sql);
@@ -72,10 +84,13 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
     	sql_disconnect();
 		$this->assertNull(var_get('sql/dbConnection'));
+		print 'done' . "\r\n";
     }
 
     public function test_crypto() {
-	
+
+		print 'crypto : ';
+
     	if( extension_loaded('mcrypt') ){
 			
 			require_once('lib/crypto.inc.php');
@@ -90,6 +105,9 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	    	decrypt($content, $decryptKey);
 
 	    	$this->assertEquals('Secured content', $content);
+	    	print 'done' . "\r\n";
+    	}else{
+    		print 'mcrypt not found'. "\r\n";
     	}
     }
 
@@ -97,9 +115,9 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	
     	require_once('lib/file.inc.php');
 
-    	$data[] = [ 'ISO', 'Name' ];
-    	$data[] = [ 'en', 'English' ];
-    	$data[] = [ 'fr', 'French' ];
+    	$data[] = array( 'ISO', 'Name' );
+    	$data[] = array( 'en', 'English' );
+    	$data[] = array( 'fr', 'French' );
     	// ...
 
     	csv_write("data.csv", $data);
@@ -107,10 +125,30 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	$data2 = csv_load("data.csv");
 
     	$this->assertEquals($data, $data2);
+    	print 'done' . "\r\n";
     }
+
+    public function test_fs() {
+    	require_once('lib/fs.inc.php');
+		print 'fs : ';
+
+    	// Test dir creation
+    	@rmdir('tmpdir');
+    	make_sure_dir_is_created('tmpdir');
+    	$this->assertTrue(is_dir('tmpdir'));
+
+    	// And dir deletion
+    	mkdir_recursive('tmpdir/foo/bar');
+    	touch('tmpdir/foo/bar/bar.json');
+    	rmdir_recursive('tmpdir');
+    	$this->assertFalse(is_dir('tmpdir'));
+
+    	print 'done' . "\r\n";
+	}
 
     public function test_form() {
     	require_once('lib/form.inc.php');
+		print 'form : ';
 
     	// Required fields
 		$requiredField = array('type' => 'text', 'required' => true);
@@ -122,7 +160,30 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$requiredField['value'] = 'not_empty';
 		$this->assertTrue(field_validate($requiredField));
 
-		// Basic email check, but should support all the major RFC specifications
+    	// Maxlength validator
+		$maxlengthField = array('type' => 'text', 'maxlength' => 25);
+		$this->assertFalse(field_validate($maxlengthField, 'abcdefghijklmnopqrstuvwxyz'));
+		$this->assertTrue(field_validate($maxlengthField, ''));
+		$this->assertTrue(field_validate($maxlengthField, 'Something'));
+
+		// Minlength validator
+		$minlengthField = array('type' => 'text', 'minlength' => 25);
+		$this->assertTrue(field_validate($minlengthField, 'abcdefghijklmnopqrstuvwxyz'));
+		$this->assertFalse(field_validate($minlengthField, ''));
+		$this->assertFalse(field_validate($minlengthField, 'Something'));
+
+    	// Required fields
+		$requiredField = array('type' => 'text', 'required' => true);
+
+		$this->assertFalse(field_validate($requiredField, ''));
+		$this->assertFalse(field_validate($requiredField, array()));
+		$this->assertTrue(field_validate($requiredField, 'not_empty'));
+    	
+		$requiredField['value'] = 'not_empty';
+		$this->assertTrue(field_validate($requiredField));
+
+		// Basic email check, 
+		// TODO : add some more test to check RFC specifications
 		$emailField = array('type' => 'email', 'value' => 'user@example.com');
 		$this->assertTrue(field_validate($emailField));
 		$emailField['value'] = '';
@@ -135,6 +196,23 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse(field_validate($emailField));
 		$emailField['value'] = 'éx@x.x';
 		$this->assertFalse(field_validate($emailField));
+
+		print 'done' . "\r\n";
+    }
+
+    public function test_cache() {
+    	require_once('lib/cache.inc.php');
+		print 'cache : ';
+
+		$content = cache('test', function () {
+			print 'my cached content';
+		}, '+3 month');
+
+		$this->assertTrue(file_exists(cache_dir().'/test.json'));
+
+		rmdir_recursive('cache');
+
+		print 'done' . "\r\n";
     }
 
 

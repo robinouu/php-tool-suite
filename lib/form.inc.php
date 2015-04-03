@@ -79,7 +79,7 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 			if( $field['required'] && !is_string($d) ){
 				$errors[$pkey][] = form_error_message($key, $field, 'not_string');
 			}else{
-				if( $field['required'] && isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
+				if( isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
 					if( strlen($d) > (int)$field['maxlength'] ){
 						$errors[$pkey][] = form_error_message($key, $field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
 					}

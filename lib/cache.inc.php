@@ -1,43 +1,36 @@
 <?php
 require_once('fs.inc.php');
+require_once('log.inc.php');
 
-function cache($name, $expire, $cb) {
-	$fc = new FileCache($name, $expire);
-	return $fc->cache($cb);
+if( !var_get('cache/dir') ){
+	var_set('cache/dir', path_document_root().'/cache');
 }
 
-class FileCache {
-	static public $dir = 'cache';
+function cache_dir(){
+	return var_get('cache/dir');
+}
 
-	private $filename, $expire, $name;
-	public function __construct($name, $expire) {
-		$this->name = $name;
-		make_sure_dir_is_created($_SERVER['DOCUMENT_ROOT'] . '/'.FileCache::$dir);
-		$this->filename = $_SERVER['DOCUMENT_ROOT'] . '/'.FileCache::$dir.'/'.$name.'.json';
-		$this->expire = $expire;
-	}
+function cache($name, $cb, $expire = '+1 month') {
+	$dir = var_get('cache/dir');
+	make_sure_dir_is_created($dir);
+	$filename = $dir.'/'.$name.'.json';
+	$expire = $expire;
 
-	public function getValue() {
-		return $GLOBALS[Cache::globalVar][$this->name];
-	}
+	if (is_file($filename) && filemtime($filename) + strtotime($expire) < 2*time() ) {
+		return json_decode(file_get_contents($filename))->data;
+	}else{
 
-	public function cache($cb) {
-		
-		if (is_file($this->filename) && time() < filemtime($this->filename) + strtotime($this->expire) - time() ) {
-			return json_decode(file_get_contents($this->filename))->data;
-		}else{
-
-			if( is_callable($cb) ){
-				ob_start();
-				$cb();
-				$data = ob_get_contents();
-				ob_end_clean();
-			}
-			else
-				$data = $cb;
-			file_put_contents($this->filename, json_encode(array('data' => $data)));
-			return $data;
+		if( is_callable($cb) ){
+			ob_start();
+			$cb();
+			$data = ob_get_contents();
+			ob_end_clean();
 		}
+		else
+			$data = $cb;
+
+		file_put_contents($filename, json_encode(array('data' => $data)));
+		return $data;
 	}
 }
 
