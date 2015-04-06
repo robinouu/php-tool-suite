@@ -22,6 +22,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$_SERVER['SERVER_PORT'] = 443;
     	$this->assertEquals(server_is_secure(), true);
 
+    	$this->assertNotEquals(guid(), guid());
+
     	print 'done' . "\r\n";
     }
 
@@ -112,7 +114,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     }
 
     public function test_file() {
-    	
+		print 'file : ';
+
     	require_once('lib/file.inc.php');
 
     	$data[] = array( 'ISO', 'Name' );
@@ -147,8 +150,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	}
 
     public function test_form() {
-    	require_once('lib/form.inc.php');
-		print 'form : ';
+    	require_once('lib/field.inc.php');
+		print 'field : ';
 
     	// Required fields
 		$requiredField = array('type' => 'text', 'required' => true);
