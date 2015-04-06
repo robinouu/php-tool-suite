@@ -1,5 +1,12 @@
 <?php
 
+require_once('sanitize.inc.php');
+require_once('vendor/simple_html_dom.php');
+
+function dom($html) {
+	return str_get_html($html, true, false, DEFAULT_TARGET_CHARSET, false);
+}
+
 function stylesheet($attrs){
 	return '<link rel="stylesheet" type="text/css" ' . attrs($attrs) . ' />';
 }
@@ -59,13 +66,13 @@ function html5($args) {
 }
 
 function current_url() {
-	$url = var_get('site/url');
-	if( !$url ){
-		$url = (@$_SERVER["HTTPS"] == "on") ? "https://" : "http://";
-		if ($_SERVER["SERVER_PORT"] != "80") {
-			$url .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"];
+	$url = var_get('site/url', '');
+	if( !$url && isset($_SERVER['SERVER_NAME'])){
+		$url = server_is_secure() ? 'https://' : 'http://';
+		if (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != '80') {
+			$url .= $_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI'];
 		} else {
-			$url .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
+			$url .= $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 		}
 		var_set('site/url', parse_url($url));
 	}
@@ -291,6 +298,13 @@ function attrs($attrs = array()) {
 		}
 	}
 	return implode(' ', $attributes);
+}
+
+function fieldset($name = '', $content = ''){
+	$html = '<fieldset><legend>' . htmlspecialchars($name) . '</legend>';
+	$html .= $content;
+	$html .= '</fieldset>';
+	return $html;
 }
 
 

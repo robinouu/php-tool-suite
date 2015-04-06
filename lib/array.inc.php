@@ -11,7 +11,7 @@ function is_assoc_array($arr) {
 function array_get($arr, $path)
 {
 	if (!$path)
-		return null;
+		return $arr;
 	$segments = is_array($path) ? $path : explode('/', $path);
 
 	$cur =& $arr;

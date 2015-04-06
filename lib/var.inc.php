@@ -1,8 +1,12 @@
- <?php
+<?php
 
 require_once('core.inc.php');
 require_once('array.inc.php');
 require_once('crypto.inc.php');
+
+function contextify($context = null) {
+	array_set($context, 'var/context', $GLOBALS);
+}
 
 function set_cookie($options) {
 	return cookie_var_set($options);
@@ -76,6 +80,7 @@ function var_set($path = array(), $value = null, $context = null) {
 	if( !$context ){
 		$context = $GLOBALS;
 	}
+	$contextVar = array_get($context, array_get($GLOBALS, 'var/context'));
 	return array_set($context, $path, $value);
 }
 
@@ -83,21 +88,24 @@ function var_append($path = array(), $value = null, $context = null) {
 	if( !$context ){
 		$context = $GLOBALS;
 	}
-	return array_append($context, $path, $value);
+	$contextVar = array_get($context, array_get($GLOBALS, 'var/context'));
+	return array_append($contextVar, $path, $value);
 }
 
 function var_unset($path, $context = null) {
 	if( !$context ){
 		$context = $GLOBALS;
 	}
-	return array_unset($context, $path);
+	$contextVar = array_get($context, array_get($GLOBALS, 'var/context'));
+	return array_unset($contextVar, $path);
 }
 
 function var_get($path = array(), $default = null, $context = false) {
 	if( !$context ){
 		$context = $GLOBALS;
 	}
-	if( !is_null($back = array_get($context, $path)) ){
+	$contextVar = array_get($context, array_get($GLOBALS, 'var/context'));
+	if( !is_null($back = array_get($contextVar, $path)) ){
 		return $back;
 	}
 	if( is_callable($default) ){

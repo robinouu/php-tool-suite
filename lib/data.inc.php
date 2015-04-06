@@ -50,65 +50,21 @@ function data($name, $options = null){
 	return $res;
 }
 
-function data_register($name, $datas, $prefix = ''){
-	$defaultSqlField = var_get('sql/defaultField');
+function data_register($name, $datas){
 	$database = var_get('sql/schema');
-	$prefix = var_get('sql/prefix');
-
-	$data = $database[$name];
-	$fields = $data['fields'];
-
-	$d = array();
-	foreach ($fields as $key => $f) {
-		$pkey = trim($prefix) != '' ? $prefix . $key : $key;
-
-		$f = array_merge($defaultSqlField, $f);
-		if( $f['type'] === 'relation' ){
-			if( isset($datas['meta_newone_'.$pkey]) && (int)$datas['meta_newone_'.$pkey] === 1 ){
-				$child_id = data_register($f['data'], $datas, $pkey . '_');
-				//var_dump($child_id, 'meta_newone_'.$pkey);
-				if( $child_id ){
-					$datas['meta_newone_'.$pkey] = 0;
-					$datas[$pkey] = $child_id;
-					$d[$key] = $child_id;
-				}
-			}elseif( isset($datas[$pkey]) && is_numeric($datas[$pkey]) ){
-				$d[$key] = (int)$datas[$pkey];
-			}else{
-				//var_dump($key, "BIT");
-				$d[$key] = null;
-			}
-
-		}else{
-			$d[$key] = isset($datas[$pkey]) ? $datas[$pkey] : null;
-			/*if( isset($datas[$pkey]) && ( (bool)$f['required'] == true && trim($datas[$pkey]) != '') ){
-				$d[$key] = $datas[$pkey];
-			}else{
-				$d[$key] = $datas[$pkey];
-			}*/
-			/*elseif( $f['unique'] === true && $f['required'] !== true ){
-				var_dump($key, "3MAP");
-				$d[$key] = null;
-			}*/
-		}
-
-	}
-	
-	foreach ($d as $key => $value) {
-		//var_dump(substr($key, 0, strlen('meta_')) === 'meta_', substr($key, 0, strlen('meta_')));	
-		if( substr($key, 0, strlen('meta_')) === 'meta_' ){
-			unset($d[$key]);
+	$realData = array();
+	foreach ($database[$name]['fields'] as $key => $field) {
+		if( isset($datas[$key]) ){
+			$realData[$key] = $datas[$key];
 		}
 	}
-
-	if( sizeof($d) && sql_insert($name, $d) ){
+	//var_dump($realData);
+	if( sizeof($realData) && sql_insert($name, $realData) ){
 		return sql_inserted_id();
 	}else{
 		return null;
 	}
-
 }
-
 
 function data_set($name, $datas, $id = null, $where = array()) {
 	return data_update($name, $id, $datas, $where, true);
@@ -168,16 +124,16 @@ function data_update($name, $id, $datas, $where = null, $autocreate = false){
 		}
 	}
 
-	if( !$d ){
-		LOG_ERROR('data_update: Could not insert or update row for data "' . $name . '", empty parameter list.');
+	if( !sizeof($d) ){
+		return false;
+		//LOG_ERROR('data_update: Could not insert or update row for data "' . $name . '", empty parameter list.');
 		//die;
 	}
 
 	if( !$id && $autocreate ){
 		sql_insert($name, $d);
 		return (int)sql_inserted_id();
-	}else if( $id ) {
-		
+	}else if( $id ) {		
 		sql_update($name, $d, 'WHERE id = ' . (int)$id);
 		return (int)$id;
 	}
@@ -194,7 +150,7 @@ function data_populate(&$fields, $data){
 	//var_dump("result in", $fields);
 }
 
-function data_validate($dataName, $data, $id = null, &$validationData) {
+function data_validate($dataName, $data, $id = null, &$validationData = array()) {
 	$schema = var_get('sql/schema');
 	
 	$validation = scrud_validate($dataName, $data, $id);

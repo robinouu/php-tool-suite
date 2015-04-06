@@ -10,11 +10,16 @@ var_set('sql/defaultField', array(
 	'required' => false,
 	'formatter' => null,
 	'class' => '',
-	'searchable' => true
+	'searchable' => true,
+	'hasMany' => false, // for many to one relationships
 ));
 
 function sql_connect($options = array()) {
 	//LOG_ARRAY($GLOBALS);
+	if( ($sql = var_get('sql/dbConnection')) !== null ){
+		return $sql;
+	}
+
 	$options = array_merge(array(
 		'host' => var_get('sql/host', '127.0.0.1'),
 		'db' => var_get('sql/database', 'datas'),
@@ -51,15 +56,6 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC, $tr
 	if( !$sql ){
 		return false;
 	}
-	if( $transactional ){
-		$ret = $sql->query($query);
-		if( !$ret ){
-			print $sql->debugDumpParams();
-			print $sql->errorInfo();
-		}
-		return $ret;
-	}
-	//var_dump($query);
 	$q = $sql->prepare($query);
 	if( !$q ){
 		print $sql->debugDumpParams();
@@ -80,6 +76,7 @@ function sql_inserted_id() {
 	}
 	return $sql->lastInsertId();
 }
+
 function sql_insert($table, $fields) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -146,8 +143,9 @@ function sql_delete_table($table) {
 		return false;
 	}
 	$prefix = var_get('sql/prefix', '');
-	$query = 'DROP TABLE ' . sql_quote($prefix . $table, true);
-	$sql->query($query);
+	$sql->query('SET FOREIGN_KEY_CHECKS = 0');
+	$sql->query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true));
+	$sql->query('SET FOREIGN_KEY_CHECKS = 1');
 }
 
 function sql_where($where = array(), $op = 'AND') {
@@ -208,6 +206,7 @@ function sql_schema($schema, $forceDeletion = false) {
 	$prefix = var_get('sql/prefix', '');
 	$defaultSqlField = var_get('sql/defaultField');
 	$tables = sql_list_tables();
+
 	if( $forceDeletion === true ){
 		$newContentTypes = array_keys($schema);
 		// suppression des types qui sont obsolètes dans la base
@@ -220,14 +219,15 @@ function sql_schema($schema, $forceDeletion = false) {
 		}
 	}
 
-	foreach ($schema as $contenttype => $fields) {
+	foreach ($schema as $contenttype => $info) {
 		
-		$fields = $fields['fields'];
+		$fields = $info['fields'];
 		if( $forceDeletion === true ){
 			$fieldKeys = array_keys($fields);
 		}
 
 		$tableName = $prefix.$contenttype;
+
 		$tableExists = in_array($tableName, $tables);
 		
 		if( $tableExists ) {
@@ -240,16 +240,6 @@ function sql_schema($schema, $forceDeletion = false) {
 				}
 				$oldFieldTypes[$tableField['Field']] = $tableField['Type'];
 				$oldFieldNames[] = $tableField['Field'];
-
-				if( $forceDeletion === true ){
-					
-					/*if( !in_array($tableField['Field'], $fieldKeys) && ){
-						var_dump($tableField['Field']);
-						var_dump(sql_query('select * 
-from information_schema.table_constraints 
-where table_name = ' . $tableName ));
-					}*/
-				}
 			}
 		}
 		
@@ -291,8 +281,9 @@ where table_name = ' . $tableName ));
 			}
 
 			if( !$tableExists ){
+
 				$inject[] = $fieldName . ' ' . $fieldType . $default . $notnull . ' COLLATE utf8_general_ci';
-				if( $field['type'] == 'relation' ){
+				if( $field['type'] == 'relation' && !$field['hasMany'] ){
 					$rel[] = ' FOREIGN KEY `' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . '` ('.$fieldName.') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`) ';
 				}
 
@@ -317,8 +308,13 @@ where table_name = ' . $tableName ));
 		$rel = array_merge($rel, $uniques);
 
 		if( !$tableExists ){
-			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (id INT NOT NULL AUTO_INCREMENT, ' . implode(',', $inject) . ', PRIMARY KEY(id)' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
-			print ($query);
+			if( isset($info['primaryKey']) && is_array($info['primaryKey']) ){
+				$primaryKey = implode(',', $info['primaryKey']);
+			}else{
+				$primaryKey = 'id';
+			}
+			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (id INT NOT NULL AUTO_INCREMENT, ' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
+			//print ($query);
 			sql_query($query);
 		}
 		else {
@@ -336,14 +332,13 @@ where table_name = ' . $tableName ));
 
 				if( sizeof($diff) ){
 					foreach ($diff as $value) {
-						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP COLUMN ' . sql_quote($value, true) . ';');
 						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP FOREIGN KEY `FK_id_' . sql_quote($contenttype . '_' . $value, true) . '`');
+						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP COLUMN ' . sql_quote($value, true) . ';');
 					}
 				}
 			}
 
 			foreach ($inject as $query) {
-				//var_dump($query);
 				sql_query($query, null, null, true);
 			}
 		}

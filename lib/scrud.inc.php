@@ -223,120 +223,6 @@ function scrud_fields($dataName) {
 	return $schema[$dataName];
 }
 function scrud_field($dataName, $fieldName, $field, $prefix = '') {
-	$defaultSqlField = var_get('sql/defaultField');
-	$database = var_get('sql/schema');
-	$prefix = var_get('sql/prefix');
-
-	//$field = $database[$dataName]['fields'][$fieldName];
-	$field = array_merge($defaultSqlField, $field);
-
-	$html = '';
-	$id = isset($field['id']) ? $field['id'] : 'input-'.$prefix.$fieldName;
-	$fieldName = isset($field['name']) ? $field['name'] : $prefix.$fieldName;
-
-	if( isset($field['value']) ){
-		$value = $field['value'];
-	}else{
-		$value = isset($field['default']) ? $field['default'] : null;
-	}
-
-	switch ($field['type']) {
-		case 'text':
-		case 'hidden':
-		case 'password':
-		case 'date':
-		case 'datetime':
-		case 'search':
-		case 'float':
-		case 'double':
-		case 'int':
-			$isTextArea = false;
-			if( $field['type'] === 'text' && isset($field['maxlength']) && $field['maxlength'] > 255){
-				$id = !$field['id'] ? $field['id'] : 'textarea-' . $fieldName;
-				$isTextArea = true;
-				$html .= '<textarea name="' . $fieldName . '" id="' . $id . '" ';
-			}else{
-				$fieldType = $field['type'];
-				if( $fieldType === 'float' || $fieldType === 'double' ){
-					$html .= '<input type="number" step="any" name="' . $fieldName . '" id="' . $id . '" ';
-				}elseif ($fieldType === 'int' ){
-					$html .= '<input type="number" name="' . $fieldName . '" id="' . $id . '" ';
-				}else{
-					$html .= '<input type="' . $fieldType . '" name="' . $fieldName . '" id="' . $id . '" ';
-				}
-			}
-
-			if( !in_array($field['type'], array('int','float','double')) ){
-				$html .= (isset($field['maxlength']) && is_int($field['maxlength'])) ? 'maxlength="' . $field['maxlength'] . '" ' : '';
-			}
-			
-			if( $field['type'] === 'datetime' ){
-				$field['class'] = 'datetimepicker';
-			}elseif( $field['type'] === 'date' ){
-				$field['class'] = 'datepicker';
-			}
-
-
-			if( isset($field['placeholder']) && is_string($field['placeholder']) ) {
-				$html .= 'placeholder="' . $field['placeholder'] . '" ';
-			}else{
-				$html .= 'placeholder="' . (isset($field['label']) ? $field['label'] : '') . '" ';
-			}
-
-			$html .= 'class="' . $field['class'] . '" ';
-
-			if( !$isTextArea ){
-				$html .= 'value="' . $value . '" ';
-			}
-			$html .= ' >';
-
-			if( isset($isTextArea) && $isTextArea == true ){
-				$html .= $value . '</textarea>';
-			}
-			break;
-		case 'select':
-		case 'relation':
-		case 'enum':
-			if( $field['type'] === 'relation' ){
-				$data = scrud_list($field['data'], array());
-				//$fieldName = $pkey;
-			}else{
-				$data = $field['data'];
-			}
-			if( is_array($data) ){
-				$id = isset($field['id']) ? $field['id'] : 'select-' . $fieldName;
-				$html .= '<select name="' . $fieldName . '" id="' . $id . '">';
-				$assoc = is_assoc_array($data);
-				foreach ($data as $key => $value) {
-					$html .= '<option value="' . ($assoc ? $key : $value) . '">' . $value . '</option>';
-				}
-				$html .= '</select>';
-			}else{
-				$html .= 'Aucune donnée de type ' . $field['data'];
-			}
-		break;
-		case 'phone':
-		case 'email':
-		case 'url':
-			$type = array('phone' => 'tel', 'email' => 'email', 'url' => 'url');
-			$html .= '<input type="' . (isset($type[$field['type']]) ? $type[$field['type']] : '') . '" name="' . $fieldName . '" id="' . $id . '" ';
-			$html .= (isset($field['maxlength']) && is_int($field['maxlength'])) ? 'maxlength="' . $field['maxlength'] . '" ' : '';
-			$html .= (isset($field['placeholder']) && is_string($field['placeholder'])) ? 'placeholder="' . $field['placeholder'] . '" ' : (isset($field['placeholder']) && !$field['placeholder']) ? '' : 'placeholder="' . $field['label'] . '" ';
-			$html .= (isset($field['class']) && is_string($field['class'])) ? 'class="' . $field['class'] . '" ' : '';
-			$html .= 'value="' . $value . '" ';
-			$html .= '>';
-			break;
-		default:
-			# code...
-			break;
-	}
-	
-	if( isset($field['label']) && $field['type'] !== 'hidden' ){
-		$label = '<label for="' . $id . '">' . ucfirst($field['label']) . '</label>';
-	}else{
-		$label = '';
-	}
-	return $label . $html;
 }
 
 function scrud_relation_to_field($dataName, $relName) {
@@ -617,15 +503,15 @@ function scrud_validate($dataName, $datas, $id = null, $prefix = '') {
 				)) ) {
 
 			if (($field['required'] && !isset($field['default']) && trim($d) == '')) {
-				$errors[$pkey][] = scrud_get_error_message($key, $field, 'required');
+				$errors[$pkey][] = form_error_message($key, $field, 'required');
 			}else if( $field['required'] && (is_null($d) || $d == '') ){
-				$errors[$pkey][] = scrud_get_error_message($key, $field, 'required');
+				$errors[$pkey][] = form_error_message($key, $field, 'required');
 			}
 		}
 		switch ($field['type']) {
 			case 'phone':
 				if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
-					$errors[$pkey][] = scrud_get_error_message($key, $field);
+					$errors[$pkey][] = form_error_message($key, $field);
 				}
 			break;
 			case 'text':
@@ -633,17 +519,17 @@ function scrud_validate($dataName, $datas, $id = null, $prefix = '') {
 			case 'email':
 				if( $field['required'] && isset($field['maxlength']) && (int)$field['maxlength'] > 0 ){
 					if( strlen($d) > (int)$field['maxlength'] ){
-						$errors[$pkey][] = scrud_get_error_message($key, $field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
+						$errors[$pkey][] = form_error_message($key, $field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
 					}
 				}
 				if( isset($field['minlength']) && (int)$field['minlength'] > 0 ){
 					if( strlen($d) < (int)$field['minlength'] ){
-						$errors[$pkey][] = scrud_get_error_message($key, $field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
+						$errors[$pkey][] = form_error_message($key, $field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
 					}
 				}
 				if( $field['required'] && $field['type'] === 'email' ){
 					if( !filter_var($d, FILTER_VALIDATE_EMAIL) ) {
-						$errors[$pkey][] = scrud_get_error_message($key, $field, 'invalid_email'); //'L\'adresse email est invalide.';
+						$errors[$pkey][] = form_error_message($key, $field, 'invalid_email'); //'L\'adresse email est invalide.';
 					}
 				}
 					
@@ -675,7 +561,7 @@ function scrud_validate($dataName, $datas, $id = null, $prefix = '') {
 					}
 
 					if( $requiredChildren ){
-						$errors[$pkey][] = scrud_get_error_message($key, $field, 'required');
+						$errors[$pkey][] = form_error_message($key, $field, 'required');
 					}
 					else{
 						//var_dump($child_datas, '<hr/>');
@@ -705,7 +591,7 @@ function scrud_validate($dataName, $datas, $id = null, $prefix = '') {
 			//var_dump($query);
 			$exists = sql_query($query);
 			if( $exists ){
-				$errors[$pkey][] = scrud_get_error_message($key, $field, 'unique');
+				$errors[$pkey][] = form_error_message($key, $field, 'unique');
 			}
 		}
 
@@ -726,15 +612,6 @@ function scrud_validate($dataName, $datas, $id = null, $prefix = '') {
 			$back[$pkey] = $d ? $d : null;
 		}
 	}
-//var_dump($back)
-	foreach ($datas as $key => $value) {
-		if( substr($key, 0, strlen('meta_')) === 'meta_'){
-			$back[$key] = $value;
-		}
-	}
-
-	//var_dump($back);
-
 	if( sizeof($errors) ){
 		return array('valid' => false, 'errors' => $errors);
 	}
@@ -742,21 +619,6 @@ function scrud_validate($dataName, $datas, $id = null, $prefix = '') {
 	return array('valid' => true, 'data' => $back);
 }
 
-function scrud_get_error_message($key, $field, $error = '') {
-	global $database;
-	$label = ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['data']]['labels']['singular'] : $key));
-	if( $error === 'required' ){
-		return 'Champ "<strong>' . $label . '</strong>" requis';
-	}elseif( $error === 'minlength' ){
-		return 'Le champ "<strong>' . $label . '</strong>" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
-	}elseif( $error === 'maxlength' ){
-		return 'Le champ "<strong>' . $label . '</strong>" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
-	}elseif( $error === 'unique' ){
-		return 'Le champ "<strong>' . $label . '</strong>" existe déjà en base de donnée.';
-	}else{
-		return 'Champ "<strong>' . $label . '</strong>" invalide.' . $error;
-	}
-}
 
 function scrud_create($dataName, $validate = true) {
 	global $database, $config;
