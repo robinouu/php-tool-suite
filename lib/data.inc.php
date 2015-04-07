@@ -60,7 +60,7 @@ function data_register($name, $datas){
 	}
 	//var_dump($realData);
 	if( sizeof($realData) && sql_insert($name, $realData) ){
-		return sql_inserted_id();
+		return sql_last_id();
 	}else{
 		return null;
 	}
@@ -82,35 +82,17 @@ function data_update($name, $id, $datas, $where = null, $autocreate = false){
 	$data = $database[$name];
 	$fields = $data['fields'];
 
-//	var_dump($datas);
 	$d = array();
 	foreach ($fields as $key => $f) {
 		$pkey = trim($prefix) != '' ? $prefix . $key : $key;
 		$f = array_merge($defaultSqlField, $f);
 		
 		if( $f['type'] === 'relation' ){
-			//var_dump($datas);
-			if( isset($datas['meta_newone_'.$pkey]) && (int)$datas['meta_newone_'.$pkey] === 1) {
-				$child_datas = array();
-				$child_id = null;
-				//var_dump($datas);
-				foreach ($datas as $k => $v){
-					//var_dump($k, $pkey);
-					if( substr($k, 0, strlen($pkey)) === $pkey ){
-						$child_datas[$k] = $v;
-					}elseif (substr($k, 0, strlen('meta_')) === 'meta_'){
-						$child_datas[$k] = $v;
-					}
-				}
+			if( sizeof($child_datas) ){
 				//var_dump($child_datas);
-				if( sizeof($child_datas) ){
-					//var_dump($child_datas);
-					$child_id = scrud_register($f['data'], $datas, $pkey . '_');
-
-				}
+				$child_id = scrud_register($f['data'], $datas, $pkey . '_');
 				if( isset($child_id) && $child_id ){
 					$d[$pkey] = $child_id;
-					$datas['meta_newone_'.$pkey] = 0;
 				}
 			}else{
 				if( isset($datas[$key]) && is_numeric($datas[$key]) ){
@@ -132,9 +114,9 @@ function data_update($name, $id, $datas, $where = null, $autocreate = false){
 
 	if( !$id && $autocreate ){
 		sql_insert($name, $d);
-		return (int)sql_inserted_id();
+		return (int)sql_last_id();
 	}else if( $id ) {		
-		sql_update($name, $d, 'WHERE id = ' . (int)$id);
+		sql_update($name, $d, 'WHERE ' . sql_where($where));
 		return (int)$id;
 	}
 }

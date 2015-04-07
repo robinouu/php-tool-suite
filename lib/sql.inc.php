@@ -51,6 +51,10 @@ function sql_disconnect() {
 	}
 }
 
+function sql_prefix() {
+	return var_get('sql/prefix');
+}
+
 function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC, $transactional = false) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -69,12 +73,12 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC, $tr
 	return $res;
 }
 
-function sql_inserted_id() {
+function sql_last_id() {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
 	}
-	return $sql->lastInsertId();
+	return (int)$sql->lastInsertId();
 }
 
 function sql_insert($table, $fields) {
@@ -112,7 +116,7 @@ function sql_update($table, $fields = array(), $where = array()) {
 		$sql_fields[] = $key . ' = ' . sql_quote($value);
 	}
 	$query .= ' SET ' . implode(',', $sql_fields) . ' ';
-	$q = $sql->prepare($query . sql_where($where));
+	$q = $sql->prepare($query . ' WHERE ' . sql_where($where));
 	if( !$q ){
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
@@ -144,8 +148,15 @@ function sql_delete_table($table) {
 	}
 	$prefix = var_get('sql/prefix', '');
 	$sql->query('SET FOREIGN_KEY_CHECKS = 0');
-	$sql->query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true));
+	$res = $sql->query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true));
 	$sql->query('SET FOREIGN_KEY_CHECKS = 1');
+	return $res;
+}
+
+function sql_delete_tables($tables = array()) {
+	foreach ($tables as $table) {
+		sql_delete_table($table);
+	}
 }
 
 function sql_where($where = array(), $op = 'AND') {

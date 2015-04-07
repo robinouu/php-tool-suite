@@ -4,7 +4,7 @@ require_once('sanitize.inc.php');
 require_once('vendor/simple_html_dom.php');
 
 function dom($html) {
-	return str_get_html($html, true, false, DEFAULT_TARGET_CHARSET, false);
+	return @str_get_html($html, true, false, DEFAULT_TARGET_CHARSET, false);
 }
 
 function stylesheet($attrs){
