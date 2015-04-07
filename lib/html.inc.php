@@ -1,5 +1,6 @@
 <?php
 
+require_once('hook.inc.php');
 require_once('sanitize.inc.php');
 require_once('vendor/simple_html_dom.php');
 
@@ -34,35 +35,38 @@ function html5($args) {
 		unset($args['scripts']);
 	}
 
-	$page = new Partial('Template HTML 5', '<!DOCTYPE html>
-<html>
-	<head>
-		<title>{title}</title>
-		<meta charset="{encoding}" />
-		<meta name="description" content="{description}" />
-		<meta name="keywords" content="{keywords}" />
-		<meta name="viewport" content="width=device-width,initial-scale=1.0">
-		
-		{webfonts}
-		{stylesheets}
-	</head>
-
-	<body>
-		{body}
-		{scripts}
-	</body>
-
-</html>
-', array_merge(array(
+	$args = array_merge(array(
 	'title' => '',
 	'encoding' => 'UTF-8',
+	'lang' => current_lang(),
 	'description' => '',
 	'keywords' => '',
 	'body' => '',
 	'stylesheets' => $stylesheets_str,
 	'scripts' => $scripts_str,
 	'webfonts' => ''), $args));
-	return $page->using();
+
+	$head = tag('title', $arg['title']) . 
+		tag('meta', '', array('charset' => $args['charset']), true) . 
+		tag('meta', '', array('name' => 'description', 'content' => $args['description']), true) . 
+		tag('meta', '', array('name' => 'keywords', 'content' => $args['keywords']), true) . 
+		tag('meta', '', array('name' => 'viewport', 'content' => $args['viewport'] ? $args['viewport'] : 'width=device-width,initial-scale=1.0'), true)
+	
+
+	$head .= hook_do('html_stylesheets');
+
+	$head .= $stylesheets_str;
+	$head .= $scripts_str;
+
+	$head .= hook_do('html_head');
+
+	$page .= tag('head', $head);
+
+	$page .= tag('body', $args['body']);
+
+	$page .= hook_do('html_scripts');
+
+	return '<!DOCTYPE html>' . tag('html', $page, array('lang' => $args['lang'], 'xml:lang' => $args['lang'] ));
 }
 
 function current_url() {

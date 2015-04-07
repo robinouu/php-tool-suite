@@ -41,6 +41,22 @@ function set_locale($locales) {
 	return false;
 }
 
+function current_lang() {
+	$locale = current_locale();
+	if( preg_match('#^([a-z]{2})[\-_]#', $locale, $m) ){
+		return $m[1];
+	}
+	return '';
+}
+
+function preferred_lang() {
+	$locale = preferred_locale();
+	if( preg_match('#^([a-z]{2})[\-_]#', $locale, $m) ){
+		return $m[1];
+	}
+	return '';
+}
+
 function current_locale() {
 	if( ($locale = session_var_get('i18n/locale')) !== null ) {
 		return $locale;

@@ -63,6 +63,41 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		print 'done' . "\r\n";
     }
 
+    public function test_hook() {
+    	require_once('lib/hook.inc.php');
+
+    	print 'hook : ';
+
+		$this->assertNull(hook_do('my_first_hook'));
+
+    	hook_register('my_first_hook', function () {
+    		return true;
+		});
+
+    	$this->assertTrue(hook_do('my_first_hook'));
+
+    	hook_unregister('my_first_hook');
+
+		$this->assertNull(hook_do('my_first_hook'));
+
+
+		hook_register('my_second_hook', function () {
+    		return 'a';
+		}, 2);
+
+		hook_register('my_second_hook', function () {
+    		return 'b';
+		});
+
+		hook_register('my_second_hook', function () {
+    		return 'c';
+		}, -2);
+
+		$this->assertEquals(hook_do('my_second_hook'), 'cba');
+
+    	print 'done' . "\r\n";
+    }
+
     public function test_sanitize() {
     	require_once('lib/sanitize.inc.php');
 
@@ -82,10 +117,50 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	$sql = sql_connect();
     	$this->assertNotNull($sql);
 
+		sql_delete_table('user');
+		sql_schema(array(
+			'user' => array(
+				'fields' => array(
+					'login_id' => array('required' => true, 'unique' => true),
+					'password' => array('type' => 'password')
+				)
+			)
+		));
+
+		$this->assertTrue(sql_table_exists('user'));
+
+		// check data integrity
+		$userData = array('login_id' => 'username', 'password' => sha1('my_pass'));
+		$this->assertTrue(sql_insert('user', $userData));
+		
+		$userID = sql_last_id();
+		$this->assertNotEquals($userID, 0);
+		
+		$data = sql_query(sql_select('user', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
+		$this->assertNotNull($data);
+		$this->assertTrue(sizeof($data) === 1);
+
+		$data = $data[0];
+		$this->assertEquals($data['login_id'], $userData['login_id']);
+		$this->assertEquals($data['password'], $userData['password']);
+
+		// Data updates
+		$userData = array('login_id' => 'my_new_username');
+		$this->assertNotNull(sql_update('user', $userData, array('id' => $userID)));
+
+		$data = sql_query(sql_select('user', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
+		$this->assertNotNull($data);
+		$this->assertTrue(sizeof($data) === 1);
+
+		$data = $data[0];
+		$this->assertEquals($data['login_id'], 'my_new_username');	
+
     	// TODO : We need some stuff to handle data testing, it think there is some kind of datasets with phpunit
+		$this->assertNotFalse(sql_delete_table('user'));
 
     	sql_disconnect();
 		$this->assertNull(var_get('sql/dbConnection'));
+
 		print 'done' . "\r\n";
     }
 

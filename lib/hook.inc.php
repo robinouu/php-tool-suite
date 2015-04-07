@@ -10,7 +10,7 @@ function hook_register($name, $callback, $priority = 1, $persistent = false) {
 }
 
 function hook_do($name, $args = array()) {
-    Hook::call($name, $args);
+    return Hook::call($name, $args);
 };
 
 function hook_unregister($name) {
