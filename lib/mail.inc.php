@@ -50,5 +50,4 @@ function email($options) {
 	return mail($options['to'], $options['subject'], '', $msg);
 }
 
-email(array('from' => 'Robin Ruaux <robinouu@gmail.com>', 'to' => 'robinouu@gmail.com', 'subject' => 'test de contenu', 'content' => '<p><strong>Petit test</strong> en ta compagnie</p>'));
 ?>
