@@ -66,13 +66,9 @@ function data_register($name, $datas){
 	}
 }
 
-function data_set($name, $datas, $id = null, $where = array()) {
-	return data_update($name, $id, $datas, $where, true);
-}
-
-function data_update($name, $id, $datas, $where = null, $autocreate = false){
-	if( !is_array($where) ){
-		$where = array('id' => $id);
+function data_set($name, $datas, $where = array()) {
+	if( !is_array($where) && isset($datas['id']) ){
+		$where = array('id' => $datas['id']);
 	}
 
 	$defaultSqlField = var_get('sql/defaultField');
@@ -84,21 +80,13 @@ function data_update($name, $id, $datas, $where = null, $autocreate = false){
 
 	$d = array();
 	foreach ($fields as $key => $f) {
-		$pkey = trim($prefix) != '' ? $prefix . $key : $key;
+		if( !isset($datas[$key]) ){
+			continue;
+		}
 		$f = array_merge($defaultSqlField, $f);
 		
 		if( $f['type'] === 'relation' ){
-			if( sizeof($child_datas) ){
-				//var_dump($child_datas);
-				$child_id = scrud_register($f['data'], $datas, $pkey . '_');
-				if( isset($child_id) && $child_id ){
-					$d[$pkey] = $child_id;
-				}
-			}else{
-				if( isset($datas[$key]) && is_numeric($datas[$key]) ){
-					$d[$pkey] = (int)$datas[$pkey];
-				}
-			}
+			
 		}else{
 			if( isset($datas[$pkey]) ) {
 				$d[$pkey] = $datas[$pkey];
@@ -108,17 +96,9 @@ function data_update($name, $id, $datas, $where = null, $autocreate = false){
 
 	if( !sizeof($d) ){
 		return false;
-		//LOG_ERROR('data_update: Could not insert or update row for data "' . $name . '", empty parameter list.');
-		//die;
 	}
-
-	if( !$id && $autocreate ){
-		sql_insert($name, $d);
-		return (int)sql_last_id();
-	}else if( $id ) {		
-		sql_update($name, $d, 'WHERE ' . sql_where($where));
-		return (int)$id;
-	}
+	
+	return (bool)sql_update($name, $d, 'WHERE ' . sql_where($where));
 }
 
 function data_populate(&$fields, $data){
