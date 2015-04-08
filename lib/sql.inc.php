@@ -55,7 +55,7 @@ function sql_prefix() {
 	return var_get('sql/prefix');
 }
 
-function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC, $transactional = false) {
+function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
@@ -65,11 +65,15 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC, $tr
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
 	}
-	$q->execute($values);
-	$res = $q->fetchAll($fetchMode);
-
-	if( sizeof($res) == 0)
+	$result = $q->execute($values);
+	if( $fetchMode != null ){
+		$res = $q->fetchAll($fetchMode);
+	}else{
+		return $result;
+	}
+	if( sizeof($res) == 0 ){
 		return false;
+	}
 	return $res;
 }
 
@@ -326,7 +330,7 @@ function sql_schema($schema, $forceDeletion = false) {
 			}
 			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (id INT NOT NULL AUTO_INCREMENT, ' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
 			//print ($query);
-			sql_query($query);
+			sql_query($query, null, null);
 		}
 		else {
 			// On supprime les champs en trop dans la base de donnée
@@ -350,7 +354,7 @@ function sql_schema($schema, $forceDeletion = false) {
 			}
 
 			foreach ($inject as $query) {
-				sql_query($query, null, null, true);
+				sql_query($query, null, null);
 			}
 		}
 	}
