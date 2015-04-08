@@ -2,7 +2,50 @@
 ini_set('xdebug.max_nesting_level', 1500);
 
 require_once('core.inc.php');
+require_once('var.inc.php');
 require_once('url.inc.php');
+
+var_set('crawler/HTTPCodeWhiteList', array(200, 201, 202, 203, 205, 210));
+var_set('crawler/fileExtBlackList', array('jpg', 'jpeg', 'bmp', 'png', 'gif', 'tar', 'gz', 'zip', 'xml', 'pdf', 'rar'));
+
+var_set('crawler/keywordsBlackList', array(
+	
+	// Generic Version
+	'http', 'www',
+
+	// FR Version
+	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+	'je', 'tu', 'il', 'nous', 'vous', 'ils', 'elle', 'elles', 
+	'le', 'la', 'les', 'un', 'une', 'des', 'ce', 'cela', 'ceci', 'ci', 'ici', 'là', 'dont', 'aucun', 'aucune', 'concernant', 
+	'mon', 'ton', 'son', 'ma', 'ta', 'sa', 'notre', 'votre', 'leur', 'mes', 'tes', 'ses', 'nos', 'vos', 'leurs', 
+	'pas', 'pendant', 'se', 'cette', 'aux', 'avec', 'plus', 'eu', 'ne',	'de', 'et', 'du', 'en', 'que',
+	'd', 'sur', 'dans', 'pour', 'au', 'par', 'contre',
+	'qu', 'qui', 'lequel', 'quel', 'quelle', 'laquelle', 'quoi', 'quelque', 'quelques', 
+	'tout', 'toute', 'tous', 'comme', 'celles', 'on', 'ou', 'sans', 'aussi', 'tant', 'si', 'cet', 'chez', 'donc',
+	'selon', 'certains', 'entre', 'autre', 'autres', 'mais', 'lui', 'encore', 'ah', 'ces', 'afin',
+	"quand", "quant", 'toutes', 'tous', 'trop','contact', 'ni', 'jamais', 'sous',
+	'continuer', 'suite', 'lire', 'partager', 'commentaire', 'commentaires', 'commentez','télécharger', 'suivre', 
+	'twitter', 'facebook', 'google', 'pinterest', 'partage',
+	'*', 'peut', 'peuvent', 'sujet', 'objet', 'site', 'page',
+	"suis", "es", "est", "sommes", "êtes", "sont", "être", 'soit',
+	'sera', 'serons', 'serez', 'seront', 
+	"ai", "as", "avons", "avez", "ont", "avoir",
+	"fais", "fait", "faisons", "faisez", "font", "faire",
+	"va", "vas", "allons", "allez", "vont", 'peu',
+	'doit', 'devons', 'devez', 'doivent',
+	'faut',
+	
+	// EN Version
+	'comment', 'comments', 'new', 'list', 'go', 'there', 'web', 'of', 'in', 'and', 'for', 'only', 'should',
+	'no', 'yes', 'download', 'follow', 'hide', 'edit', 'invite', 'at', 'will', 'get', 'from', 'can', 'could', 'was', 'her',
+	'also', 'me', 'ago', 'discuss', 'about', 'read', 'add', 'each', 'its', 'wait', 'tell', 'public', 'how', 'make', 'do', 'than', 'view',
+	'be', 'why', 'he', 'she', 'but', 'not', 'they', 'such', 'other', 'if', 'continue', 'reading', 'so', 'when', 'where', 'them',
+	'a', 'an', 'the', 'that', 'this', 'my', 'his', 'it', 'our', 'their', 'what', 'who', 'here', 'is', 'has', 'have', 'to', 'see', 'more',
+	'share', 'us', 'you', 'we', 'are', 'am', 'or', 'any', 'may', 'use', 'your', 'by', 'with', 'these', 'all', 'were', 
+	
+	// ES Version
+	'los', 'que', 'las', 'su', 'el', 'por',
+));
 
 function crawler_get_url($url, $isSSL = null){
 	$metas = array();
@@ -13,7 +56,6 @@ function crawler_get_url($url, $isSSL = null){
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
-	var_dump($url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_USERAGENT, 'PHP Minimal Framework default user agent (' . guid() . ')');
 	//curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -24,13 +66,11 @@ function crawler_get_url($url, $isSSL = null){
 	$result = curl_exec($ch);
 
 	$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	if( !in_array($code, array(200, 201, 202, 203, 205, 210)) ){
+	if( !in_array($code, var_get('crawler/HTTPCodeWhiteList')) ){
 		return false;
 	}
 	curl_close($ch);
 
-	
-	var_dump($code);
 	return $result;
 }
 
@@ -62,7 +102,6 @@ function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) 
 
 			$nodeName = strtolower($node->getName());
 			if( $nodeName === 'url' ){
-				//var_dump($site_url, $base_url);
 				if( !trim($route) || $site_url !== $base_url ){
 					continue;
 				}
@@ -84,7 +123,6 @@ function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) 
 			}
 		}
 	}
-	//var_dump($urls);
 	return $urls;
 }
 
@@ -99,8 +137,6 @@ function crawler_get_page_info($url){
 	$dom = dom($content);
 
 	if( !$dom ){
-		//var_dump($content);
-		//var_dump("contenu non parsable", $url);
 		return $page;
 	}
 
@@ -111,7 +147,7 @@ function crawler_get_page_info($url){
 			if( isset($parsed['host'], $base_url['host']) && $parsed['host'] === $base_url['host'] ){
 				$ext = explode('.', $link->href);
 				$ext = $ext[sizeof($ext)-1];
-				if( in_array($ext, array('jpg', 'jpeg', 'bmp', 'png', 'gif', 'tar', 'gz', 'zip', 'xml', 'pdf')) ){
+				if( in_array($ext, var_get('crawler/fileExtBlackList')) ){
 					continue;
 				}
 				$page['internal_links'][] = preg_replace('/^(https?):\/\/' . preg_quote($parsed['host']) . '/', '', $link->href, 1);
@@ -142,31 +178,10 @@ function crawler_get_page_info($url){
 
 	$page['content'] = html_entity_decode($page['content']);
 	$words = array_map('trim', preg_split('#[\s\.;,:\(\)\[\]\"\'\!\?\/\-]#', substr($page['content'], 0, 10000)));
-	$blacklist = array(
-		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-		'le', 'la', 'les', 'un', 'une', 'des', 'ce', 'cela', 'ceci', 'mon', 'ton', 'son', 'ma', 'ta', 'sa', 'notre', 'votre', 'leur',
-		'je', 'tu', 'il', 'nous', 'vous', 'ils', 'elle', 'elles', 'pas', 'pendant', 'se', 'cette', 'aux', 'avec', 'plus', 'eu', 'ne',
-		'de', 'et', 'du', 'en', 'que', 'qui', 'lequel', 'quel', 'laquelle', 'd', 'sur', 'dans', 'pour', 'au', 'par', 'est', 'contre',
-		'tout', 'toute', 'tous', 'l', 'ont', 'vos', 'nos', 'comme', 'celles', 'on', 'qu', 'ou', 'sont', 'sans', 'continuer', 'suite', 'lire', 
-		'mes', 'tes', 'ses', 'vos', 'leurs', 'twitter', 'facebook', 'google', 'pinterest', 'partage', 'partager', 'aussi', 'tant', 'si', 'cet', 'chez', 
-		'ci', 'ici', 'là', 'dont', 'aucun', 'aucune', 'concernant', '*', 'peut', 'peuvent', 'sujet', 'objet', 'site', 'page',
-		"suis", "es", "est", "sommes", "êtes", "sont", "être",
-		"ai", "as", "avons", "avez", "ont", "avoir",
-		"fais", "fait", "faisons", "faisez", "font", "faire",
-		"va", "vas", "allons", "allez", "vont", 'peu', 'devez', 'devons', 'doivent', 'faut', 'http', 'www', 'fr', 'com', 
-		"quand", "quant", 'toutes', 'tous', 'trop', 'quoi', 'contact', 'soit', 'ni', 'jamais', 'sous', 'bien',
-		'commentaire', 'commentaires', 'commentez', 'donc', 'quelque', 'quelques', 
-		'comment', 'comments',
-		'download', 'télécharger', 'suivre', 'follow', 'hide', 'edit', 'invite', 'at', 'will', 'get', 'from', 'can', 'could', 'was', 'her',
-		'also', 'me', 'ago', 'discuss', 'about', 'read', 'add', 'each', 'its', 'wait', 'tell', 'public', 'how', 'make', 'do', 'than', 'view',
-		'be', 'why', 'he', 'she', 'but', 'not', 'they', 'such', 'other', 'if', 'continue', 'reading', 'so', 'when', 'where', 'them',
-		'selon', 'certains', 'entre', 'autre', 'autres', 'mais', 'lui', 'encore', 'no', 'ah', 'ces', 'sera', 'serons', 'serez', 'seront', 'afin',
-		'a', 'an', 'the', 'that', 'this', 'my', 'his', 'it', 'our', 'their', 'what', 'who', 'here', 'is', 'has', 'have', 'to', 'see', 'more',
-		'share', 'us', 'you', 'we', 'are', 'am', 'or', 'any', 'may', 'use', 'your', 'by', 'with', 'these', 'all', 'were', 
-		'of', 'in', 'and', 'for', 'los', 'las', 'su', 'el', 'por', 'new', 'list', 'go', 'there', 'web', 'org', 'net', 'only', 'should');
 	$occ = array();
 
 	$averageWordLength = 5.5;
+	$blacklist = var_get('crawler/keywordsBlackList');
 	foreach ($words as $word) {
 		$word = strtolower($word);
 		if( in_array($word, $blacklist) || preg_match('#[^a-zéçèàù]#', $word) || !$word ){
@@ -226,7 +241,6 @@ function crawler_crawl_site($siteFirstLevelDomain, $callbackFoundURL) {
 	do {
 		$diff = array_diff($routes, $already_visited);
 		if( sizeof($diff) === 0 ){
-			print 'Website scan finished (with ' . sizeof($already_visited) . ' pages visits)' . "\r\n";
 			break;
 		}
 		foreach ($diff as $route) {
@@ -250,31 +264,4 @@ function crawler_crawl_site($siteFirstLevelDomain, $callbackFoundURL) {
 
 	$site['pages'][] = $page;
 	return $site;
-}
-
-
-function crawler_web($urls) {
-	global $already_visited;
-
-	$newurls = array();
-	foreach ($urls as $url) {
-		if( in_array($url, $already_visited))
-			continue;
-
-		$content = crawler_get_url($url);
-		$already_visited[] = $url;
-
-		$words = preg_split("#[\s'\.;,:\/\(\)\[\]]#", $content);
-		$words = array_unique($words);
-
-		if (preg_match_all("#<a(.*)href=\"(.*)\"(.*)>(.+)<\/a>#ui", $content, $m)) {
-			foreach ($m as $match) {
-				$newurls[] = $match[2];
-				
-			}
-		}
-	}
-
-	if (sizeof($newurls))
-		crawl_web($newurls);
 }
