@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * File system
+ * @package php-tool-suite
+ */
 function mkdir_recursive($dir) {
 	return mkdir($dir, 0777, true);
 }

@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Request
+ * @package php-tool-suite
+ */
 function redirect($url) {
 	header('Location: ' . $url);
 	exit;

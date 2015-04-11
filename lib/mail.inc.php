@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Emailing
+ * @package php-tool-suite
+ */
 function email($options) {
 	$options = array_merge(array(
 		'to' => array(),

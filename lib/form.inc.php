@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Forms
+ * @package php-tool-suite
+ */
 require_once('i18n.inc.php');
 require_once('html.inc.php');
 

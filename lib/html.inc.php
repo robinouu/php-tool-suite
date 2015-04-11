@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * HTML Helpers
+ * @package php-tool-suite
+ */
 require_once('hook.inc.php');
 require_once('sanitize.inc.php');
 require_once('vendor/simple_html_dom.php');

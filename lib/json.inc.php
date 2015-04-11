@@ -1,4 +1,8 @@
 <?php
+/**
+ * JSON
+ * @package php-tool-suite
+ */
 require_once('core.inc.php');
 require_once('var.inc.php');
 

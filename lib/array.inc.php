@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Arrays
+ * @package php-tool-suite
+ */
 function is_simple_array($arr = array()) {
 	return (is_array($arr) && count($arr) == count($arr, COUNT_RECURSIVE));
 }

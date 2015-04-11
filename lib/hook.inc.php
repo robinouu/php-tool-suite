@@ -1,4 +1,8 @@
 <?php
+/**
+ * Hooks
+ * @package php-tool-suite
+ */
 require_once('var.inc.php');
 require_once('Hook.class.php');
 

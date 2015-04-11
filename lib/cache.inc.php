@@ -1,4 +1,8 @@
 <?php
+/**
+ * Cache
+ * @package php-tool-suite
+ */
 require_once('fs.inc.php');
 require_once('log.inc.php');
 

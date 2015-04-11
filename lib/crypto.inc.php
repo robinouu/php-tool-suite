@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Crypto
+ * @package php-tool-suite
+ */
 require_once('var.inc.php');
 
 if( !var_get('crypto/iv') ){

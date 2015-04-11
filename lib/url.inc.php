@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * URLs
+ * @package url
+ */
 function url_website($url, $noScheme = false) {
 	$urlInfo = parse_url($url);
 	if( !isset($urlInfo['path']) || !isset($urlInfo['host']) ){

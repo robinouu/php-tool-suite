@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Core
+ * @package php-tool-suite
+ */
 function guid() {
 	if( function_exists('com_create_guid') ){
         return com_create_guid();

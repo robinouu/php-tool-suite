@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Editor
+ * @package php-tool-suite
+ */
 require_once('hook.inc.php');
 require_once('data.inc.php');
 

@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Fields
+ * @package php-tool-suite
+ */
 require_once('i18n.inc.php');
 
 function field_value($field) {

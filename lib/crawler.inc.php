@@ -1,4 +1,8 @@
 <?php
+/**
+ * Crawler
+ * @package php-tool-suite
+ */
 ini_set('xdebug.max_nesting_level', 1500);
 
 require_once('core.inc.php');

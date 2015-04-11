@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * SCRUD (Search, Create, Read, Update, Delete)
+ * @package php-tool-suite
+ */
 require_once('sql.inc.php');
 require_once('field.inc.php');
 

@@ -1,4 +1,8 @@
 <?php
+/**
+ * SQL
+ * @package php-tool-suite
+ */
 require_once('log.inc.php');
 require_once('var.inc.php');
 

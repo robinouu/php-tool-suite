@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Internationalization
+ * @package php-tool-suite
+ */
 require_once('var.inc.php');
 
 if( !function_exists('__') ){

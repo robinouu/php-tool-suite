@@ -1,9 +1,12 @@
 <?php
-
+/**
+ * Sanitize
+ * @package php-tool-suite
+ */
 require_once('var.inc.php');
 
 // Tables from http://phpcrossref.com/xref/mantisbt/library/utf8/utils/ascii.php.txt
-if( !var_get('core/UTF8_LOWER_ACCENTS') ){
+if( !var_get('core/toasciitable_lower') ){
 	var_set('core/toasciitable_lower', array(
 	'à' => 'a', 'ô' => 'o', 'ď' => 'd', 'ḟ' => 'f', 'ë' => 'e', 'š' => 's', 'ơ' => 'o',
 	'ß' => 'ss', 'ă' => 'a', 'ř' => 'r', 'ț' => 't', 'ň' => 'n', 'ā' => 'a', 'ķ' => 'k',
