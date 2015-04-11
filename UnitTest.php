@@ -117,17 +117,53 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	$sql = sql_connect();
     	$this->assertNotNull($sql);
 
-		sql_delete_table('user');
+		sql_delete_tables();
+
+		$this->assertFalse(sql_table_exists('user'));
+		$this->assertFalse(sql_table_exists('user_meta'));
+		$this->assertFalse(sql_table_exists('news'));
+		$this->assertFalse(sql_table_exists('keyword'));
+
+		// Test schema insertion, with data relations
 		sql_schema(array(
 			'user' => array(
 				'fields' => array(
 					'login_id' => array('required' => true, 'unique' => true),
 					'password' => array('type' => 'password')
 				)
-			)
+			),
+			'user_meta' => array(
+				'fields' => array(
+					'user' => array('type' => 'relation', 'data' => 'user'),
+					'meta_key' => array(),
+					'meta_value' => array('maxlength' => 5000),
+				)
+			),
+			'keyword' => array(
+				'fields' => array(
+					'name' => array('unique' => true)
+				),
+				'primaryKey' => array('id', 'name')
+			),
+			'news' => array(
+				'fields' => array(
+					'title' => array(),
+					'keywords' => array('type' => 'relation', 'data' => 'keyword', 'hasMany' => true)
+				)
+			),
+			/*'news_keywords' => array(
+				'fields' => array(
+					'news' => array('type' => 'relation', 'data' => 'news'),
+					'keyword' => array('type' => 'relation', 'data' => 'keyword')
+				)
+			),*/
 		));
 
 		$this->assertTrue(sql_table_exists('user'));
+		$this->assertTrue(sql_table_exists('user_meta'));
+		$this->assertTrue(sql_table_exists('news'));
+		$this->assertTrue(sql_table_exists('keyword'));
+		$this->assertTrue(sql_table_exists('news_keywords'));
 
 		// check data integrity
 		$userData = array('login_id' => 'username', 'password' => sha1('my_pass'));
@@ -156,8 +192,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($data['login_id'], 'my_new_username');	
 
     	// TODO : We need some stuff to handle data testing, it think there is some kind of datasets with phpunit
-		$this->assertNotFalse(sql_delete_table('user'));
-
+		
     	sql_disconnect();
 		$this->assertNull(var_get('sql/dbConnection'));
 
@@ -274,6 +309,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse(field_validate($emailField));
 		$emailField['value'] = 'éx@x.x';
 		$this->assertFalse(field_validate($emailField));
+
+		// multiple field validation
+		$emailField['value'] = 'x.x@x.x';
+		$this->assertTrue(fields_validate(array($emailField, $requiredField)));
+		$emailField['value'] = 'x';
+		$this->assertFalse(fields_validate(array($emailField, $requiredField)));
 
 		print 'done' . "\r\n";
     }
