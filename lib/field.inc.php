@@ -2,6 +2,18 @@
 
 require_once('i18n.inc.php');
 
+function field_value($field) {
+
+	$value = null;
+	if( isset($field['value']) ){
+		$value = $field['value'];
+	}else{
+		$value = isset($field['default']) ? $field['default'] : null;
+	}
+
+	return $value;
+}
+
 function field($field = array()) {
 	$defaultSqlField = var_get('sql/defaultField');
 	$database = var_get('sql/schema');
@@ -13,11 +25,7 @@ function field($field = array()) {
 	$id = isset($field['id']) ? $field['id'] : 'input-'.$prefix.$fieldName;
 	$fieldName = isset($field['name']) ? $field['name'] : $prefix.$fieldName;
 
-	if( isset($field['value']) ){
-		$value = $field['value'];
-	}else{
-		$value = isset($field['default']) ? $field['default'] : null;
-	}
+	$value = field_value();
 
 	switch ($field['type']) {
 		case 'text':
@@ -46,7 +54,10 @@ function field($field = array()) {
 			}
 
 			if( !in_array($field['type'], array('int','float','double')) ){
-				$html .= (isset($field['maxlength']) && is_int($field['maxlength'])) ? 'maxlength="' . $field['maxlength'] . '" ' : '';
+				$html .= (isset($field['maxlength']) && is_numeric($field['maxlength'])) ? 'maxlength="' . $field['maxlength'] . '" ' : '';
+			}else{
+				$html .= (isset($field['minValue']) && is_numeric($field['minValue'])) ? 'min="' . $field['minValue'] . '" ' : '';
+				$html .= (isset($field['maxValue']) && is_numeric($field['maxValue'])) ? 'max="' . $field['maxValue'] . '" ' : '';
 			}
 			
 			if( $field['type'] === 'datetime' ){
@@ -56,7 +67,7 @@ function field($field = array()) {
 			}
 
 			if( isset($field['readOnly']) && $field['readOnly'] === true ){
-				 $html .= 'readonly aria-readonly="true" ';
+				$html .= 'readonly aria-readonly="true" ';
 			}
 
 			if( isset($field['placeholder']) && is_string($field['placeholder']) ) {
@@ -139,16 +150,32 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 
 	$errors[$pkey] = array();
 
-	$d = !is_null($value) ? $value : (isset($field['value']) ? $field['value'] : (isset($field['default']) && !is_null($field['default']) ? $field['default'] : null));
+	$d = !is_null($value) ? $value : field_value($field);
 
 	if ($field['required'] && !$d ) {
 		$errors[$pkey][] = field_error_message($key, $field, 'required');
 	}
 
 	switch ($field['type']) {
+		case 'int':
+		case 'float':
+		case 'double':
+			if( is_numeric($field['min']) && $d < $field['min'] ){
+				$errors[$pkey][] = field_error_message($key, $field, 'min');
+			}
+			if( is_numeric($field['max']) && $d > $field['max'] ){
+				$errors[$pkey][] = field_error_message($key, $field, 'max');
+			}
+		break;
 		case 'phone':
 			if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
 				$errors[$pkey][] = field_error_message($key, $field);
+			}
+		break;
+		case 'data':
+		case 'datetime':
+			if( $field['required'] && !strtotime($d) ){
+				$errors[$pkey][] = field_error_message($key, $field, 'date');
 			}
 		break;
 		case 'text':
@@ -274,8 +301,7 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 }
 
 function fields_validate($fields, $values = null, &$data = null) {
-	$success = false;
-	// try default request values
+	// try the default $_REQUEST values
 	if( !$values ){
 		$values = $_REQUEST; 
 	}
@@ -284,30 +310,32 @@ function fields_validate($fields, $values = null, &$data = null) {
 	foreach ($fields as $fieldName => $field) {
 		$field['name'] = $fieldName;
 		$back = array();
-
-		//var_dump($values[$fieldName]);
-		validate_field($field, isset($values[$fieldName]) ? $values[$fieldName] : (isset($field['value']) ? $field['value'] : (isset($field['default']) ? $field['default'] : null) ), $back);
-		//var_dump($back);
+		field_validate($field, isset($values[$fieldName]) ? $values[$fieldName] : (isset($field['value']) ? $field['value'] : (isset($field['default']) ? $field['default'] : null) ), $back);
 		$data = array_merge_recursive($data, $back);
 	}
-	//$data = $back;
-
 	return !sizeof($data['errors']);
 }
 
 
 function field_error_message($key, $field, $error = '')
-{
+{	
+	$database = var_get('sql/schema');
 	$label = '<strong>' . ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['data']]['labels']['singular'] : $key)) . '</strong>';
 	if( $error === 'required' ){
-		return t('Le champ') . ' ' . $label . t('est requis');
+		return t('The field') . ' ' . $label . ' ' . t('is required');
 	}elseif( $error === 'minlength' ){
-		return t('Le champ') . ' ' . $label . ' ' . t('ne peut comporter moins de ') . $field['minlength'] . ' ' . t('caractères');
+		return t('The field') . ' ' . $label . ' ' . t('cannot contain less than') . ' ' . $field['minlength'] . ' ' . t('characters');
 	}elseif( $error === 'maxlength' ){
-		return t('Le champ') . ' ' . $label . ' ' . t('ne peut comporter plus de ') . $field['maxlength'] . ' ' . t('caractères');
+		return t('The field') . ' ' . $label . ' ' . t('cannot contain more than') . ' ' . $field['maxlength'] . ' ' . t('characters');
 	}elseif( $error === 'unique' ){
-		return t('Le champ') . ' ' . $label . ' ' . t('existe déjà en base de donnée.');
+		return t('The field') . ' ' . $label . ' ' . t('already exist in database.');
+	}elseif( $error === 'min' ){
+		return t('The field') . ' ' . $label . ' ' . t('must be greater than') . ' ' . $field['min'];
+	}elseif( $error === 'max' ){
+		return t('The field') . ' ' . $label . ' ' . t('must be lower than') . ' ' . $field['max'];
+	}elseif( $error === 'max' ){
+		return t('The date field') . ' ' . $label . ' ' . t('is invalid');
 	}else{
-		return t('Le champ') . ' ' . $label . ' ' . t('est invalide.');
+		return t('The field') . ' ' . $label . ' ' . t('is invalid');
 	}
 }
