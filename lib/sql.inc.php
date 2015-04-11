@@ -11,11 +11,11 @@ var_set('sql/defaultField', array(
 	'formatter' => null,
 	'class' => '',
 	'searchable' => true,
-	'hasMany' => false, // for many to one relationships
+	'hasMany' => false, // for one to many relations
 ));
 
 function sql_connect($options = array()) {
-	//LOG_ARRAY($GLOBALS);
+	
 	if( ($sql = var_get('sql/dbConnection')) !== null ){
 		return $sql;
 	}
@@ -28,7 +28,6 @@ function sql_connect($options = array()) {
 	), $options);
 
 	try {
-		//var_dump('mysql:host='.var_get('sql/host', '127.0.0.1').';dbname='.var_get('sql/database', 'cms'));
 		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass'] );	
 	}catch (Exception $e){
 		LOG_ERROR($e->getMessage());
@@ -152,15 +151,28 @@ function sql_delete_table($table) {
 	}
 	$prefix = var_get('sql/prefix', '');
 	$sql->query('SET FOREIGN_KEY_CHECKS = 0');
-	$res = $sql->query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true));
+	$res = sql_query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true), null, null);
 	$sql->query('SET FOREIGN_KEY_CHECKS = 1');
 	return $res;
 }
 
-function sql_delete_tables($tables = array()) {
-	foreach ($tables as $table) {
-		sql_delete_table($table);
+function sql_delete_tables($tables = null) {
+	$sql = sql_connect();
+	if( !$sql || (is_array($tables) && !sizeof($tables)) ){
+		return false;
 	}
+	if( is_null($tables) ){
+		$tables = sql_list_tables();
+	}
+	$res = true;
+	$prefix = var_get('sql/prefix', '');
+	$sql->query('SET FOREIGN_KEY_CHECKS = 0');
+	foreach ($tables as $table) {
+		$res = sql_query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true), null, null) && $res;
+	}
+	$sql->query('SET FOREIGN_KEY_CHECKS = 1');
+	return $res;
+
 }
 
 function sql_where($where = array(), $op = 'AND') {
@@ -224,7 +236,6 @@ function sql_schema($schema, $forceDeletion = false) {
 
 	if( $forceDeletion === true ){
 		$newContentTypes = array_keys($schema);
-		// suppression des types qui sont obsolètes dans la base
 		foreach( $tables as $table ) {
 			$ct = substr($table, strlen($prefix));
 			if( substr($table, 0, strlen($prefix)) === $prefix && !in_array($ct, $newContentTypes) ){
@@ -261,6 +272,7 @@ function sql_schema($schema, $forceDeletion = false) {
 		$inject = array();
 		$uniques = array();
 		$rel = array();
+		$many = array();
 		$lastColumn = 'id';
 		$i = 0;
 		foreach ($fields as $fieldName => $field) {
@@ -273,6 +285,18 @@ function sql_schema($schema, $forceDeletion = false) {
 				$fieldType = 'INT(11)';
 				if( !is_numeric($field['default']) ){ 
 					$field['default'] = 0;
+				}
+				if( $field['hasMany'] ){
+					$manyTableName = $contenttype . '_' . $fieldName;
+					
+					$many[] = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($manyTableName, true) . ' (' . 
+						'id_' . $contenttype . ' int(11) NOT NULL, ' . 
+						'id_' . $field['data'] . ' int(11) NOT NULL, 
+						PRIMARY KEY(id_' . $contenttype . ',id_' . $field['data'] . '),
+						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $contenttype, true) . '` (id_'.$contenttype.') REFERENCES `' . sql_quote($prefix . $contenttype, true) . '`(`id`),
+						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $field['data'], true) . '` (id_'.$field['data'].') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`)
+						) COLLATE utf8_general_ci ENGINE=InnoDB;';
+					continue;
 				}
 			}elseif (in_array($field['type'], array('int', 'float', 'double', 'bool', 'datetime', 'date'))){
 				if( $field['type'] === 'int' ){
@@ -306,10 +330,12 @@ function sql_schema($schema, $forceDeletion = false) {
 				if( in_array($fieldName, $oldFieldNames) ){
 					$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' MODIFY COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull;
 				}else{
-					$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull . ' AFTER ' . sql_quote($lastColumn, true);
-					if( $field['type'] == 'relation' ){
-						$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true);
-						$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . ' FOREIGN KEY (`' . $fieldName . '`) REFERENCES ' . sql_quote($prefix . $field['data'], true) . '(`id`) ';
+					if( !$field['hasMany'] ){
+						$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull . ' AFTER ' . sql_quote($lastColumn, true);
+						if( $field['type'] == 'relation' ){
+							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true);
+							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . ' FOREIGN KEY (`' . $fieldName . '`) REFERENCES ' . sql_quote($prefix . $field['data'], true) . '(`id`) ';
+						}
 					}
 				}				
 			}else{
@@ -323,17 +349,23 @@ function sql_schema($schema, $forceDeletion = false) {
 		$rel = array_merge($rel, $uniques);
 
 		if( !$tableExists ){
-			if( isset($info['primaryKey']) && is_array($info['primaryKey']) ){
-				$primaryKey = implode(',', $info['primaryKey']);
-			}else{
-				$primaryKey = 'id';
+			$primaryKey = array('id');
+			if( isset($info['primaryKey']) ){
+				if( is_array($info['primaryKey']) ){
+					$primaryKey = $info['primaryKey'];
+				}elseif( is_string($info['primaryKey']) ){
+					$primaryKey = array($info['primaryKey']);
+				}
 			}
-			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (id INT NOT NULL AUTO_INCREMENT, ' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
+			if( in_array('id', $primaryKey) ){
+				array_unshift($inject, 'id INT NOT NULL AUTO_INCREMENT');
+			} 
+			$primaryKey = implode(', ', $primaryKey);
+			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
 			//print ($query);
 			sql_query($query, null, null);
 		}
 		else {
-			// On supprime les champs en trop dans la base de donnée
 			if ($forceDeletion){
 				$fieldsToDelete = array_keys($fields);
 				$fieldsCopy = $oldFieldNames;
@@ -359,6 +391,10 @@ function sql_schema($schema, $forceDeletion = false) {
 		}
 	}
 
+	// execute many relations
+	foreach ($many as $query) {
+		sql_query($query, null, null);
+	}
 }
 
 
