@@ -100,9 +100,9 @@ function cookie_var_set($options) {
  * Get a cookie value.
  *
  * @param array $options The cookie options.
- * name string The cookie unique name 
- * defaultValue mixed The default cookie value. NULL by default.
- * encryptionKey null|string The encryption key to use to decode content. NULL by default.
+ * - name string The cookie unique name 
+ * - defaultValue mixed The default cookie value. NULL by default.
+ * - encryptionKey null|string The encryption key to use to decode content. NULL by default.
  * @return mixed The cookie value.
  */
 function cookie_var_get($options){
