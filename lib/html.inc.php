@@ -47,14 +47,13 @@ function html5($args) {
 	'body' => '',
 	'stylesheets' => $stylesheets_str,
 	'scripts' => $scripts_str,
-	'webfonts' => ''), $args));
+	'webfonts' => ''), $args);
 
 	$head = tag('title', $arg['title']) . 
 		tag('meta', '', array('charset' => $args['charset']), true) . 
 		tag('meta', '', array('name' => 'description', 'content' => $args['description']), true) . 
 		tag('meta', '', array('name' => 'keywords', 'content' => $args['keywords']), true) . 
-		tag('meta', '', array('name' => 'viewport', 'content' => $args['viewport'] ? $args['viewport'] : 'width=device-width,initial-scale=1.0'), true)
-	
+		tag('meta', '', array('name' => 'viewport', 'content' => $args['viewport'] ? $args['viewport'] : 'width=device-width,initial-scale=1.0'), true);	
 
 	$head .= hook_do('html_stylesheets');
 
