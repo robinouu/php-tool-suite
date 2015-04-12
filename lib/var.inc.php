@@ -6,7 +6,7 @@
  * You can use paths to access a particular variable, like the equivalent 'foo/bar' and array('foo', 'bar') parameters.
  * Handle cookie variables, session variables and generic arrays.
  * 
- * @subpackage var
+ * @subpackage variables
  */
 
 require_once('core.inc.php');
@@ -17,7 +17,6 @@ require_once('crypto.inc.php');
  * Add a global context to all next variable accessor calls
  *
  * @param string|array $context The path of the context. NULL by default. 
- * @subpackage var
  */
 function contextify($context = null) {
 	array_set($context, 'var/context', $GLOBALS);

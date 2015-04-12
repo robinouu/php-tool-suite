@@ -40,7 +40,7 @@ function doc_from_file($filepath) {
 
 			$token = array('summary' => '');
 			if( !$key ){
-				$token['file'] = basename(__FILE__);
+				$token['file'] = basename($filepath);
 			}
 
 			$nextMethodStr = substr($fileContent, strlen($m[0]) + $m[1]);
@@ -84,6 +84,7 @@ function doc_from_file($filepath) {
 				}
 			}
 			
+			$token['summary'] = trim($token['summary'], "\r\n");
 			$tokens[] = $token;
 		}
 	}
