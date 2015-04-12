@@ -16,7 +16,7 @@ require_once('crypto.inc.php');
 /**
  * Add a global context to all next variable accessor calls
  *
- * @param string|array $context The path of the context. Null by default. 
+ * @param string|array $context The path of the context. NULL by default. 
  * @subpackage var
  */
 function contextify($context = null) {
