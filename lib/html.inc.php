@@ -239,9 +239,9 @@ function hr() {
 
 function tag($tag, $content, $attrs = array(), $inline = false) {
 	if( $inline ){
-		return '<' . $tag . ' ' . attrs($attrs) . ' />';
+		return '<' . $tag . (sizeof($attrs) ? ' ' . attrs($attrs) : '') . ' />';
 	}else{
-		return '<' . $tag . ' ' . attrs($attrs) . '>' . $content . '</' . $tag . '>';
+		return '<' . $tag . (sizeof($attrs) ? ' ' . attrs($attrs) : '') . '>' . $content . '</' . $tag . '>';
 	}
 }
 
