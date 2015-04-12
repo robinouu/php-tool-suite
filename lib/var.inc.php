@@ -50,13 +50,13 @@ function get_cookie($options) {
  * @param array $options The cookie options.
  * - name string The cookie unique id. Required.
  * - value mixed The value to set. NULL by default.
- * - expireAt null|int Timestamp of expiration or NULL if you don't want an expiration date. NULL by default.
+ * - expireAt null|int Expiration timestamp or NULL if you don't want an expiration date. NULL by default.
  * - path string The cookie uri path. '/' by default.
  * - domain null|string The cookie domain scope. NULL by default.
  * - encryptionKey null|string If mcrypt is loaded, encrypt cookie data using this key. NULL by default.
  * - raw boolean If TRUE, send cookie without URL encoding. FALSE by default.
- * - https boolean The security parameter of your transmission. By default, get server_is_secure() is used.
- * - httpOnly boolean If TRUE, the cookie will only be accessible for HTTP connections. FALSE by default.
+ * - https boolean The security parameter of your transmission. By default, server_is_secure() is used.
+ * - httpOnly boolean If TRUE, the cookie will be only accessible for HTTP connections. FALSE by default.
  *
  * @link http://php.net/manual/en/function.setcookie.php
  */
@@ -101,7 +101,7 @@ function cookie_var_set($options) {
  * @param array $options The cookie options.
  * - name string The cookie unique name 
  * - defaultValue mixed The default cookie value. NULL by default.
- * - encryptionKey null|string The encryption key to use to decode content. NULL by default.
+ * - encryptionKey null|string The encryption key used to decode content. NULL by default.
  * @return mixed The cookie value.
  */
 function cookie_var_get($options){
@@ -127,8 +127,8 @@ function cookie_var_get($options){
 /**
  * Set a session var.
  *
- * @param string|array $path The variable path where to insert the value.
- * @param mixed The value to insert.
+ * @param string|array $path The path where to insert the value.
+ * @param mixed $value The value to insert.
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
  */
 function session_var_set($path = array(), $value = null) {
@@ -163,8 +163,8 @@ function session_var_get($path = array(), $default = null) {
  * Set a global var.
  *
  * @param string|array $path The variable path.
- * @param mixed The value to insert.
- * @param array The context array where to insert the variable (if null, $_GLOBALS will be used)
+ * @param mixed $value The value to insert.
+ * @param array $data The reference data array (if NULL, $_GLOBALS will be used)
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
  */
 function var_set($path = array(), $value = null, $data = null) {
@@ -179,8 +179,8 @@ function var_set($path = array(), $value = null, $data = null) {
  * Append a value to a global variable array.
  *
  * @param string|array $path The variable path.
- * @param mixed The value to append.
- * @param array The context array where to append the value. By default, and if null, $_GLOBALS will be used.
+ * @param mixed $value The value to append.
+ * @param array $data The reference data array where to append the value. By default, and if NULL, $_GLOBALS will be used.
  * @return boolean TRUE if the variable has been added. FALSE otherwise.
  */
 function var_append($path = array(), $value = null, $data = null) {
@@ -211,8 +211,8 @@ function var_unset($path, $data = null) {
  * Get a global variable.
  *
  * @param string|array $path The variable path.
- * @param mixed The value to return if the variable is not set. Can be a callback. NULL by default.
- * @param array The context array where to find the variable. By default, and if NULL, $_GLOBALS will be used.
+ * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
+ * @param array $data The context array where to find the variable. By default, and if NULL, $_GLOBALS will be used.
  * @return mixed The global variable value.
  */
 function var_get($path = array(), $default = null, $data = false) {
