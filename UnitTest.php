@@ -264,7 +264,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		print 'field : ';
 
     	// Required fields
-		$requiredField = array('type' => 'text', 'required' => true);
+		$requiredField = array('label' => 'Required field', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
@@ -274,19 +274,19 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(field_validate($requiredField));
 
     	// Maxlength validator
-		$maxlengthField = array('type' => 'text', 'maxlength' => 25);
+		$maxlengthField = array('label' => 'Maxlength field', 'maxlength' => 25);
 		$this->assertFalse(field_validate($maxlengthField, 'abcdefghijklmnopqrstuvwxyz'));
 		$this->assertTrue(field_validate($maxlengthField, ''));
 		$this->assertTrue(field_validate($maxlengthField, 'Something'));
 
 		// Minlength validator
-		$minlengthField = array('type' => 'text', 'minlength' => 25);
+		$minlengthField = array('label' => 'Minlength field', 'minlength' => 25);
 		$this->assertTrue(field_validate($minlengthField, 'abcdefghijklmnopqrstuvwxyz'));
 		$this->assertFalse(field_validate($minlengthField, ''));
 		$this->assertFalse(field_validate($minlengthField, 'Something'));
 
     	// Required fields
-		$requiredField = array('type' => 'text', 'required' => true);
+		$requiredField = array('label' => 'Required field', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
@@ -297,7 +297,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		// Basic email check, 
 		// TODO : add some more test to check RFC specifications
-		$emailField = array('type' => 'email', 'value' => 'user@example.com');
+		$emailField = array('label' => 'Email field', 'type' => 'email', 'value' => 'user@example.com');
 		$this->assertTrue(field_validate($emailField));
 		$emailField['value'] = '';
 		$this->assertTrue(field_validate($emailField));

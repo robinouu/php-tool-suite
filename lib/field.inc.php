@@ -2,9 +2,15 @@
 /**
  * Fields
  * @package php-tool-suite
+ * @subpackage fields
  */
 require_once('i18n.inc.php');
 
+/**
+ * Get the field value, or field default value if set.
+ * @param array $field The field reference 
+ * @return mixed The field value or default value. NULL otherwise
+ */
 function field_value($field) {
 
 	$value = null;
@@ -17,6 +23,11 @@ function field_value($field) {
 	return $value;
 }
 
+/**
+ * Get an HTML representation of a field
+ * @param array $field The field reference 
+ * @return string The generated HTML for the value, generally along with a label.
+ */
 function field($field = array()) {
 	$defaultSqlField = var_get('sql/defaultField');
 	$database = var_get('sql/schema');
@@ -141,7 +152,14 @@ function field($field = array()) {
 }
 
 
-function field_validate($field, $value = null, &$data = null, $prefix = ''){
+/**
+ * Validates a field value.
+ * @param array $field The field reference 
+ * @param array $value An optional value. If NULL, use field_value().
+ * @param array $data The returned validation data.
+ * @return boolean TRUE if the value has been validated. FALSE otherwise. Error details can be found in $data['errors'].
+ */
+function field_validate($field, $value = null, &$data = null){
 	static $ids = 0;
 
 	$defaultSqlField = var_get('sql/defaultField', array());
@@ -149,14 +167,14 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 	$errors = array();
 
 	$key = isset($field['name']) && is_string($field['name']) ? $field['name'] : ++$ids;
-	$pkey = trim($prefix) != '' ? $prefix . $key : $key;
+	$pkey = $key;
 
 	$errors[$pkey] = array();
 
 	$d = !is_null($value) ? $value : field_value($field);
 
 	if ($field['required'] && !$d ) {
-		$errors[$pkey][] = field_error_message($key, $field, 'required');
+		$errors[$pkey][] = field_error_message($field, 'required');
 	}
 
 	switch ($field['type']) {
@@ -164,37 +182,37 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 		case 'float':
 		case 'double':
 			if( is_numeric($field['min']) && $d < $field['min'] ){
-				$errors[$pkey][] = field_error_message($key, $field, 'min');
+				$errors[$pkey][] = field_error_message($field, 'min');
 			}
 			if( is_numeric($field['max']) && $d > $field['max'] ){
-				$errors[$pkey][] = field_error_message($key, $field, 'max');
+				$errors[$pkey][] = field_error_message($field, 'max');
 			}
 		break;
 		case 'phone':
 			if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
-				$errors[$pkey][] = field_error_message($key, $field);
+				$errors[$pkey][] = field_error_message($field);
 			}
 		break;
 		case 'data':
 		case 'datetime':
 			if( $field['required'] && !strtotime($d) ){
-				$errors[$pkey][] = field_error_message($key, $field, 'date');
+				$errors[$pkey][] = field_error_message($field, 'date');
 			}
 		break;
 		case 'text':
 		case 'password':
 		case 'email':
 			if( $field['required'] && !is_string($d) ){
-				$errors[$pkey][] = field_error_message($key, $field, 'not_string');
+				$errors[$pkey][] = field_error_message($field, 'not_string');
 			}else{
 				if( isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
 					if( strlen($d) > (int)$field['maxlength'] ){
-						$errors[$pkey][] = field_error_message($key, $field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
+						$errors[$pkey][] = field_error_message($field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
 					}
 				}
 				if( isset($field['minlength']) && (int)$field['minlength'] > 0 ){
 					if( strlen($d) < (int)$field['minlength'] ){
-						$errors[$pkey][] = field_error_message($key, $field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
+						$errors[$pkey][] = field_error_message($field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
 					}
 				}
 				if( $field['type'] === 'email' ){
@@ -206,7 +224,7 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 							$valid = filter_var($d, FILTER_VALIDATE_EMAIL);
 						}
 						if( !$valid ){
-							$errors[$pkey][] = field_error_message($key, $field, 'invalid_email'); //'L\'adresse email est invalide.';
+							$errors[$pkey][] = field_error_message($field, 'invalid_email'); //'L\'adresse email est invalide.';
 						}
 					}
 				}
@@ -268,7 +286,7 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 		//var_dump($query);
 		$exists = sql_query($query);
 		if( $exists ){
-			$errors[$pkey][] = field_error_message($key, $field, 'unique');
+			$errors[$pkey][] = field_error_message($field, 'unique');
 		}
 	}
 
@@ -303,6 +321,14 @@ function field_validate($field, $value = null, &$data = null, $prefix = ''){
 	return $valid;
 }
 
+
+/**
+ * Validate multiple field values
+ * @param array $field An array of fields to validate
+ * @param array $value An optional associate array containing the field keys and values to test for.
+ * @param array $data The returned validation data.
+ * @return boolean TRUE if the values have been validated. FALSE otherwise. Error details can be found in $data['errors'].
+ */
 function fields_validate($fields, $values = null, &$data = null) {
 	// try the default $_REQUEST values
 	if( !$values ){
@@ -313,17 +339,23 @@ function fields_validate($fields, $values = null, &$data = null) {
 	foreach ($fields as $fieldName => $field) {
 		$field['name'] = $fieldName;
 		$back = array();
-		field_validate($field, isset($values[$fieldName]) ? $values[$fieldName] : (isset($field['value']) ? $field['value'] : (isset($field['default']) ? $field['default'] : null) ), $back);
+		field_validate($field, isset($values[$fieldName]) ? $values[$fieldName] : field_value($field), $back);
 		$data = array_merge_recursive($data, $back);
 	}
 	return !sizeof($data['errors']);
 }
 
 
-function field_error_message($key, $field, $error = '')
+/**
+ * Get a human readable message from a field error code
+ * @param array $field The field reference
+ * @param string $error The error code
+ * @return string An internationalized human readable error message.
+ */
+function field_error_message($field, $error = '')
 {	
 	$database = var_get('sql/schema');
-	$label = '<strong>' . ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['data']]['labels']['singular'] : $key)) . '</strong>';
+	$label = '<strong>' . ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['data']]['labels']['singular'] : $field['name'])) . '</strong>';
 	if( $error === 'required' ){
 		return t('The field') . ' ' . $label . ' ' . t('is required');
 	}elseif( $error === 'minlength' ){
