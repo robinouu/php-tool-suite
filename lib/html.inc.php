@@ -2,7 +2,7 @@
 /**
  * HTML Helpers
  * @package php-tool-suite
- * @subpackage html helpers
+ * @subpackage HTML helpers
  */
 require_once('hook.inc.php');
 require_once('sanitize.inc.php');
@@ -24,7 +24,7 @@ function dom($html) {
  * Returns an HTML stylesheet link tag
  * @param array $attrs The link tag attributes ('src', 'media'...)
  * @return an HTML stylesheet link
- * <pre><code><link rel="stylesheet" type="text/css" src="jquery.min.css" /></code></pre>
+ * 		<link rel="stylesheet" type="text/css" src="jquery.min.css" />
  */
 function stylesheet($attrs){
 	return '<link rel="stylesheet" type="text/css" ' . attrs($attrs) . ' />';
@@ -35,7 +35,7 @@ function stylesheet($attrs){
  * Returns an HTML external javascript tag
  * @param array $attrs The script tag attributes ('src', 'defer', 'async'...)
  * @return an HTML external javascript tag
- * <pre><code><script type="text/javascript" src="jquery.min.js"></script></code></pre>
+ * 		<script type="text/javascript" src="jquery.min.js"></script>
  */
 function javascript($attrs) {
 	return '<script type="text/javascript" ' . attrs($attrs) . '></script>';

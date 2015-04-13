@@ -84,7 +84,7 @@ function doc_from_file($filepath) {
 				}
 			}
 			
-			$token['summary'] = trim($token['summary'], "\r\n");
+//			$token['summary'] = trim($token['summary'], "\r\n");
 			$tokens[] = $token;
 		}
 	}

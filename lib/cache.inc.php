@@ -19,7 +19,7 @@ if( !var_get('cache/dir') ){
  */
 function cache($name, $cb, $expire = null) {
 	$dir = var_get('cache/dir');
-	make_sure_dir_is_created($dir);
+	mkdir_recursive($dir);
 	$filename = $dir.'/'.$name.'.json';
 	if( !$expire ) {
 		$expire = strtotime('+1 month');

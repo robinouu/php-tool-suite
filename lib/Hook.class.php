@@ -142,7 +142,7 @@ class Hook {
 			}elseif( is_double($value) ){
 				$backValue += (double)$backValue + $value;
 			}elseif( is_bool($value) ){
-				$backValue = (bool)$backValue && $value;
+				$backValue = !is_bool($backValue) ? $value : (bool)$backValue && $value;
 			}
 		}
 

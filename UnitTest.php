@@ -247,7 +247,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
     	// Test dir creation
     	@rmdir('tmpdir');
-    	make_sure_dir_is_created('tmpdir');
+    	mkdir_recursive('tmpdir');
     	$this->assertTrue(is_dir('tmpdir'));
 
     	// And dir deletion
