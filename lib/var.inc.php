@@ -13,13 +13,110 @@ require_once('core.inc.php');
 require_once('array.inc.php');
 require_once('crypto.inc.php');
 
+
 /**
- * Add a global context to all next variable accessor calls
+ * Set a global var.
  *
- * @param string|array $context The path of the context. NULL by default. 
+ * @param string|array $path The variable path.
+ * @param mixed $value The value to insert.
+ * @param array $data The reference data array (if NULL, $_GLOBALS will be used)
+ * @return boolean TRUE if the variable has been set. FALSE otherwise.
  */
-function contextify($context = null) {
-	array_set($context, 'var/context', $GLOBALS);
+function var_set($path = array(), $value = null, $data = null) {
+	if( !$data ){
+		$data = $GLOBALS;
+	}
+	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
+	return array_set($contextVar, $path, $value);
+}
+
+/**
+ * Get a global variable.
+ *
+ * @param string|array $path The variable path.
+ * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
+ * @param array $data The context array where to find the variable. By default, and if NULL, $_GLOBALS will be used.
+ * @return mixed The global variable value.
+ */
+function var_get($path = array(), $default = null, $data = false) {
+	if( !$data ){
+		$data = $GLOBALS;
+	}
+	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
+	if( !is_null($back = array_get($contextVar, $path)) ){
+		return $back;
+	}
+	if( is_callable($default) ){
+		return $default();
+	}
+	return $default;
+}
+
+
+/**
+ * Append a value to a global variable array.
+ *
+ * @param string|array $path The variable path.
+ * @param mixed $value The value to append.
+ * @param array $data The reference data array where to append the value. By default, and if NULL, $_GLOBALS will be used.
+ * @return boolean TRUE if the variable has been added. FALSE otherwise.
+ */
+function var_append($path = array(), $value = null, $data = null) {
+	if( !$data ){
+		$data = $GLOBALS;
+	}
+	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
+	return array_append($contextVar, $path, $value);
+}
+
+/**
+ * Unset a global variable.
+ *
+ * @param string|array $path The variable path.
+ * @param array The context array where to unset the variable. By default, and if NULL, $_GLOBALS will be used.
+ * @return boolean TRUE if the variable has been unset. FALSE otherwise.
+ */
+function var_unset($path, $data = null) {
+	if( !$data ){
+		$data = $GLOBALS;
+	}
+	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
+	return array_unset($contextVar, $path);
+}
+
+
+/**
+ * Set a session var.
+ *
+ * @param string|array $path The path where to insert the value.
+ * @param mixed $value The value to insert.
+ * @return boolean TRUE if the variable has been set. FALSE otherwise.
+ */
+function session_var_set($path = array(), $value = null) {
+	return var_set($path, $value, $_SESSION);
+}
+
+
+
+/**
+ * Unset a session var.
+ *
+ * @param string|array $path The path where to delete the variable.
+ * @return boolean TRUE if the variable has been unset. FALSE otherwise.
+ */
+function session_var_unset($path = array()) {
+	return var_unset($path, $_SESSION);
+}
+
+/**
+ * Get a session variable value.
+ *
+ * @param string|array $path The variable path.
+ * @param string|array $default The value to use if the variable is not set.
+ * @return mixed The variable value.
+ */
+function session_var_get($path = array(), $default = null) {
+	return var_get($path, $default, $_SESSION);
 }
 
 /**
@@ -124,107 +221,12 @@ function cookie_var_get($options){
 }
 
 
-/**
- * Set a session var.
- *
- * @param string|array $path The path where to insert the value.
- * @param mixed $value The value to insert.
- * @return boolean TRUE if the variable has been set. FALSE otherwise.
- */
-function session_var_set($path = array(), $value = null) {
-	return var_set($path, $value, $_SESSION);
-}
-
-
 
 /**
- * Unset a session var.
+ * Add a global context to all next variable accessor calls
  *
- * @param string|array $path The path where to delete the variable.
- * @return boolean TRUE if the variable has been unset. FALSE otherwise.
+ * @param string|array $context The path of the context. NULL by default. 
  */
-function session_var_unset($path = array()) {
-	return var_unset($path, $_SESSION);
-}
-
-/**
- * Get a session variable value.
- *
- * @param string|array $path The variable path.
- * @param string|array $default The value to use if the variable is not set.
- * @return mixed The variable value.
- */
-function session_var_get($path = array(), $default = null) {
-	return var_get($path, $default, $_SESSION);
-}
-
-
-/**
- * Set a global var.
- *
- * @param string|array $path The variable path.
- * @param mixed $value The value to insert.
- * @param array $data The reference data array (if NULL, $_GLOBALS will be used)
- * @return boolean TRUE if the variable has been set. FALSE otherwise.
- */
-function var_set($path = array(), $value = null, $data = null) {
-	if( !$data ){
-		$data = $GLOBALS;
-	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_set($contextVar, $path, $value);
-}
-
-/**
- * Append a value to a global variable array.
- *
- * @param string|array $path The variable path.
- * @param mixed $value The value to append.
- * @param array $data The reference data array where to append the value. By default, and if NULL, $_GLOBALS will be used.
- * @return boolean TRUE if the variable has been added. FALSE otherwise.
- */
-function var_append($path = array(), $value = null, $data = null) {
-	if( !$data ){
-		$data = $GLOBALS;
-	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_append($contextVar, $path, $value);
-}
-
-/**
- * Unset a global variable.
- *
- * @param string|array $path The variable path.
- * @param array The context array where to unset the variable. By default, and if NULL, $_GLOBALS will be used.
- * @return boolean TRUE if the variable has been unset. FALSE otherwise.
- */
-function var_unset($path, $data = null) {
-	if( !$data ){
-		$data = $GLOBALS;
-	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_unset($contextVar, $path);
-}
-
-
-/**
- * Get a global variable.
- *
- * @param string|array $path The variable path.
- * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
- * @param array $data The context array where to find the variable. By default, and if NULL, $_GLOBALS will be used.
- * @return mixed The global variable value.
- */
-function var_get($path = array(), $default = null, $data = false) {
-	if( !$data ){
-		$data = $GLOBALS;
-	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	if( !is_null($back = array_get($contextVar, $path)) ){
-		return $back;
-	}
-	if( is_callable($default) ){
-		return $default();
-	}
-	return $default;
+function contextify($context = null) {
+	array_set($context, 'var/context', $GLOBALS);
 }

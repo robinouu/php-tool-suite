@@ -2,15 +2,35 @@
 /**
  * Arrays
  * @package php-tool-suite
+ * @subpackage arrays
+ */
+
+/**
+ * Check if the specified array is simple or not. (one level)
+ * @param array $array The array to test
+ * @return boolean TRUE if the array is simple. FALSE otherwise.
  */
 function is_simple_array($arr = array()) {
 	return (is_array($arr) && count($arr) == count($arr, COUNT_RECURSIVE));
 }
 
+
+/**
+ * Check if the specified array is associative or not.
+ * @param array $array The array to test
+ * @return boolean TRUE if the array is associative. FALSE otherwise.
+ */
 function is_assoc_array($arr) {
     return (bool)count(array_filter(array_keys($arr), 'is_string'));
 }
 
+
+/**
+ * Get an array value by path
+ * @param array $array The reference array.
+ * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
+ * @return mixed Return the current path value.
+ */
 function array_get($arr, $path)
 {
 	if (!$path)
@@ -30,10 +50,18 @@ function array_get($arr, $path)
 	return $cur;
 }
 
+
+/**
+ * Set an array value by path
+ * @param array $array The reference array.
+ * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
+ * @param mixed $value The value to set
+ * @return boolean TRUE if the variable has been correctly set. FALSE otherwise.
+ */
 function array_set(&$arr, $path, $value)
 {
 	if (!$path)
-		return null;
+		return false;
 
 	$segments = is_array($path) ? $path : explode('/', $path);
 	$cur =& $arr;
@@ -51,10 +79,19 @@ function array_set(&$arr, $path, $value)
 	return true;
 }
 
+
+/**
+ * Append a value to a subarray by path
+ * @param array $array The reference array.
+ * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
+ * @param string $value The key to inject
+ * @param mixed $value The value to inject
+ * @return boolean TRUE if the variable has been correctly set. FALSE otherwise.
+ */
 function array_append(&$arr, $path, $key, $value = null)
 {
 	if (!$path)
-		return null;
+		return false;
 
 	$segments = is_array($path) ? $path : explode('/', $path);
 	$cur = &$arr;
@@ -73,8 +110,15 @@ function array_append(&$arr, $path, $key, $value = null)
 		$cur =& $cur[$segment];
 		++$i;
 	}
+	return true;
 }
 
+/**
+ * Unset a value from array by path
+ * @param array $array The reference array.
+ * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
+ * @return boolean TRUE if the variable has been correctly unset. FALSE otherwise.
+ */
 function array_unset(&$arr, $path)
 {
 	if (!$path)
@@ -98,7 +142,7 @@ function array_unset(&$arr, $path)
 		++$i;
 	}
 	
-	return $arr;
+	return TRUE;
 }
 
 

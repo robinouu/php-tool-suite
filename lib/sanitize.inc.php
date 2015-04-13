@@ -46,7 +46,6 @@ if( !var_get('core/toasciitable_upper') ){
 }
 
 function slug($str, $delimiter = '-') {
-
 	$str = str_replace(array_keys(var_get('core/toasciitable_lower')), array_values(var_get('core/toasciitable_lower')), $str);
 	$str = str_replace(array_keys(var_get('core/toasciitable_upper')), array_values(var_get('core/toasciitable_upper')), $str);
 
