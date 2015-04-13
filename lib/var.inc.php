@@ -145,16 +145,17 @@ function get_cookie($options) {
  * Set a cookie 
  *
  * @param array $options The cookie options.
- * - name string The cookie unique id. Required.
- * - value mixed The value to set. NULL by default.
- * - expireAt null|int Expiration timestamp or NULL if you don't want an expiration date. NULL by default.
- * - path string The cookie uri path. '/' by default.
- * - domain null|string The cookie domain scope. NULL by default.
- * - encryptionKey null|string If mcrypt is loaded, encrypt cookie data using this key. NULL by default.
- * - raw boolean If TRUE, send cookie without URL encoding. FALSE by default.
- * - https boolean The security parameter of your transmission. By default, server_is_secure() is used.
- * - httpOnly boolean If TRUE, the cookie will be only accessible for HTTP connections. FALSE by default.
- *
+ * <ul>
+ * 	<li>name string The cookie unique id. Required.</li>
+ * 	<li>value mixed The value to set. NULL by default.</li>
+ * 	<li>expireAt null|int Expiration timestamp or NULL if you don't want an expiration date. NULL by default.</li>
+ * 	<li>path string The cookie uri path. '/' by default.</li>
+ * 	<li>domain null|string The cookie domain scope. NULL by default.</li>
+ * 	<li>encryptionKey null|string If mcrypt is loaded, encrypt cookie data using this key. NULL by default.</li>
+ * 	<li>raw boolean If TRUE, send cookie without URL encoding. FALSE by default.</li>
+ * 	<li>https boolean The security parameter of your transmission. By default, server_is_secure() is used.</li>
+ * 	<li>httpOnly boolean If TRUE, the cookie will be only accessible for HTTP connections. FALSE by default.</li>
+ * </ul>
  * @link http://php.net/manual/en/function.setcookie.php
  */
 function cookie_var_set($options) {
@@ -196,9 +197,11 @@ function cookie_var_set($options) {
  * Get a cookie value.
  *
  * @param array $options The cookie options.
- * - name string The cookie unique name 
- * - defaultValue mixed The default cookie value. NULL by default.
- * - encryptionKey null|string The encryption key used to decode content. NULL by default.
+ * <ul>
+ * 	<li>name string The cookie unique name </li>
+ * 	<li>defaultValue mixed The default cookie value. NULL by default.</li>
+ *  <li>encryptionKey null|string The encryption key used to decode content. NULL by default.</li>
+ * </ul>
  * @return mixed The cookie value.
  */
 function cookie_var_get($options){

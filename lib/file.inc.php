@@ -9,9 +9,14 @@
  * Write a CSV file using array data
  * @param string $filepath The csv filepath where to write data
  * @param array $data The datas to write, formatted like this :
- * $data = array(array('Row 1, column 1', 'Row 1 column 2'),
- * 	array('Row 2, column 1', 'Row 2 column 2')
- * );
+ * <pre>
+ * 	<code>
+ *  	$data = array(
+ * 			array('Row 1, column 1', 'Row 1 column 2'),
+ * 			array('Row 2, column 1', 'Row 2 column 2')
+ * 		);
+ * 	</code>
+ * </pre>
  * @param string $columnSeparator The column separator to use. Comma by default.
  * @return boolean TRUE if the file has been wrote. FALSE otherwise.
  */
@@ -28,8 +33,10 @@ function csv_write($filepath, $data, $colSep = ','){
  * Load data from a CSV file
  * @param string $filepath The csv filepath to load
  * @param callable $callback An optional callback to use to browse each line. The function takes two parameters :
- * - the current line data
- * - the current line number
+ * <ol>
+ * 	<li>the current line data</li>
+ * 	<li>the current line number</li>
+ * </ol>
  * @param boolean $ignoreFirstLine Set it to TRUE if you want to ignore the first line, that generally give column information.
  * @param string $columnSeparator The column separator to use. Comma by default.
  * @return array Returns the CSV data.
