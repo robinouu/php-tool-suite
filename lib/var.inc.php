@@ -15,7 +15,7 @@ require_once('crypto.inc.php');
 
 
 /**
- * Set a global var.
+ * Sets a global var.
  *
  * @param string|array $path The variable path.
  * @param mixed $value The value to insert.
@@ -31,7 +31,7 @@ function var_set($path = array(), $value = null, $data = null) {
 }
 
 /**
- * Get a global variable.
+ * Gets a global variable.
  *
  * @param string|array $path The variable path.
  * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
@@ -54,7 +54,7 @@ function var_get($path = array(), $default = null, $data = false) {
 
 
 /**
- * Append a value to a global variable array.
+ * Appends a value to a global variable array.
  *
  * @param string|array $path The variable path.
  * @param mixed $value The value to append.
@@ -70,7 +70,7 @@ function var_append($path = array(), $value = null, $data = null) {
 }
 
 /**
- * Unset a global variable.
+ * Unsets a global variable.
  *
  * @param string|array $path The variable path.
  * @param array The context array where to unset the variable. By default, and if NULL, $_GLOBALS will be used.
@@ -86,7 +86,7 @@ function var_unset($path, $data = null) {
 
 
 /**
- * Set a session var.
+ * Sets a session var.
  *
  * @param string|array $path The path where to insert the value.
  * @param mixed $value The value to insert.
@@ -99,7 +99,7 @@ function session_var_set($path = array(), $value = null) {
 
 
 /**
- * Unset a session var.
+ * Unsets a session var.
  *
  * @param string|array $path The path where to delete the variable.
  * @return boolean TRUE if the variable has been unset. FALSE otherwise.
@@ -109,7 +109,7 @@ function session_var_unset($path = array()) {
 }
 
 /**
- * Get a session variable value.
+ * Gets a session variable value.
  *
  * @param string|array $path The variable path.
  * @param string|array $default The value to use if the variable is not set.
@@ -120,7 +120,7 @@ function session_var_get($path = array(), $default = null) {
 }
 
 /**
- * Set a cookie
+ * Sets a cookie
  *
  * @param array $options The cookie options.
  * @return boolean TRUE if the cookie has been correctly set. FALSE otherwise.
@@ -131,7 +131,7 @@ function set_cookie($options) {
 }
 
 /**
- * Get a cookie value.
+ * Gets a cookie value.
  *
  * @param array $options The cookie options.
  * @return mixed The cookie value.
@@ -142,7 +142,7 @@ function get_cookie($options) {
 }
 
 /**
- * Set a cookie 
+ * Sets a cookie 
  *
  * @param array $options The cookie options.
  * <ul>
@@ -194,7 +194,7 @@ function cookie_var_set($options) {
 }
 
 /**
- * Get a cookie value.
+ * Gets a cookie value.
  *
  * @param array $options The cookie options.
  * <ul>
@@ -226,7 +226,7 @@ function cookie_var_get($options){
 
 
 /**
- * Add a global context to all next variable accessor calls
+ * Adds a global context to all next variable accessor calls
  *
  * @param string|array $context The path of the context. NULL by default. 
  */

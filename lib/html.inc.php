@@ -2,22 +2,45 @@
 /**
  * HTML Helpers
  * @package php-tool-suite
+ * @subpackage html helpers
  */
 require_once('hook.inc.php');
 require_once('sanitize.inc.php');
 require_once('vendor/simple_html_dom.php');
 
+/**
+ * Parse an HTML string into DOM.
+ * It's just a wrapper around the <a href="http://simplehtmldom.sourceforge.net/" target="_blank">simplehtmldom</a> string parser.
+ * @param string $html The HTML string to parse.
+ * @return a DOM representation of the HTML data
+ * @see http://simplehtmldom.sourceforge.net/
+ */
 function dom($html) {
 	return @str_get_html($html, true, false, DEFAULT_TARGET_CHARSET, false);
 }
 
+
+/**
+ * Returns an HTML stylesheet link tag
+ * @param array $attrs The link tag attributes ('src', 'media'...)
+ * @return an HTML stylesheet link
+ * <pre><code><link rel="stylesheet" type="text/css" src="jquery.min.css" /></code></pre>
+ */
 function stylesheet($attrs){
 	return '<link rel="stylesheet" type="text/css" ' . attrs($attrs) . ' />';
 }
 
+
+/**
+ * Returns an HTML external javascript tag
+ * @param array $attrs The script tag attributes ('src', 'defer', 'async'...)
+ * @return an HTML external javascript tag
+ * <pre><code><script type="text/javascript" src="jquery.min.js"></script></code></pre>
+ */
 function javascript($attrs) {
 	return '<script type="text/javascript" ' . attrs($attrs) . '></script>';
 }
+
 
 function html5($args) {
 	require_once(dirname(__FILE__).'/partial.class.php');
@@ -237,6 +260,14 @@ function hr() {
 	return '<hr />' . "\r\n";
 }
 
+/**
+ * Returns an HTML tag
+ * @param string $tag The tag name.
+ * @param string $content The tag content.
+ * @param array $attrs The tag attributes
+ * @param boolean $inline If TRUE if specified, the HTML inline format will be used. (for tags like link,br,hr...)
+ * @return a properly formatted HTML tag
+ */
 function tag($tag, $content, $attrs = array(), $inline = false) {
 	if( $inline ){
 		return '<' . $tag . (sizeof($attrs) ? ' ' . attrs($attrs) : '') . ' />';
@@ -290,6 +321,12 @@ function button_submit($label = 'Submit', $attrs = array()) {
 	return tag('input', '', $attrs, true);
 }
 
+
+/**
+ * Returns an HTML tag attributes.
+ * @param array $attrs The attributes with their respective string values.
+ * @return string an HTML list of attributes, joined by spaces.
+ */
 function attrs($attrs = array()) {
 	$html = '';
 	if( !is_array($attrs) ){

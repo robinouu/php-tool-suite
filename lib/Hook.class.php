@@ -132,7 +132,7 @@ class Hook {
 			// Merge back args
 			$value = call_user_func_array($callback, $arguments);
 			if( is_array($value) ){
-				$backValue = is_array($backValue) ? array_merge($backValue, $value) : array_merge(array($backValue), $value);
+				$backValue = is_array($backValue) ? array_merge($backValue, $value) : array_merge_recursive(array($backValue), $value);
 			}elseif( is_string($value) ){
 				$backValue = (string)$backValue . $value;
 			}elseif( is_integer($value) ){
@@ -142,7 +142,7 @@ class Hook {
 			}elseif( is_double($value) ){
 				$backValue += (double)$backValue + $value;
 			}elseif( is_bool($value) ){
-				$backValue = $value;
+				$backValue = (bool)$backValue && $value;
 			}
 		}
 

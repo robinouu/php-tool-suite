@@ -2,11 +2,25 @@
 /**
  * File system
  * @package php-tool-suite
+ * @subpackage file system
+ */
+
+/**
+ * Creates directories recursively.
+ * If the path does not exist in the file system, it will be automatically created.
+ * @param string $dir The path to create.
+ * @return boolean TRUE if the path has been set. FALSE otherwise.
  */
 function mkdir_recursive($dir) {
 	return mkdir($dir, 0777, true);
 }
 
+
+/**
+ * Removes a directory and all of its subdirectories.
+ * @param string $dir The directory to remove.
+ * @return boolean TRUE if the path has been correctly removed. FALSE otherwise.
+ */
 function rmdir_recursive($dir) {
 	$files = scandir($dir);
     foreach($files as $file) {
@@ -21,11 +35,4 @@ function rmdir_recursive($dir) {
         }
     }
    	return rmdir($dir);
-}
-
-function make_sure_dir_is_created($directory, $chmod = 0777) {
-	if ( !is_dir($directory) ) {
-  		return mkdir($directory, 0777, true);
-	}
-	return true;
 }

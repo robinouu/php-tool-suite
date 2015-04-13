@@ -6,7 +6,7 @@
  */
 
 /**
- * Check if the specified array is simple or not. (one level)
+ * Checks if the specified array is simple or not. (one level)
  * @param array $array The array to test
  * @return boolean TRUE if the array is simple. FALSE otherwise.
  */
@@ -16,7 +16,7 @@ function is_simple_array($arr = array()) {
 
 
 /**
- * Check if the specified array is associative or not.
+ * Checks if the specified array is associative or not.
  * @param array $array The array to test
  * @return boolean TRUE if the array is associative. FALSE otherwise.
  */
@@ -26,7 +26,7 @@ function is_assoc_array($arr) {
 
 
 /**
- * Get an array value by path
+ * Gets an array value by path
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @return mixed Return the current path value.
@@ -52,7 +52,7 @@ function array_get($arr, $path)
 
 
 /**
- * Set an array value by path
+ * Sets an array value by path
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @param mixed $value The value to set
@@ -81,7 +81,7 @@ function array_set(&$arr, $path, $value)
 
 
 /**
- * Append a value to a subarray by path
+ * Appends a value to a subarray by path
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @param string $value The key to inject
@@ -114,7 +114,7 @@ function array_append(&$arr, $path, $key, $value = null)
 }
 
 /**
- * Unset a value from array by path
+ * Unsets a value from array by path
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @return boolean TRUE if the variable has been correctly unset. FALSE otherwise.

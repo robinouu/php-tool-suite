@@ -7,7 +7,7 @@
 require_once('i18n.inc.php');
 
 /**
- * Get the field value, or field default value if set.
+ * Gets the field value, or field default value if set.
  * @param array $field The field reference 
  * @return mixed The field value or default value. NULL otherwise
  */
@@ -24,7 +24,7 @@ function field_value($field) {
 }
 
 /**
- * Get an HTML representation of a field
+ * Gets an HTML representation of a field
  * @param array $field The field reference 
  * @return string The generated HTML for the value, generally along with a label.
  */
@@ -323,7 +323,7 @@ function field_validate($field, $value = null, &$data = null){
 
 
 /**
- * Validate multiple field values
+ * Validates multiple field values
  * @param array $field An array of fields to validate
  * @param array $value An optional associate array containing the field keys and values to test for.
  * @param array $data The returned validation data.
@@ -347,7 +347,7 @@ function fields_validate($fields, $values = null, &$data = null) {
 
 
 /**
- * Get a human readable message from a field error code
+ * Gets a human readable message from a field error code
  * @param array $field The field reference
  * @param string $error The error code
  * @return string An internationalized human readable error message.

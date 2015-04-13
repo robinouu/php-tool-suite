@@ -6,7 +6,7 @@
  */
 
 /**
- * Generate a GUID (Globally Unique Identifier)
+ * Generates a GUID (Globally Unique Identifier)
  * @return string a unique identifier formatted like this {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
  */
 function guid() {
@@ -21,7 +21,7 @@ function guid() {
 }
 
 /**
- * Return the security state of the current connection.
+ * Returns the security state of the current connection.
  * @return boolean TRUE if a secured connection is active. FALSE otherwhise.
  */
 function server_is_secure() {
@@ -30,7 +30,7 @@ function server_is_secure() {
 
 
 /**
- * Get the document root path.
+ * Gets the document root path.
  * @return string The document root path.
  */
 function path_document_root() {

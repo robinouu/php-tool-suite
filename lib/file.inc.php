@@ -6,7 +6,7 @@
  */
 
 /**
- * Write a CSV file using array data
+ * Writes a CSV file using array data
  * @param string $filepath The csv filepath where to write data
  * @param array $data The datas to write, formatted like this :
  * <pre>
@@ -30,7 +30,7 @@ function csv_write($filepath, $data, $colSep = ','){
 
 
 /**
- * Load data from a CSV file
+ * Loads data from a CSV file
  * @param string $filepath The csv filepath to load
  * @param callable $callback An optional callback to use to browse each line. The function takes two parameters :
  * <ol>
