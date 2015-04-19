@@ -117,15 +117,14 @@ function data_populate(&$fields, $data){
 
 function data_validate($dataName, $data, $id = null, &$validationData = array()) {
 	$schema = var_get('sql/schema');
-	
-	$validation = scrud_validate($dataName, $data, $id);
 
-	if( $validation['valid'] ){
-		$validationData['data'] = $validation['data'];
-		$validationData['errors'] = array();
-	}else{
-		$validationData['data'] = array();
-		$validationData['errors'] = $validation['errors'];
+	foreach ($schema[$dataName]['fields'] as $fieldName => $field) {
+		$field['name'] = $fieldName;
+		$field['data'] = $dataName;
+		$back = array();
+		field_validate($field, isset($data[$fieldName]) ? $data[$fieldName] : field_value($field), $back);
+		$validationData = array_merge_recursive($validationData, $back);
 	}
-	return sizeof($validationData['errors']) === 0;
+
+	return !sizeof($validationData['errors']);
 }

@@ -229,10 +229,13 @@ function sql_describe($table) {
 	return sql_query($query);
 }
 
-function sql_schema($schema, $forceDeletion = false) {
+function sql_schema($schema = null, $forceDeletion = false) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
+	}
+	if( !$schema ){
+		$schema = var_get('sql/schema');
 	}
 	$prefix = var_get('sql/prefix', '');
 	$defaultSqlField = var_get('sql/defaultField');

@@ -109,10 +109,10 @@ function field($field = array()) {
 		case 'relation':
 		case 'enum':
 			if( $field['type'] === 'relation' ){
-				$data = scrud_list($field['data'], array());
+				$data = scrud_list($field['relData'], array());
 				//$fieldName = $pkey;
 			}else{
-				$data = $field['data'];
+				$data = $field['relData'];
 			}
 			if( is_array($data) ){
 				$id = isset($field['id']) ? $field['id'] : 'select-' . $fieldName;
@@ -123,7 +123,7 @@ function field($field = array()) {
 				}
 				$html .= '</select>';
 			}else{
-				$html .= 'Aucune donnée de type ' . $field['data'];
+				$html .= 'Aucune donnée de type ' . $field['relData'];
 			}
 		break;
 		case 'phone':
@@ -168,6 +168,7 @@ function field_validate($field, $value = null, &$data = null){
 
 	$key = isset($field['name']) && is_string($field['name']) ? $field['name'] : ++$ids;
 	$pkey = $key;
+
 
 	$errors[$pkey] = array();
 
@@ -276,19 +277,14 @@ function field_validate($field, $value = null, &$data = null){
 			break;
 	}
 
-	if( (bool)$field['unique'] === true && $d && (!isset($datas['meta_newone_'.$pkey]) || (int)$datas['meta_newone_'.$pkey] !== 1 ) ){//&& ($datas['meta_mode'] !== 'edit') ){
-
-		$query = sql_select('data_'.$dataName, 'id') . ' WHERE ' . sql_quote($key, true) . ' = ' . sql_quote($d);
-		if( $id > 0 ){
-			$query .= ' AND id <> ' . $id;
-		}
-		$query .= ' LIMIT 1';
-		//var_dump($query);
+	if( (bool)$field['unique'] === true && $d ){
+		$query = sql_select($field['data'], 'id') . ' WHERE ' . sql_quote($key, true) . ' = ' . sql_quote($d) . ' LIMIT 1';
 		$exists = sql_query($query);
 		if( $exists ){
 			$errors[$pkey][] = field_error_message($field, 'unique');
 		}
 	}
+
 
 	if( !sizeof($errors[$pkey]) ){
 		unset($errors[$pkey]);
@@ -308,17 +304,13 @@ function field_validate($field, $value = null, &$data = null){
 		$back[$pkey] = $d ? $d : null;
 	}
 
-	$valid = !sizeof($errors);
-
-	if( is_array($data) ){
-		if( !isset($data['data']) ){ 
-			$data['data'] = array();
-		}
-		$data['errors'] = $errors;
+	if( !is_array($data) || !sizeof($data) ){
+		$data = array('data' => $back, 'errors' => $errors);
+	}else{
 		$data['data'] = array_merge($data['data'], $back);
+		$data['errors'] = $errors;
 	}
-
-	return $valid;
+	return !sizeof($errors);
 }
 
 
@@ -355,7 +347,7 @@ function fields_validate($fields, $values = null, &$data = null) {
 function field_error_message($field, $error = '')
 {	
 	$database = var_get('sql/schema');
-	$label = '<strong>' . ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['data']]['labels']['singular'] : $field['name'])) . '</strong>';
+	$label = '<strong>' . ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['relData']]['labels']['singular'] : $field['name'])) . '</strong>';
 	if( $error === 'required' ){
 		return t('The field') . ' ' . $label . ' ' . t('is required');
 	}elseif( $error === 'minlength' ){

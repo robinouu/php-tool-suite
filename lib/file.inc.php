@@ -47,7 +47,7 @@ function csv_load($filepath, $callback = null, $ignoreFirstLine = false, $colSep
 	if (($handle = fopen($filepath, "r")) !== FALSE) {
 		$opened = true;
 		$l = 0;
-		while (($data = fgetcsv($handle, 8000, $colSep)) !== FALSE) {
+		while (($data = fgetcsv($handle, 0, $colSep)) !== FALSE) {
 			++$l;
 			if( $ignoreFirstLine && $l == 1 ){
 				continue;
