@@ -323,11 +323,16 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	require_once('lib/cache.inc.php');
 		print 'cache : ';
 
-		$content = cache('test', function () {
-			print 'my cached content';
+		mkdir_recursive('cache');
+
+		$content = 'my cached content';
+		$cachedContent = cache('cache/test.html', function () use ($content) {
+			print $content;
 		}, '+3 month');
 
-		$this->assertTrue(file_exists(cache_dir().'/test.json'));
+		$this->assertTrue(file_exists('cache/test.html'));
+
+		$this->assertEquals($cachedContent, $content);
 
 		rmdir_recursive('cache');
 

@@ -7,38 +7,31 @@
 require_once('fs.inc.php');
 require_once('log.inc.php');
 
-if( !var_get('cache/dir') ){
-	var_set('cache/dir', path_document_root().'/cache');
-}
-
 /**
- * Cache a buffer into a JSON file, up to the specified expiration date.
+ * Cache data into a file, up to the specified expiration date.
  * @param string $name the name of cached variable
- * @param callable $cb the function to call. Output will be sent to the JSON file.
+ * @param mixed|callable $data the data to cache. It can also be the return of a callback.
  * @param string $expire The expiration timestamp. +1 month by default.
+ * @return mixed The cached data.
  */
-function cache($name, $cb, $expire = null) {
-	$dir = var_get('cache/dir');
-	mkdir_recursive($dir);
-	$filename = $dir.'/'.$name.'.json';
+function cache($filename, $data, $expire = null) {
 	if( !$expire ) {
 		$expire = strtotime('+1 month');
 	}
 	if (is_file($filename) && filemtime($filename) + $expire < 2*time() ) {
-		return json_decode(file_get_contents($filename))->data;
+		return file_get_contents($filename);
 	}else{
-
-		if( is_callable($cb) ){
+		if( is_callable($data) ){
 			ob_start();
-			$cb();
-			$data = ob_get_contents();
+			$data();
+			$backData = ob_get_contents();
 			ob_end_clean();
 		}
-		else
-			$data = $cb;
-
-		file_put_contents($filename, json_encode(array('data' => $data)));
-		return $data;
+		else{
+			$backData = &$data;
+		}
+		file_put_contents($filename, $backData);
+		return $backData;
 	}
 }
 

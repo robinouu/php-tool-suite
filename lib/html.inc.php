@@ -94,19 +94,6 @@ function html5($args) {
 	return '<!DOCTYPE html>' . tag('html', $page, array('lang' => $args['lang'], 'xml:lang' => $args['lang'] ));
 }
 
-function current_url() {
-	$url = var_get('site/url', '');
-	if( !$url && isset($_SERVER['SERVER_NAME'])){
-		$url = server_is_secure() ? 'https://' : 'http://';
-		if (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != '80') {
-			$url .= $_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI'];
-		} else {
-			$url .= $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-		}
-		var_set('site/url', parse_url($url));
-	}
-	return $url;
-}
 
 function block($str = '', $callback = null) {
 	if( $callback ) {

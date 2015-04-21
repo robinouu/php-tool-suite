@@ -5,6 +5,8 @@
  * @subpackage file system
  */
 
+require_once('core.inc.php');
+
 /**
  * Creates directories recursively.
  * If the path does not exist in the file system, it will be automatically created.
@@ -22,17 +24,26 @@ function mkdir_recursive($dir) {
  * @return boolean TRUE if the path has been correctly removed. FALSE otherwise.
  */
 function rmdir_recursive($dir) {
-	$files = scandir($dir);
-    foreach($files as $file) {
-        if( $file === '.' || $file === '..' ){
-        	continue;
+    return browse_recursive($dir, 'unlink', 'rmdir');
+}
+
+function browse_recursive($dir, $cbEach = null, $cbAfter = null, $ignorePaths = array()) {
+    $files = scandir($dir);
+    if( !$files ){
+        return FALSE;
+    }
+    foreach( $files as $file ) {
+        if( $file === '.' || $file === '..' || in_array($file, $ignorePaths) ){
+            continue;
         }
         if( is_dir($dir.'/'.$file) ){
-        	rmdir_recursive($dir.'/'.$file);
+            browse_recursive($dir.'/'.$file, $cbEach, $cbAfter);
         }
-        else{
-        	unlink($dir.'/'.$file);
+        elseif ($cbEach) {
+            call_user_func($cbEach, $dir.'/'.$file);
         }
     }
-   	return rmdir($dir);
+    if( $cbAfter ){
+        return call_user_func($cbAfter, $dir);
+    }
 }
