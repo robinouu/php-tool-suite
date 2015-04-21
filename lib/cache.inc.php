@@ -9,7 +9,7 @@ require_once('log.inc.php');
 
 /**
  * Cache data into a file, up to the specified expiration date.
- * @param string $name the name of cached variable
+ * @param string $filepath The cached file path.
  * @param mixed|callable $data the data to cache. It can also be the return of a callback.
  * @param string $expire The expiration timestamp. +1 month by default.
  * @return mixed The cached data.
@@ -34,12 +34,3 @@ function cache($filename, $data, $expire = null) {
 		return $backData;
 	}
 }
-
-/**
- * Get the default cache directory
- * @return string the default cache directory
- */
-function cache_dir(){
-	return var_get('cache/dir');
-}
-
