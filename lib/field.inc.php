@@ -5,6 +5,21 @@
  * @subpackage fields
  */
 require_once('i18n.inc.php');
+require_once('html.inc.php');
+
+if( !var_get('field/default') ){
+	var_set('field/default', array(
+		'type' => 'text',
+		'maxlength' => 255,
+		'default' => null,
+		'unique' => false,
+		'required' => false,
+		'formatter' => null,
+		'class' => '',
+		'searchable' => true,
+		'hasMany' => false,
+	));
+}
 
 /**
  * Gets the field value, or field default value if set.
@@ -29,17 +44,14 @@ function field_value($field) {
  * @return string The generated HTML for the value, generally along with a label.
  */
 function field($field = array()) {
-	$defaultSqlField = var_get('sql/defaultField');
-	$database = var_get('sql/schema');
-	$prefix = var_get('sql/prefix');
-
-	$field = array_merge($defaultSqlField, $field);
+	$field = array_merge(var_get('field/default', array()), $field);
 
 	$html = '';
-	$id = isset($field['id']) ? $field['id'] : 'input-'.$prefix.$fieldName;
-	$fieldName = isset($field['name']) ? $field['name'] : $prefix.$fieldName;
+	$attrs = array();
+	$attrs['name'] = $field['name'];
+	$attrs['id'] = isset($field['id']) ? $field['id'] : 'input-' . $field['name'];
 
-	$value = field_value();
+	$value = field_value($field);
 
 	switch ($field['type']) {
 		case 'text':
@@ -51,66 +63,74 @@ function field($field = array()) {
 		case 'float':
 		case 'double':
 		case 'int':
+		case 'tel':
+		case 'email':
+		case 'url':
 			$isTextArea = false;
+		
 			if( $field['type'] === 'text' && isset($field['maxlength']) && $field['maxlength'] > 255){
-				$id = !$field['id'] ? $field['id'] : 'textarea-' . $fieldName;
 				$isTextArea = true;
-				$html .= '<textarea name="' . $fieldName . '" id="' . $id . '" role="textbox" aria-multiline="true" ';
+				$attrs['role'] = 'textbox';
+				$attrs['aria-multiline'] = 'true';
 			}else{
-				$fieldType = $field['type'];
+				$attrs['type'] = $field['type'];
 				if( $fieldType === 'float' || $fieldType === 'double' ){
-					$html .= '<input type="number" step="any" name="' . $fieldName . '" id="' . $id . '" ';
+					$attrs['type'] = 'number';
+					$attrs['step'] = 'any';
 				}elseif ($fieldType === 'int' ){
-					$html .= '<input type="number" name="' . $fieldName . '" id="' . $id . '" ';
-				}else{
-					$html .= '<input type="' . $fieldType . '" name="' . $fieldName . '" id="' . $id . '" ';
+					$attrs['type'] = 'number';
 				}
 			}
 
-			if( !in_array($field['type'], array('int','float','double')) ){
-				$html .= (isset($field['maxlength']) && is_numeric($field['maxlength'])) ? 'maxlength="' . $field['maxlength'] . '" ' : '';
+			if( in_array($field['type'], array('int','float','double')) ){
+				if( isset($field['minValue']) && is_numeric($field['minValue']) ){
+					$attrs['min'] = $field['minValue'];
+				}
+				if( isset($field['maxValue']) && is_numeric($field['maxValue']) ){
+					$attrs['max'] = $field['maxValue'];
+				}
 			}else{
-				$html .= (isset($field['minValue']) && is_numeric($field['minValue'])) ? 'min="' . $field['minValue'] . '" ' : '';
-				$html .= (isset($field['maxValue']) && is_numeric($field['maxValue'])) ? 'max="' . $field['maxValue'] . '" ' : '';
+				if( isset($field['maxlength']) && is_numeric($field['maxlength']) ){
+					$attrs['maxlength'] = $field['maxlength'];
+				}
 			}
 			
+			$attrs['class'] = $field['class'];
 			if( $field['type'] === 'datetime' ){
-				$field['class'] = 'datetimepicker';
+				$attrs['class'] .= ' datetimepicker';
 			}elseif( $field['type'] === 'date' ){
-				$field['class'] = 'datepicker';
+				$attrs['class'] .= ' datepicker';
 			}
 
 			if( isset($field['readOnly']) && $field['readOnly'] === true ){
-				$html .= 'readonly aria-readonly="true" ';
+				$attrs['readonly'] = 'readonly';
+				$attrs['aria-readonly'] = 'true';
 			}
 
 			if( isset($field['placeholder']) && is_string($field['placeholder']) ) {
-				$html .= 'placeholder="' . $field['placeholder'] . '" ';
+				$attrs['placeholder'] = $field['placeholder'];
 			}else{
-				$html .= 'placeholder="' . (isset($field['label']) ? $field['label'] : '') . '" ';
+				$attrs['placeholder'] = (isset($field['label']) ? $field['label'] : '');
 			}
 
 			if( isset($field['required']) ){
-				$html .= 'aria-required="true" ';
+				$attrs['aria-required'] = 'true';
 			}
-
-			$html .= 'class="' . $field['class'] . '" ';
 
 			if( !$isTextArea ){
-				$html .= 'value="' . $value . '" ';
+				$attrs['value'] = $value;
+				$html = tag('input', '', $attrs, true);
+			}else{
+				$html = tag('textarea', $value, $attrs);
 			}
-			$html .= ' >';
 
-			if( isset($isTextArea) && $isTextArea == true ){
-				$html .= $value . '</textarea>';
-			}
 			break;
 		case 'select':
-		case 'relation':
+		//case 'relation':
 		case 'enum':
 			if( $field['type'] === 'relation' ){
 				$data = scrud_list($field['relData'], array());
-				//$fieldName = $pkey;
+				//$fieldName = $key;
 			}else{
 				$data = $field['relData'];
 			}
@@ -126,29 +146,17 @@ function field($field = array()) {
 				$html .= 'Aucune donnée de type ' . $field['relData'];
 			}
 		break;
-		case 'phone':
-		case 'email':
-		case 'url':
-			$type = array('phone' => 'tel', 'email' => 'email', 'url' => 'url');
-			$html .= '<input type="' . (isset($type[$field['type']]) ? $type[$field['type']] : '') . '" name="' . $fieldName . '" id="' . $id . '" ';
-			$html .= (isset($field['maxlength']) && is_int($field['maxlength'])) ? 'maxlength="' . $field['maxlength'] . '" ' : '';
-			$html .= (isset($field['placeholder']) && is_string($field['placeholder'])) ? 'placeholder="' . $field['placeholder'] . '" ' : (isset($field['placeholder']) && !$field['placeholder']) ? '' : 'placeholder="' . $field['label'] . '" ';
-			$html .= (isset($field['class']) && is_string($field['class'])) ? 'class="' . $field['class'] . '" ' : '';
-			$html .= 'value="' . $value . '" ';
-			$html .= '>';
-			break;
 		default:
 			# code...
 			break;
 	}
 	
 	if( isset($field['label']) && $field['type'] !== 'hidden' ){
-		$label = '<label for="' . $id . '">' . ucfirst($field['label']) . '</label>';
+		$label = tag('label', $field['label'], array('for' => $attrs['id']));
 	}else{
 		$label = '';
 	}
 	return $label . $html;
-
 }
 
 
@@ -160,22 +168,14 @@ function field($field = array()) {
  * @return boolean TRUE if the value has been validated. FALSE otherwise. Error details can be found in $data['errors'].
  */
 function field_validate($field, $value = null, &$data = null){
-	static $ids = 0;
+	$field = array_merge(var_get('field/default', array()), $field);
 
-	$defaultSqlField = var_get('sql/defaultField', array());
-	$field = array_merge($defaultSqlField, $field);
-	$errors = array();
-
-	$key = isset($field['name']) && is_string($field['name']) ? $field['name'] : ++$ids;
-	$pkey = $key;
-
-
-	$errors[$pkey] = array();
-
+	$key = $field['name'];
+	$errors = array($key => array());
 	$d = !is_null($value) ? $value : field_value($field);
 
 	if ($field['required'] && !$d ) {
-		$errors[$pkey][] = field_error_message($field, 'required');
+		$errors[$key][] = field_error_message($field, 'required');
 	}
 
 	switch ($field['type']) {
@@ -183,37 +183,37 @@ function field_validate($field, $value = null, &$data = null){
 		case 'float':
 		case 'double':
 			if( is_numeric($field['min']) && $d < $field['min'] ){
-				$errors[$pkey][] = field_error_message($field, 'min');
+				$errors[$key][] = field_error_message($field, 'min');
 			}
 			if( is_numeric($field['max']) && $d > $field['max'] ){
-				$errors[$pkey][] = field_error_message($field, 'max');
+				$errors[$key][] = field_error_message($field, 'max');
 			}
 		break;
 		case 'phone':
 			if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
-				$errors[$pkey][] = field_error_message($field);
+				$errors[$key][] = field_error_message($field);
 			}
 		break;
 		case 'data':
 		case 'datetime':
 			if( $field['required'] && !strtotime($d) ){
-				$errors[$pkey][] = field_error_message($field, 'date');
+				$errors[$key][] = field_error_message($field, 'date');
 			}
 		break;
 		case 'text':
 		case 'password':
 		case 'email':
 			if( $field['required'] && !is_string($d) ){
-				$errors[$pkey][] = field_error_message($field, 'not_string');
+				$errors[$key][] = field_error_message($field, 'not_string');
 			}else{
 				if( isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
 					if( strlen($d) > (int)$field['maxlength'] ){
-						$errors[$pkey][] = field_error_message($field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
+						$errors[$key][] = field_error_message($field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
 					}
 				}
 				if( isset($field['minlength']) && (int)$field['minlength'] > 0 ){
 					if( strlen($d) < (int)$field['minlength'] ){
-						$errors[$pkey][] = field_error_message($field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
+						$errors[$key][] = field_error_message($field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
 					}
 				}
 				if( $field['type'] === 'email' ){
@@ -225,91 +225,28 @@ function field_validate($field, $value = null, &$data = null){
 							$valid = filter_var($d, FILTER_VALIDATE_EMAIL);
 						}
 						if( !$valid ){
-							$errors[$pkey][] = field_error_message($field, 'invalid_email'); //'L\'adresse email est invalide.';
+							$errors[$key][] = field_error_message($field, 'invalid_email'); //'L\'adresse email est invalide.';
 						}
 					}
 				}
 			}
 			break;
-		case 'relation':
-			/*if( $d ){
-				$d = null;
-				$child_datas = array();
-				$child_id = null;
-
-				$hasOne = false;
-				$relData = $database[$field['data']]['fields'];
-
-				$requiredChildren = $field['required'];
-				foreach ($relData as $relKey => $relField) {
-					$relField = array_merge($defaultSqlField, $relField);
-					$value = isset($datas[$pkey . '_' . $relKey]) ? $datas[$pkey . '_' . $relKey] : null;
-				
-					if( sql_quote($value) !== 'NULL' ){
-						$requiredChildren = false;
-						$child_datas[$pkey . '_' . $relKey] = $value;
-					}
-				}
-				foreach ($datas as $k => $v){
-					if( substr($k, 0, strlen('meta_')) === 'meta_'){
-						$child_datas[$k] = $v;
-					}
-				}
-
-				if( $requiredChildren ){
-					$errors[$pkey][] = field_error_message($key, $field, 'required');
-				}
-				else{
-					//var_dump($child_datas, '<hr/>');
-					$validation = scrud_validate($field['data'], $child_datas, $d, $pkey . '_');
-					if( !$validation['valid'] ){
-						$errors += $validation['errors'];
-					}else{
-						$back = array_merge_recursive($back, $validation['data']);
-					}
-				}
-			}else if( isset($datas[$pkey]) ) {
-				$back[$pkey] = $datas[$pkey];
-			}*/
-		break;
 		default:
 			# code...
 			break;
 	}
 
-	if( (bool)$field['unique'] === true && $d ){
-		$query = sql_select($field['data'], 'id') . ' WHERE ' . sql_quote($key, true) . ' = ' . sql_quote($d) . ' LIMIT 1';
-		$exists = sql_query($query);
-		if( $exists ){
-			$errors[$pkey][] = field_error_message($field, 'unique');
-		}
-	}
-
-
-	if( !sizeof($errors[$pkey]) ){
-		unset($errors[$pkey]);
-	}
-
-	if( $field['type'] === 'relation' ) {
-		if( isset($validation) ){
-			if( $validation['valid'] ){
-				//var_dump($validation);
-				$back = array_merge_recursive_unique($back, $validation['data']);
-				$errors = array_merge($validation['errors'], $errors);
-			}
-		}elseif (isset($d)) {
-			$back[$pkey] = $d;
-		}
-	}else{
-		$back[$pkey] = $d ? $d : null;
+	if( !sizeof($errors[$key]) ){
+		unset($errors[$key]);
 	}
 
 	if( !is_array($data) || !sizeof($data) ){
-		$data = array('data' => $back, 'errors' => $errors);
+		$data = array('data' => $d, 'errors' => $errors);
 	}else{
-		$data['data'] = array_merge($data['data'], $back);
+		$data['data'] = $d;
 		$data['errors'] = $errors;
 	}
+
 	return !sizeof($errors);
 }
 
@@ -346,8 +283,7 @@ function fields_validate($fields, $values = null, &$data = null) {
  */
 function field_error_message($field, $error = '')
 {	
-	$database = var_get('sql/schema');
-	$label = '<strong>' . ucfirst(isset($field['label']) ? $field['label'] : ($field['type'] === 'relation' ? $database[$field['relData']]['labels']['singular'] : $field['name'])) . '</strong>';
+	$label = '<strong>' . (isset($field['label']) ? $field['label'] : ucfirst($field['name'])) . '</strong>';
 	if( $error === 'required' ){
 		return t('The field') . ' ' . $label . ' ' . t('is required');
 	}elseif( $error === 'minlength' ){
@@ -366,3 +302,174 @@ function field_error_message($field, $error = '')
 		return t('The field') . ' ' . $label . ' ' . t('is invalid');
 	}
 }
+
+
+/*
+function fields_to_sql($fields, $forceDeletion = false) {
+	$prefix = var_get('sql/prefix', '');
+	$defaultSqlField = var_get('sql/defaultField');
+	$tables = sql_list_tables();
+
+	if( $forceDeletion === true ){
+		$newContentTypes = array_keys($schema);
+		foreach( $tables as $table ) {
+			$ct = substr($table, strlen($prefix));
+			if( substr($table, 0, strlen($prefix)) === $prefix && !in_array($ct, $newContentTypes) ){
+				sql_delete_table($ct);
+				continue;
+			}
+		}
+	}
+
+	foreach ($fields as $contenttype => $info) {
+		
+		$fields = $info['fields'];
+		if( $forceDeletion === true ){
+			$fieldKeys = array_keys($fields);
+		}
+
+		$tableName = $prefix.$contenttype;
+
+		$tableExists = in_array($tableName, $tables);
+		
+		if( $tableExists ) {
+			$tableDescribe = sql_describe($tableName);
+			$oldFieldTypes = array();
+			$oldFieldNames = array();
+			foreach ($tableDescribe as $tableField) {
+				if( $tableField['Field'] === 'id' ){
+					continue;
+				}
+				$oldFieldTypes[$tableField['Field']] = $tableField['Type'];
+				$oldFieldNames[] = $tableField['Field'];
+			}
+		}
+		
+		$inject = array();
+		$uniques = array();
+		$rel = array();
+		$many = array();
+		$lastColumn = 'id';
+		$i = 0;
+		foreach ($fields as $fieldName => $field) {
+			$default = '';
+			$field = array_merge($defaultSqlField, $field);
+			$fieldType = 'VARCHAR(' . $field['maxlength'] . ')';
+			if( $field['type'] == 'text' && $field['maxlength'] > 255 || $field['type'] === 'password' || $field['maxlength'] === -1 ){
+				$fieldType = 'TEXT';
+			}elseif( $field['type'] == 'relation' ){
+				$fieldType = 'INT(11)';
+				if( !is_numeric($field['default']) ){ 
+					$field['default'] = 0;
+				}
+				if( $field['hasMany'] ){
+					$manyTableName = $contenttype . '_' . $fieldName;
+					
+					$many[] = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($manyTableName, true) . ' (' . 
+						'id_' . $contenttype . ' int(11) NOT NULL, ' . 
+						'id_' . $field['data'] . ' int(11) NOT NULL, 
+						PRIMARY KEY(id_' . $contenttype . ',id_' . $field['data'] . '),
+						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $contenttype, true) . '` (id_'.$contenttype.') REFERENCES `' . sql_quote($prefix . $contenttype, true) . '`(`id`),
+						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $field['data'], true) . '` (id_'.$field['data'].') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`)
+						) COLLATE utf8_general_ci ENGINE=InnoDB;';
+					continue;
+				}
+			}elseif (in_array($field['type'], array('int', 'float', 'double', 'bool', 'datetime', 'date'))){
+				if( $field['type'] === 'int' ){
+					$fieldType = 'int(11)';
+				}else{
+					$fieldType = $field['type'];
+				}
+				if( !is_numeric($field['default']) ){ 
+					$field['default'] = 0;
+				}
+			}
+
+			if( isset($field['unique']) && $field['unique'] === true ){
+				$uniques[] = ' UNIQUE ('.$fieldName.') ';
+			}
+
+
+			$notnull = '';
+			if( isset($field['required']) && $field['required'] === true ){
+				$notnull .= ' NOT NULL';
+			}
+
+			if( !$tableExists ){
+
+				$inject[] = $fieldName . ' ' . $fieldType . $default . $notnull . ' COLLATE utf8_general_ci';
+				if( $field['type'] == 'relation' && !$field['hasMany'] ){
+					$rel[] = ' FOREIGN KEY `' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . '` ('.$fieldName.') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`) ';
+				}
+
+			}elseif( !isset($oldFieldTypes[$fieldName]) || mb_strtolower($fieldType) !== mb_strtolower($oldFieldTypes[$fieldName]) ){
+				if( in_array($fieldName, $oldFieldNames) ){
+					$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' MODIFY COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull;
+				}else{
+					if( !$field['hasMany'] ){
+						$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull . ' AFTER ' . sql_quote($lastColumn, true);
+						if( $field['type'] == 'relation' ){
+							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true);
+							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . ' FOREIGN KEY (`' . $fieldName . '`) REFERENCES ' . sql_quote($prefix . $field['data'], true) . '(`id`) ';
+						}
+					}
+				}				
+			}else{
+				
+			}
+
+			$lastColumn = $fieldName;
+			++$i;
+		}
+
+		$rel = array_merge($rel, $uniques);
+
+		if( !$tableExists ){
+			$primaryKey = array('id');
+			if( isset($info['primaryKey']) ){
+				if( is_array($info['primaryKey']) ){
+					$primaryKey = $info['primaryKey'];
+				}elseif( is_string($info['primaryKey']) ){
+					$primaryKey = array($info['primaryKey']);
+				}
+			}
+			if( in_array('id', $primaryKey) ){
+				array_unshift($inject, 'id INT NOT NULL AUTO_INCREMENT');
+			} 
+			$primaryKey = implode(', ', $primaryKey);
+			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
+			//print ($query);
+			sql_query($query, null, null);
+		}
+		else {
+			if ($forceDeletion){
+				$fieldsToDelete = array_keys($fields);
+				$fieldsCopy = $oldFieldNames;
+				foreach ($fieldsCopy as $key => $v) {
+					if( $v == 'id'){
+						unset($fieldsCopy[$key]);
+					}
+				}
+
+				$diff = array_diff($fieldsCopy, $fieldsToDelete);
+
+				if( sizeof($diff) ){
+					foreach ($diff as $value) {
+						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP FOREIGN KEY `FK_id_' . sql_quote($contenttype . '_' . $value, true) . '`');
+						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP COLUMN ' . sql_quote($value, true) . ';');
+					}
+				}
+			}
+
+			foreach ($inject as $query) {
+				sql_query($query, null, null);
+			}
+		}
+	}
+
+	// execute many relations
+	foreach ($many as $query) {
+		sql_query($query, null, null);
+	}
+}
+*/

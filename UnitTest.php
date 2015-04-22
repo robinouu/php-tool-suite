@@ -114,65 +114,39 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		print 'sql : ';
 
-    	$sql = sql_connect();
+    	$sql = sql_connect(array('db' => 'datas'));
     	$this->assertNotNull($sql);
 
 		sql_delete_tables();
 
 		$this->assertFalse(sql_table_exists('user'));
-		$this->assertFalse(sql_table_exists('user_meta'));
-		$this->assertFalse(sql_table_exists('news'));
-		$this->assertFalse(sql_table_exists('keyword'));
-
+		
 		// Test schema insertion, with data relations
-		sql_schema(array(
-			'user' => array(
-				'fields' => array(
-					'login_id' => array('required' => true, 'unique' => true),
-					'password' => array('type' => 'password')
-				)
+		sql_create_table('signable', array(
+			'columns' => array(
+				'login_id VARCHAR(255) NOT NULL UNIQUE',
+				'password VARCHAR(255)'
+			)
+		));
+
+		sql_create_table('user', array(
+			'columns' => array(
+				'display_name VARCHAR(255) UNIQUE NOT NULL',
+				'auth int(11) UNIQUE NOT NULL '
 			),
-			'user_meta' => array(
-				'fields' => array(
-					'user' => array('type' => 'relation', 'data' => 'user'),
-					'meta_key' => array(),
-					'meta_value' => array('maxlength' => 5000),
-				)
-			),
-			'keyword' => array(
-				'fields' => array(
-					'name' => array('unique' => true)
-				),
-				'primaryKey' => array('id', 'name')
-			),
-			'news' => array(
-				'fields' => array(
-					'title' => array(),
-					'keywords' => array('type' => 'relation', 'data' => 'keyword', 'hasMany' => true)
-				)
-			),
-			/*'news_keywords' => array(
-				'fields' => array(
-					'news' => array('type' => 'relation', 'data' => 'news'),
-					'keyword' => array('type' => 'relation', 'data' => 'keyword')
-				)
-			),*/
+			'foreignKeys' => array('auth' => array('name' => 'FK_auth', 'ref' => 'signable(id)'))
 		));
 
 		$this->assertTrue(sql_table_exists('user'));
-		$this->assertTrue(sql_table_exists('user_meta'));
-		$this->assertTrue(sql_table_exists('news'));
-		$this->assertTrue(sql_table_exists('keyword'));
-		$this->assertTrue(sql_table_exists('news_keywords'));
-
+		
 		// check data integrity
 		$userData = array('login_id' => 'username', 'password' => sha1('my_pass'));
-		$this->assertTrue(sql_insert('user', $userData));
+		$this->assertTrue(sql_insert('signable', $userData));
 		
 		$userID = sql_last_id();
 		$this->assertNotEquals($userID, 0);
 		
-		$data = sql_query(sql_select('user', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
+		$data = sql_query(sql_select('signable', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
 		$this->assertNotNull($data);
 		$this->assertTrue(sizeof($data) === 1);
 
@@ -182,9 +156,9 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		// Data updates
 		$userData = array('login_id' => 'my_new_username');
-		$this->assertNotNull(sql_update('user', $userData, array('id' => $userID)));
+		$this->assertNotNull(sql_update('signable', $userData, array('id' => $userID)));
 
-		$data = sql_query(sql_select('user', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
+		$data = sql_query(sql_select('signable', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
 		$this->assertNotNull($data);
 		$this->assertTrue(sizeof($data) === 1);
 
@@ -193,6 +167,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
     	// TODO : We need some stuff to handle data testing, it think there is some kind of datasets with phpunit
 		
+		sql_alter_table('signable', array(
+			'columns' => array(),
+			'charset' => 'latin1',
+			'tableName' => 'authenticator'
+		));
+
     	sql_disconnect();
 		$this->assertNull(var_get('sql/dbConnection'));
 
@@ -259,12 +239,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	print 'done' . "\r\n";
 	}
 
-    public function test_form() {
+    public function test_field() {
     	require_once('lib/field.inc.php');
 		print 'field : ';
 
     	// Required fields
-		$requiredField = array('label' => 'Required field', 'required' => true);
+		$requiredField = array('name' => 'field', 'label' => 'Required field', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
@@ -274,19 +254,19 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(field_validate($requiredField));
 
     	// Maxlength validator
-		$maxlengthField = array('label' => 'Maxlength field', 'maxlength' => 25);
+		$maxlengthField = array('name' => 'field', 'label' => 'Maxlength field', 'maxlength' => 25);
 		$this->assertFalse(field_validate($maxlengthField, 'abcdefghijklmnopqrstuvwxyz'));
 		$this->assertTrue(field_validate($maxlengthField, ''));
 		$this->assertTrue(field_validate($maxlengthField, 'Something'));
 
 		// Minlength validator
-		$minlengthField = array('label' => 'Minlength field', 'minlength' => 25);
+		$minlengthField = array('name' => 'field', 'label' => 'Minlength field', 'minlength' => 25);
 		$this->assertTrue(field_validate($minlengthField, 'abcdefghijklmnopqrstuvwxyz'));
 		$this->assertFalse(field_validate($minlengthField, ''));
 		$this->assertFalse(field_validate($minlengthField, 'Something'));
 
     	// Required fields
-		$requiredField = array('label' => 'Required field', 'required' => true);
+		$requiredField = array('name' => 'field', 'label' => 'Required field', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
@@ -297,7 +277,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		// Basic email check, 
 		// TODO : add some more test to check RFC specifications
-		$emailField = array('label' => 'Email field', 'type' => 'email', 'value' => 'user@example.com');
+		$emailField = array('name' => 'field', 'label' => 'Email field', 'type' => 'email', 'value' => 'user@example.com');
 		$this->assertTrue(field_validate($emailField));
 		$emailField['value'] = '';
 		$this->assertTrue(field_validate($emailField));
@@ -315,6 +295,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(fields_validate(array($emailField, $requiredField)));
 		$emailField['value'] = 'x';
 		$this->assertFalse(fields_validate(array($emailField, $requiredField)));
+
 
 		print 'done' . "\r\n";
     }

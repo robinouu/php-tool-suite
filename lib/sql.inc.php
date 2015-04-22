@@ -6,18 +6,18 @@
 require_once('log.inc.php');
 require_once('var.inc.php');
 
-var_set('sql/defaultField', array(
-	'type' => 'text',
-	'maxlength' => 255,
-	'default' => null,
-	'unique' => false,
-	'required' => false,
-	'formatter' => null,
-	'class' => '',
-	'searchable' => true,
-	'hasMany' => false, // for one to many relations
-));
-
+/**
+ * Connects to an SQL database using PDO, or return the current PDO object if already connected
+ * @param array $options The connection options
+ * <ul>
+ * 	<li>host string The host. '127.0.0.1' by default.</li>
+ * 	<li>db string The SQL database to connect to.</li>
+ * 	<li>user string The SQL username. 'root' by default.</li>
+ * 	<li>pass string The user password. Empty by default.</li>
+ * 	<li>charset string The connection charset to use. 'utf8' by default.</li>
+ * </ul>
+ * @return mixed The PDO object used for the connection or FALSE if the connection could not be established.
+ */
 function sql_connect($options = array()) {
 	
 	if( ($sql = var_get('sql/dbConnection')) !== null ){
@@ -25,22 +25,22 @@ function sql_connect($options = array()) {
 	}
 
 	$options = array_merge(array(
-		'host' => var_get('sql/host', '127.0.0.1'),
-		'db' => var_get('sql/database', 'datas'),
-		'user' => var_get('sql/user', 'root'),
-		'pass' => var_get('sql/pass', '')
+		'host' => '127.0.0.1',
+		'db' => '',
+		'user' => 'root',
+		'pass' => '',
+		'charset' => 'utf8'
 	), $options);
 
 	try {
 		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass'] );	
 	}catch (Exception $e){
-		LOG_ERROR($e->getMessage());
-		die;
+		return false;
 	}
 
 	var_set('sql/dbConnection', $sql);
 
-	$sql->exec('SET NAMES utf8;');
+	$sql->exec('SET NAMES ' . $options['charset'] . ';');
 	$sql->exec('USE ' . $options['db'] . ';');
  	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
@@ -48,16 +48,32 @@ function sql_connect($options = array()) {
     return $sql;
 }
 
+/**
+ * Disconnects from the SQL connection started with sql_connect()
+ * @return boolean TRUE if the connection has been unset. FALSE otherwise.
+ */
 function sql_disconnect() {
 	if( ($sql = var_set('sql/dbConnection')) !== null ){
-		var_unset('sql/dbConnection');
+		return var_unset('sql/dbConnection');
 	}
+	return TRUE;
 }
 
+/**
+ * Returns the current table prefix.
+ * @return string The current table prefix.
+ */
 function sql_prefix() {
 	return var_get('sql/prefix');
 }
 
+/**
+ * Queries the database.
+ * @param string $query The query string to execute on the current database.
+ * @param array $values The values to prepare. See 
+ * @param int $fetchMode The PDO fetch mode. Default to PDO::FETCH_ASSOC.
+ * @return mixed The actual result of the query, or a boolean result if $fetchMode is NULL.
+ */
 function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -80,6 +96,10 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	return $res;
 }
 
+/**
+ * Returns the last auto-incremented field inserted in database.
+ * @return int The last auto-incremented field inserted in database.
+ */
 function sql_last_id() {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -88,6 +108,14 @@ function sql_last_id() {
 	return (int)$sql->lastInsertId();
 }
 
+
+/**
+ * Inserts a row in database.
+ * @param string $table The table name where to insert data. It will be automatically prefixed.
+ * @param array $fields An associative array containing the data to insert
+ * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
+ * @return boolean TRUE if the data has been inserted in the table. FALSE otherwise.
+ */
 function sql_insert($table, $fields) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -96,7 +124,7 @@ function sql_insert($table, $fields) {
 	$prefix = var_get('sql/prefix', '');
 
 	$query = 'INSERT INTO ' . sql_quote($prefix . $table, true);
-	$query .= ' (' . implode(',', array_keys($fields)) . ') VALUES (' . implode(',', array_fill(0, sizeof($fields), '?')) . ')';
+	$query .= ' (' . implode(',', array_keys($fields)) . ') VALUES (' . implode(',', array_fill(0, sizeof($fields), '?')) . ');';
 	$q = $sql->prepare($query);
 	if( !$q ){
 		print $sql->debugDumpParams();
@@ -106,7 +134,16 @@ function sql_insert($table, $fields) {
 	return $q->execute(array_values($fields));
 }
 
-function sql_update($table, $fields = array(), $where = array()) {
+
+/**
+ * Updates a row in database.
+ * @param string $table The table name where to insert data. It will be automatically prefixed.
+ * @param array $fields An associative array containing the columns to update
+ * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
+ * @param array $where An optional filter. See sql_where() for usage.
+ * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
+ */
+function sql_update($table, $fields = array(), $where = null) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
@@ -123,21 +160,20 @@ function sql_update($table, $fields = array(), $where = array()) {
 		$sql_fields[] = $key . ' = ' . sql_quote($value);
 	}
 	$query .= ' SET ' . implode(',', $sql_fields) . ' ';
-	$q = $sql->prepare($query . ' WHERE ' . sql_where($where));
+	$q = $sql->prepare($query . (is_null($where) ? '' : ' WHERE ' . sql_where($where)). ';');
 	if( !$q ){
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
 	}
-	//var_dump($query.$where, $fields, '<hr />');
 	return $q->execute();
 }
 
-function sql_select($table, $fields = '*') {
+function sql_select($table, $fields = '*', $prefixed = true) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
 	}
-	$prefix = var_get('sql/prefix', '');
+	$prefix = $prefixed ? var_get('sql/prefix', '') : '';
 	
 	$query = 'SELECT ';
 	if( is_string($fields) ){
@@ -148,6 +184,12 @@ function sql_select($table, $fields = '*') {
 	return $query;
 }
 
+
+/**
+ * Deletes a table.
+ * @param string $table The table to delete. It will be automatically prefixed.
+ * @return boolean TRUE if the table has been deleted. FALSE otherwise.
+ */
 function sql_delete_table($table) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -160,7 +202,14 @@ function sql_delete_table($table) {
 	return $res;
 }
 
-function sql_delete_tables($tables = null) {
+
+/**
+ * Deletes multiple tables.
+ * @param boolean $foreignKeyCheck By default, and if set to FALSE, foreign key checks will be ignored.
+ * @param array $table The tables to delete. They will be automatically prefixed. By default, and if set to NULL, all tables are deleted.
+ * @return boolean TRUE if the tables have been deleted. FALSE otherwise.
+ */
+function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
 	$sql = sql_connect();
 	if( !$sql || (is_array($tables) && !sizeof($tables)) ){
 		return false;
@@ -170,13 +219,16 @@ function sql_delete_tables($tables = null) {
 	}
 	$res = true;
 	$prefix = var_get('sql/prefix', '');
-	$sql->query('SET FOREIGN_KEY_CHECKS = 0');
+	if( !$foreignKeyCheck ){
+		$sql->query('SET FOREIGN_KEY_CHECKS = 0');
+	}
 	foreach ($tables as $table) {
 		$res = sql_query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true), null, null) && $res;
 	}
-	$sql->query('SET FOREIGN_KEY_CHECKS = 1');
+	if( !$foreignKeyCheck ){
+		$sql->query('SET FOREIGN_KEY_CHECKS = 1');
+	}
 	return $res;
-
 }
 
 function sql_where($where = array(), $op = 'AND') {
@@ -229,181 +281,6 @@ function sql_describe($table) {
 	return sql_query($query);
 }
 
-function sql_schema($schema = null, $forceDeletion = false) {
-	$sql = sql_connect();
-	if( !$sql ){
-		return false;
-	}
-	if( !$schema ){
-		$schema = var_get('sql/schema');
-	}
-	$prefix = var_get('sql/prefix', '');
-	$defaultSqlField = var_get('sql/defaultField');
-	$tables = sql_list_tables();
-
-	if( $forceDeletion === true ){
-		$newContentTypes = array_keys($schema);
-		foreach( $tables as $table ) {
-			$ct = substr($table, strlen($prefix));
-			if( substr($table, 0, strlen($prefix)) === $prefix && !in_array($ct, $newContentTypes) ){
-				sql_delete_table($ct);
-				continue;
-			}
-		}
-	}
-
-	foreach ($schema as $contenttype => $info) {
-		
-		$fields = $info['fields'];
-		if( $forceDeletion === true ){
-			$fieldKeys = array_keys($fields);
-		}
-
-		$tableName = $prefix.$contenttype;
-
-		$tableExists = in_array($tableName, $tables);
-		
-		if( $tableExists ) {
-			$tableDescribe = sql_describe($tableName);
-			$oldFieldTypes = array();
-			$oldFieldNames = array();
-			foreach ($tableDescribe as $tableField) {
-				if( $tableField['Field'] === 'id' ){
-					continue;
-				}
-				$oldFieldTypes[$tableField['Field']] = $tableField['Type'];
-				$oldFieldNames[] = $tableField['Field'];
-			}
-		}
-		
-		$inject = array();
-		$uniques = array();
-		$rel = array();
-		$many = array();
-		$lastColumn = 'id';
-		$i = 0;
-		foreach ($fields as $fieldName => $field) {
-			$default = '';
-			$field = array_merge($defaultSqlField, $field);
-			$fieldType = 'VARCHAR(' . $field['maxlength'] . ')';
-			if( $field['type'] == 'text' && $field['maxlength'] > 255 || $field['type'] === 'password' || $field['maxlength'] === -1 ){
-				$fieldType = 'TEXT';
-			}elseif( $field['type'] == 'relation' ){
-				$fieldType = 'INT(11)';
-				if( !is_numeric($field['default']) ){ 
-					$field['default'] = 0;
-				}
-				if( $field['hasMany'] ){
-					$manyTableName = $contenttype . '_' . $fieldName;
-					
-					$many[] = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($manyTableName, true) . ' (' . 
-						'id_' . $contenttype . ' int(11) NOT NULL, ' . 
-						'id_' . $field['data'] . ' int(11) NOT NULL, 
-						PRIMARY KEY(id_' . $contenttype . ',id_' . $field['data'] . '),
-						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $contenttype, true) . '` (id_'.$contenttype.') REFERENCES `' . sql_quote($prefix . $contenttype, true) . '`(`id`),
-						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $field['data'], true) . '` (id_'.$field['data'].') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`)
-						) COLLATE utf8_general_ci ENGINE=InnoDB;';
-					continue;
-				}
-			}elseif (in_array($field['type'], array('int', 'float', 'double', 'bool', 'datetime', 'date'))){
-				if( $field['type'] === 'int' ){
-					$fieldType = 'int(11)';
-				}else{
-					$fieldType = $field['type'];
-				}
-				if( !is_numeric($field['default']) ){ 
-					$field['default'] = 0;
-				}
-			}
-
-			if( isset($field['unique']) && $field['unique'] === true ){
-				$uniques[] = ' UNIQUE ('.$fieldName.') ';
-			}
-
-
-			$notnull = '';
-			if( isset($field['required']) && $field['required'] === true ){
-				$notnull .= ' NOT NULL';
-			}
-
-			if( !$tableExists ){
-
-				$inject[] = $fieldName . ' ' . $fieldType . $default . $notnull . ' COLLATE utf8_general_ci';
-				if( $field['type'] == 'relation' && !$field['hasMany'] ){
-					$rel[] = ' FOREIGN KEY `' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . '` ('.$fieldName.') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`) ';
-				}
-
-			}elseif( !isset($oldFieldTypes[$fieldName]) || mb_strtolower($fieldType) !== mb_strtolower($oldFieldTypes[$fieldName]) ){
-				if( in_array($fieldName, $oldFieldNames) ){
-					$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' MODIFY COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull;
-				}else{
-					if( !$field['hasMany'] ){
-						$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull . ' AFTER ' . sql_quote($lastColumn, true);
-						if( $field['type'] == 'relation' ){
-							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true);
-							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . ' FOREIGN KEY (`' . $fieldName . '`) REFERENCES ' . sql_quote($prefix . $field['data'], true) . '(`id`) ';
-						}
-					}
-				}				
-			}else{
-				
-			}
-
-			$lastColumn = $fieldName;
-			++$i;
-		}
-
-		$rel = array_merge($rel, $uniques);
-
-		if( !$tableExists ){
-			$primaryKey = array('id');
-			if( isset($info['primaryKey']) ){
-				if( is_array($info['primaryKey']) ){
-					$primaryKey = $info['primaryKey'];
-				}elseif( is_string($info['primaryKey']) ){
-					$primaryKey = array($info['primaryKey']);
-				}
-			}
-			if( in_array('id', $primaryKey) ){
-				array_unshift($inject, 'id INT NOT NULL AUTO_INCREMENT');
-			} 
-			$primaryKey = implode(', ', $primaryKey);
-			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
-			//print ($query);
-			sql_query($query, null, null);
-		}
-		else {
-			if ($forceDeletion){
-				$fieldsToDelete = array_keys($fields);
-				$fieldsCopy = $oldFieldNames;
-				foreach ($fieldsCopy as $key => $v) {
-					if( $v == 'id'){
-						unset($fieldsCopy[$key]);
-					}
-				}
-
-				$diff = array_diff($fieldsCopy, $fieldsToDelete);
-
-				if( sizeof($diff) ){
-					foreach ($diff as $value) {
-						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP FOREIGN KEY `FK_id_' . sql_quote($contenttype . '_' . $value, true) . '`');
-						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP COLUMN ' . sql_quote($value, true) . ';');
-					}
-				}
-			}
-
-			foreach ($inject as $query) {
-				sql_query($query, null, null);
-			}
-		}
-	}
-
-	// execute many relations
-	foreach ($many as $query) {
-		sql_query($query, null, null);
-	}
-}
-
 
 function sql_table_exists($table) {
 	$sql = sql_connect();
@@ -416,4 +293,129 @@ function sql_table_exists($table) {
 		return FALSE;
 	}
     return $result !== FALSE;
+}
+
+function sql_create_table($table, $options) {
+	$options = array_merge(array(
+		'hasID' => true,
+		'columns' => array(),
+		'primaryKeys' => array(),
+		'foreignKeys' => array(),
+		'collation' => 'utf8_general_ci',
+		'engine' => 'InnoDB',
+	), $options);
+
+	if( $options['hasID'] ){
+		array_unshift($options['columns'], 'id INT(11) NOT NULL AUTO_INCREMENT');
+		array_unshift($options['primaryKeys'], 'id');
+	}
+
+	$attributes = $options['columns'];
+
+	if( sizeof($options['primaryKeys']) ){
+		$attributes[] = 'PRIMARY KEY (' . implode(', ', $options['primaryKeys']) . ')';
+	}
+
+	if( sizeof($options['foreignKeys']) ){
+		$options['engine'] = 'InnoDB';
+		foreach ($options['foreignKeys'] as $key => $ref) {
+			if( is_string($ref) ){
+				$attributes[] = 'FOREIGN KEY (' . $key . ') REFERENCES ' . $ref;
+			}elseif( is_array($ref) ){
+				if( !isset($ref['name']) ){
+					$attributes[] = 'FOREIGN KEY (' . $key . ') REFERENCES ' . $ref;
+				}else{
+					$attributes[] = 'CONSTRAINT ' . $ref['name'] . ' FOREIGN KEY (' . $key . ') REFERENCES ' . $ref['ref'];
+				}
+			}
+		}
+	}
+
+	$prefix = var_get('sql/prefix', '');
+	$query = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($prefix . $table, true) . ' (' . implode(', ', $attributes) . ' ) COLLATE ' . $options['collation'] . ' ENGINE=' . $options['engine'] . ';';
+	
+	return sql_query($query, null, null);
+}
+
+function sql_alter_table($table, $options = array()) {
+
+	$inject = array();
+
+
+	// Alter table collation (mysql only)
+	if( sql_driver() === 'mysql' ){
+		if( isset($options['collation']) && is_string($options['collation']) ){
+			$res = sql_query('SHOW COLLATION WHERE Collation = "' . $options['collation'] . '" ');
+			if( $res ){
+				$inject[] = 'ALTER TABLE ' . sql_quote($table, true) . ' CONVERT TO CHARACTER SET ' . $res[0]['Charset'] . ' COLLATE ' . $options['collation'] . ';';
+			}
+		}elseif( isset($options['charset']) && is_string($options['charset']) ){
+			$inject[] = 'ALTER TABLE ' . sql_quote($table, true) . ' CONVERT TO CHARACTER SET ' . $options['charset'] . ';';
+		}
+	}
+
+	
+	$tableDescription = sql_describe($table);
+	//var_dump($tableDescription);
+
+
+	if( isset($options['tableName']) && $options['tableName'] !== $table ){
+		$inject[] = 'ALTER TABLE ' . sql_quote($table, true) . ' RENAME TO ' . $options['tableName'] . ';';
+	}
+
+	$res = true;
+	foreach ($inject as $query) {
+		$res = $res && sql_query($query, null, null);
+	}
+	return $res;
+}
+
+function sql_driver() {
+	$sql = var_get('sql/dbConnection');
+	return $sql->getAttribute(PDO::ATTR_DRIVER_NAME);
+}
+
+function sql_get($table, $options = array()){
+
+	$options = array_merge(array(
+		'asArray' => false
+	), $options);
+
+	if( is_integer($options) ){
+		$query = sql_select($table) . ' WHERE id = ' . (int)$options;
+	}elseif (is_array($options)) {
+
+		$fields = array();
+		if( isset($options['fields']) && is_string($options['fields']) ){
+			$fields = array_map('trim', explode(',', $options['fields']));
+		}
+		$query = sql_select($table, $fields);
+
+		// WHERE CLAUSE
+		if( isset($options['where']) ) {
+			if( is_string($options['where']) ){
+				$query .= ' WHERE ' . $options['where'];
+			}elseif( is_array($options['where']) ){
+				$query .= ' WHERE ' . sql_where($options['where']);
+			}
+		}
+
+		// ORDER BY CLAUSE
+		if( isset($options['orderby']) && is_string($options['orderby']) ){
+			$query .= ' ORDER BY ' . $options['orderby'];
+		}
+
+		// LIMIT CLAUSE
+		if( isset($options['limit']) ){
+			$query .= ' LIMIT ' . (int)$options['limit'];
+		}
+	}
+
+	//var_dump($query);
+	$res = sql_query($query);
+	if( $options['asArray'] !== true && is_array($res) && sizeof($res) == 1 ){
+		return $res[0];
+	}
+
+	return $res;
 }
