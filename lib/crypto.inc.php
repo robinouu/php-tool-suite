@@ -4,15 +4,13 @@
  * @package php-tool-suite
  */
 require_once('var.inc.php');
+require_once('random.inc.php');
 
 if( !var_get('crypto/iv') ){
 	if( extension_loaded('mcrypt') ){
 		var_set('crypto/iv', $iv = mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_CBC), MCRYPT_RAND));
 	}
 }
-
-srand((double) microtime() * 1000000);
-
 
 function generate_key($key) {
 	return hash("SHA256", $key, true);

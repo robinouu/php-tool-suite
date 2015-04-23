@@ -1,7 +1,8 @@
 <?php
 /**
- * SQL
+ * SQL Databases
  * @package php-tool-suite
+ * @subpackage SQL
  */
 require_once('log.inc.php');
 require_once('var.inc.php');
@@ -111,7 +112,7 @@ function sql_last_id() {
 
 /**
  * Inserts a row in database.
- * @param string $table The table name where to insert data. It will be automatically prefixed.
+ * @param string $table The table name where to insert data. It will automatically be prefixed.
  * @param array $fields An associative array containing the data to insert
  * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
  * @return boolean TRUE if the data has been inserted in the table. FALSE otherwise.
@@ -137,7 +138,7 @@ function sql_insert($table, $fields) {
 
 /**
  * Updates a row in database.
- * @param string $table The table name where to insert data. It will be automatically prefixed.
+ * @param string $table The table name where to insert data. It will automatically be prefixed.
  * @param array $fields An associative array containing the columns to update
  * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
  * @param array $where An optional filter. See sql_where() for usage.
@@ -187,7 +188,7 @@ function sql_select($table, $fields = '*', $prefixed = true) {
 
 /**
  * Deletes a table.
- * @param string $table The table to delete. It will be automatically prefixed.
+ * @param string $table The table to delete. It will automatically be prefixed.
  * @return boolean TRUE if the table has been deleted. FALSE otherwise.
  */
 function sql_delete_table($table) {
@@ -206,7 +207,7 @@ function sql_delete_table($table) {
 /**
  * Deletes multiple tables.
  * @param boolean $foreignKeyCheck By default, and if set to FALSE, foreign key checks will be ignored.
- * @param array $table The tables to delete. They will be automatically prefixed. By default, and if set to NULL, all tables are deleted.
+ * @param array $table The tables to delete. They will automatically be prefixed. By default, and if set to NULL, all tables are deleted.
  * @return boolean TRUE if the tables have been deleted. FALSE otherwise.
  */
 function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
@@ -246,6 +247,11 @@ function sql_where($where = array(), $op = 'AND') {
 	return implode(' ' . $op . ' ', $res);
 }
 
+
+/**
+ * Lists all tables from the current database.
+ * @return array An array of tables that exist in database.
+ */
 function sql_list_tables() {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -256,6 +262,13 @@ function sql_list_tables() {
 	return $query->fetchAll(PDO::FETCH_COLUMN);
 }
 
+
+/**
+ * Converts a value to its SQL representation.
+ * @param mixed $value The value to convert. 
+ * @param boolean $column_or_table If set to TRUE, sanitize the string to accept a column or table name.
+ * @return mixed Returns the SQL representation of a value. If the value is NULL, returns 'NULL'. Otherwhise, PDO::quote is used.
+ */
 function sql_quote($text, $column_or_table = false){
 	$sql = sql_connect();
 	if( !$sql ){
@@ -272,6 +285,14 @@ function sql_quote($text, $column_or_table = false){
 	}
 	return preg_replace('/[^0-9a-zA-Z_]/', '', $text);
 }
+
+
+/**
+ * Describes a table.
+ * @param string $table The table to describe.
+ * @return array Returns the table description (Column name, column type, Nullable, Key type, Default value, Extra)
+ * @see https://dev.mysql.com/doc/refman/4.1/en/describe.html
+ */
 function sql_describe($table) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -281,7 +302,11 @@ function sql_describe($table) {
 	return sql_query($query);
 }
 
-
+/**
+ * Checks if the table exists in the database.
+ * @param string $table The table to check for existence.
+ * @return boolean Returns TRUE if the table exists. FALSE otherwise.
+ */
 function sql_table_exists($table) {
 	$sql = sql_connect();
 	if( !$sql ){
@@ -295,6 +320,25 @@ function sql_table_exists($table) {
     return $result !== FALSE;
 }
 
+
+/**
+ * Creates a table in database
+ * @param string $table The table to create. It will automatically be prefixed.
+ * @param array $options The table configuration
+ * <ul>
+ * 	<li>hasID boolean If set to TRUE, an 'id' primary column with auto-increment behaviour will be inserted at the beginning of the table. TRUE by default.</li>
+ * 	<li>columns array The columns to add to the table. Example : <pre><code>array('username VARCHAR(255) NOT NULL UNIQUE');</code></pre></li>
+ * 	<li>primaryKeys array An array of column names to use for primary keys.</li>
+ * 	<li>foreignKeys array An array of foreign keys. Example :
+ *  <pre><code>array(
+ *		'user_id' => 'user(id)',
+ * 		'news_id' => array('name' => 'FK_news_ref', 'ref' => 'news(id)')
+ *	);</pre></code></li>
+ * 	<li>collation string The collation to use. 'utf8_general_ci' by default.</li>
+ * 	<li>engine string The engine to use. 'InnoDB' is used by default or when foreign keys have been set.</li>
+ * </ul>
+ * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
+ */
 function sql_create_table($table, $options) {
 	$options = array_merge(array(
 		'hasID' => true,
@@ -370,10 +414,17 @@ function sql_alter_table($table, $options = array()) {
 	return $res;
 }
 
+
+/**
+ * Returns the current PDO driver.
+ * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
+ * @see http://php.net/manual/fr/pdo.getavailabledrivers.php
+ */
 function sql_driver() {
 	$sql = var_get('sql/dbConnection');
 	return $sql->getAttribute(PDO::ATTR_DRIVER_NAME);
 }
+
 
 function sql_get($table, $options = array()){
 
