@@ -43,7 +43,6 @@ function javascript($attrs) {
 
 
 function html5($args) {
-	require_once(dirname(__FILE__).'/partial.class.php');
 
 	$stylesheets_str = '';
 	if( isset($args['stylesheets']) && is_array($args['stylesheets'])) {
@@ -52,6 +51,8 @@ function html5($args) {
 		}
 		unset($args['stylesheets']);
 	}
+	$stylesheets_str .= hook_do('html/stylesheets');
+
 
 	$scripts_str = '';
 	if( isset($args['scripts']) && is_array($args['scripts']) ){
@@ -60,23 +61,27 @@ function html5($args) {
 		}
 		unset($args['scripts']);
 	}
+	$scripts_str .= hook_do('html/scripts');
 
 	$args = array_merge(array(
-	'title' => '',
-	'encoding' => 'UTF-8',
-	'lang' => current_lang(),
-	'description' => '',
-	'keywords' => '',
-	'body' => '',
-	'stylesheets' => $stylesheets_str,
-	'scripts' => $scripts_str,
-	'webfonts' => ''), $args);
+		'title' => '',
+		'meta' => array(
+			'charset' => 'UTF-8',
+			'description' => '',
+			'keywords' => '',
+			'viewport' => 'width=device-width,initial-scale=1.0',
+		),
+		'lang' => current_lang(),
+		'body' => '',
+		'stylesheets' => $stylesheets_str,
+		'scripts' => $scripts_str
+	), $args);
 
-	$head = tag('title', $arg['title']) . 
-		tag('meta', '', array('charset' => $args['charset']), true) . 
-		tag('meta', '', array('name' => 'description', 'content' => $args['description']), true) . 
-		tag('meta', '', array('name' => 'keywords', 'content' => $args['keywords']), true) . 
-		tag('meta', '', array('name' => 'viewport', 'content' => $args['viewport'] ? $args['viewport'] : 'width=device-width,initial-scale=1.0'), true);	
+	$head = tag('title', $args['title']);
+
+	foreach ($args['meta'] as $key => $value) {
+		$head .= tag('meta', '', array($key => $value), true);
+	}
 
 	$head .= hook_do('html_stylesheets');
 
@@ -85,7 +90,7 @@ function html5($args) {
 
 	$head .= hook_do('html_head');
 
-	$page .= tag('head', $head);
+	$page = tag('head', $head);
 
 	$page .= tag('body', $args['body']);
 
@@ -128,31 +133,6 @@ function text_vars($text, $vars) {
 		}
 	}
 	return $text; 
-}
-
-
-function route($route = '/', $callback = null){
-	current_url();
-	$url = var_get('site/url/path', '/');
-
-	if( preg_match("#^" . $route . "$#ui", $url, $m) ){
-		ob_start();
-		$callback($m);
-		$content = ob_get_contents();
-		ob_end_clean();
-		//var_push("route/headers", '');
-		print $content;
-		var_set('routeFound', true);
-		return true;
-	}
-
-	return false;	
-}
-
-function no_route($callback) {
-	if( !var_get('routeFound', false) ){
-		$callback();
-	}
 }
 
 function menu($items = array(), $attrs = array()) {
