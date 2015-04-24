@@ -28,3 +28,9 @@ function server_is_secure() {
 	return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 }
 
+function object_hash($obj) {
+	if (is_object($obj)) {
+		return spl_object_hash($obj);
+	}
+	return md5(print_r($obj, true));
+}
