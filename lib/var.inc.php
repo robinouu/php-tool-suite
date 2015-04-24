@@ -54,19 +54,20 @@ function var_get($path = array(), $default = null, $data = false) {
 
 
 /**
- * Appends a value to a global variable array.
+ * Appends a key-value pair to a global variable.
  *
  * @param string|array $path The variable path.
- * @param mixed $value The value to append.
+ * @param string $key The associative key to append.
+ * @param mixed $value The associative value to append.
  * @param array $data The reference data array where to append the value. By default, and if NULL, $_GLOBALS will be used.
  * @return boolean TRUE if the variable has been added. FALSE otherwise.
  */
-function var_append($path = array(), $value = null, $data = null) {
+function var_append($path = array(), $key, $value = null, $data = null) {
 	if( !$data ){
 		$data = $GLOBALS;
 	}
 	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_append($contextVar, $path, $value);
+	return array_append($contextVar, $path, $key, $value);
 }
 
 /**
