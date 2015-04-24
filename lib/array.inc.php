@@ -21,7 +21,7 @@ function is_simple_array($arr = array()) {
  * @return boolean TRUE if the array is associative. FALSE otherwise.
  */
 function is_assoc_array($arr) {
-    return (bool)count(array_filter(array_keys($arr), 'is_string'));
+	return (bool)count(array_filter(array_keys($arr), 'is_string'));
 }
 
 
@@ -164,34 +164,34 @@ function array_find_deep(array $array, $string, array &$result) {
 	return false;
 }
 function array_merge_recursive_unique($array1, $array2) {   
-    foreach($array2 AS $k => $v) {
-        if(!isset($array1[$k]))
-        {
-            $array1[$k] = $v;
-        }
-        else
-        {
-            if(!is_array($v)){
-                if(is_array($array1[$k])) {
-                    if(!in_array($v,$array1[$k]))
-                    {
-                        $array1[$k][] = $v;
-                    }
-                }
-                else
-                {
-                    if($array1[$k] != $v)
-                        $array1[$k] = array($array1[$k], $v);
-	            }
-            }
-            else
-            {
-                $array1[$k] =    array_merge_recursive_unique($array1,$array2[$k]);
-            }
-            
-        }
-    
-    }
+	foreach($array2 AS $k => $v) {
+		if(!isset($array1[$k]))
+		{
+			$array1[$k] = $v;
+		}
+		else
+		{
+			if(!is_array($v)){
+				if(is_array($array1[$k])) {
+					if(!in_array($v,$array1[$k]))
+					{
+						$array1[$k][] = $v;
+					}
+				}
+				else
+				{
+					if($array1[$k] != $v)
+						$array1[$k] = array($array1[$k], $v);
+				}
+			}
+			else
+			{
+				$array1[$k] =    array_merge_recursive_unique($array1,$array2[$k]);
+			}
+			
+		}
+	
+	}
 	unset($k, $v);
-    return $array1;
+	return $array1;
 }

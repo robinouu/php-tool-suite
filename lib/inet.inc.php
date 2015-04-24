@@ -79,34 +79,34 @@ function inet_server($options = array()) {
 			$write = NULL;
 			$except = NULL;
 			if (socket_select($read, $write, $except, 0) < 1)
-            	continue;
+				continue;
 
-            if( in_array($socket, $read) ){
-            	$clients[] = $client = socket_accept($socket);
-            	if( is_callable($options['onClientConnected']) ){
+			if( in_array($socket, $read) ){
+				$clients[] = $client = socket_accept($socket);
+				if( is_callable($options['onClientConnected']) ){
 					$options['onClientConnected']($client);
 				}
 
 				$key = array_search($socket, $read);
 				unset($read[$key]);
-            }
+			}
 
-            foreach ($read as $readable_client) {
-            	$data = @socket_read($readable_client, $options['clientBuffer'], PHP_NORMAL_READ);
+			foreach ($read as $readable_client) {
+				$data = @socket_read($readable_client, $options['clientBuffer'], PHP_NORMAL_READ);
 
-            	if( $data === FALSE ){
-            		if( $options['onClientDisconnected'] ){
+				if( $data === FALSE ){
+					if( $options['onClientDisconnected'] ){
 						$options['onClientDisconnected']($readable_client);
 					}
-            		$key = array_search($readable_client, $clients);
-            		unset($clients[$key]);
-            		continue;
-            	}
+					$key = array_search($readable_client, $clients);
+					unset($clients[$key]);
+					continue;
+				}
 
-            	if( is_callable($options['onClientData']) ){
-            		$options['onClientData']($readable_client, $data);
-            	}
-            }
+				if( is_callable($options['onClientData']) ){
+					$options['onClientData']($readable_client, $data);
+				}
+			}
 		}
 
 	}else{

@@ -26,19 +26,6 @@ function json_find($data, $key, $value, &$path = array()) {
 	return false;
 }
 
-/*function json_browse(&$data, $callback = null, &$path = array()) {
-	foreach ($data as $k => &$v) {
-		if( is_array($v) ){
-			array_push($path, $k);
-			json_browse($v, $callback, $path);
-			array_pop($path);
-		}elseif( is_callable($callback) ){
-			$callback($k, $v, $path);
-		}
-	}
-}*/
-
-
 function json_browse(&$data, &$path = array(), $callback = null, $callbackStart = null, $callbackEnd = null) {
 	if( is_callable($callbackStart) ){
 		//var_dump('onStart:', $path);

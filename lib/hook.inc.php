@@ -14,7 +14,7 @@ require_once('Hook.class.php');
  * @param int $priority An optional priority value of execution.
  */
 function hook_register($name, $callback, $priority = 1) {
-    Hook::add($name, $callback, $priority);
+	Hook::add($name, $callback, $priority);
 }
 
 
@@ -32,7 +32,7 @@ function hook_register($name, $callback, $priority = 1) {
  * </ul>
  */
 function hook_do($name, $args = array()) {
-    return Hook::call($name, $args);
+	return Hook::call($name, $args);
 };
 
 
@@ -41,5 +41,5 @@ function hook_do($name, $args = array()) {
  * @param string $name The hook name.
  */
 function hook_unregister($name) {
-    Hook::remove($name);
+	Hook::remove($name);
 }

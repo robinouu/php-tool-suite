@@ -20,6 +20,6 @@ function LOG_ERROR($str) {
 
 function LOG_ARRAY($arr) {
 	print '<pre>';
-    var_dump($arr);
-    print '</pre>';
+	var_dump($arr);
+	print '</pre>';
 }

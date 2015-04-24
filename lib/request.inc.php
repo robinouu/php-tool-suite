@@ -18,7 +18,6 @@ function request_url() {
 	return $url;
 }
 
-/*
 function url_website($url, $noScheme = false) {
 	$urlInfo = parse_url($url);
 	if( !isset($urlInfo['path']) || !isset($urlInfo['host']) ){
@@ -33,7 +32,6 @@ function url_website($url, $noScheme = false) {
 				(isset($urlInfo['port']) ? ':' . $urlInfo['port'] : '');
 	}
 }
-*/
 
 function redirect($url) {
 	header('Location: ' . $url);

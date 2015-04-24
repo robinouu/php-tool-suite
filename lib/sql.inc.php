@@ -43,10 +43,10 @@ function sql_connect($options = array()) {
 
 	$sql->exec('SET NAMES ' . $options['charset'] . ';');
 	$sql->exec('USE ' . $options['db'] . ';');
- 	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+	$sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
-    return $sql;
+	return $sql;
 }
 
 /**
@@ -317,7 +317,7 @@ function sql_table_exists($table) {
 	} catch (Exception $e) {
 		return FALSE;
 	}
-    return $result !== FALSE;
+	return $result !== FALSE;
 }
 
 

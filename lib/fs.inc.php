@@ -24,26 +24,26 @@ function mkdir_recursive($dir) {
  * @return boolean TRUE if the path has been correctly removed. FALSE otherwise.
  */
 function rmdir_recursive($dir) {
-    return browse_recursive($dir, 'unlink', 'rmdir');
+	return browse_recursive($dir, 'unlink', 'rmdir');
 }
 
 function browse_recursive($dir, $cbEach = null, $cbAfter = null, $ignorePaths = array()) {
-    $files = scandir($dir);
-    if( !$files ){
-        return FALSE;
-    }
-    foreach( $files as $file ) {
-        if( $file === '.' || $file === '..' || in_array($file, $ignorePaths) ){
-            continue;
-        }
-        if( is_dir($dir.'/'.$file) ){
-            browse_recursive($dir.'/'.$file, $cbEach, $cbAfter);
-        }
-        elseif ($cbEach) {
-            call_user_func($cbEach, $dir.'/'.$file);
-        }
-    }
-    if( $cbAfter ){
-        return call_user_func($cbAfter, $dir);
-    }
+	$files = scandir($dir);
+	if( !$files ){
+		return FALSE;
+	}
+	foreach( $files as $file ) {
+		if( $file === '.' || $file === '..' || in_array($file, $ignorePaths) ){
+			continue;
+		}
+		if( is_dir($dir.'/'.$file) ){
+			browse_recursive($dir.'/'.$file, $cbEach, $cbAfter);
+		}
+		elseif ($cbEach) {
+			call_user_func($cbEach, $dir.'/'.$file);
+		}
+	}
+	if( $cbAfter ){
+		return call_user_func($cbAfter, $dir);
+	}
 }
