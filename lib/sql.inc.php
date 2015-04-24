@@ -34,7 +34,7 @@ function sql_connect($options = array()) {
 	), $options);
 
 	try {
-		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass'] );	
+		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass']);	
 	}catch (Exception $e){
 		return false;
 	}
@@ -44,7 +44,7 @@ function sql_connect($options = array()) {
 	$sql->exec('SET NAMES ' . $options['charset'] . ';');
 	$sql->exec('USE ' . $options['db'] . ';');
 	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	$sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+	$sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);	
 
 	return $sql;
 }
@@ -185,6 +185,22 @@ function sql_select($table, $fields = '*', $prefixed = true) {
 	return $query;
 }
 
+/**
+ * Truncates a table.
+ * @param string $table The table to truncate. It will automatically be prefixed.
+ * @return boolean TRUE if the table has been truncated. FALSE otherwise.
+ */
+function sql_truncate_table($table) {
+	$sql = sql_connect();
+	if( !$sql ){
+		return false;
+	}
+	$prefix = var_get('sql/prefix', '');
+	$sql->query('SET FOREIGN_KEY_CHECKS = 0;');
+	$res = sql_query('TRUNCATE TABLE ' . sql_quote($prefix . $table, true) . ';', null, null);
+	$sql->query('SET FOREIGN_KEY_CHECKS = 1;');
+	return $res;
+}
 
 /**
  * Deletes a table.
@@ -469,4 +485,35 @@ function sql_get($table, $options = array()){
 	}
 
 	return $res;
+}
+
+
+function sql_import_csv($options) {
+	$sql = var_get('sql/dbConnection');
+	$options = array_merge(array(
+		'charset' => 'utf8',
+		'columns' => null,
+		'lineStarting' => '',
+		'lineEnding' => "\n",
+		'fieldEnclosing' => '',
+		'fieldEscaping' => '',
+		'fieldEnding' => ';',
+		'ignoreLines' => 0
+	), $options);
+
+	if( !isset($options['filename'], $options['table']) || sql_driver() !== 'mysql' ){
+		return FALSE;
+	}
+
+	$options['filename'] = str_replace('/', '\\', $options['filename']);
+	$query = 'LOAD DATA INFILE ' . sql_quote($options['filename']) . ' INTO TABLE ' . sql_quote($options['table'], true);
+	$query .= ' CHARACTER SET ' . sql_quote($options['charset']);
+	$query .= ' FIELDS TERMINATED BY ' . $sql->quote($options['fieldEnding']) . ' ENCLOSED BY ' . $sql->quote($options['fieldEnclosing']) . ' ESCAPED BY ' . $sql->quote($options['fieldEscaping']);
+	$query .= ' LINES STARTING BY ' . $sql->quote($options['lineStarting']) . ' TERMINATED BY ' . $sql->quote($options['lineEnding']);
+	$query .= ' IGNORE ' . $options['ignoreLines'] . ' LINES';
+	if( is_array($options['columns']) ){
+		$query .= ' (' . implode(', ', $options['columns']) . ')';
+	}
+	$query .= ';';
+	sql_query($query, null, null);
 }
