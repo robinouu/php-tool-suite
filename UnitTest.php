@@ -35,30 +35,28 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		// Check string path accessors
 		$this->assertTrue(var_set('path', true));
-		$this->assertTrue($GLOBALS['path']);
 		$this->assertTrue(var_get('path'));
 		
 		$this->assertTrue(var_set('path/path2', true));
-		$this->assertTrue($GLOBALS['path']['path2']);
 		$this->assertTrue(var_get('path/path2'));
 
 		// Check array key path accessors
 		$this->assertTrue(var_set(array('arrayPath'), true));
-		$this->assertTrue($GLOBALS['arrayPath']);
+		$this->assertTrue(var_get('arrayPath'));
 
 		$this->assertTrue(var_set(array('arrayPath', 'arrayPath2'), true));
-		$this->assertTrue($GLOBALS['arrayPath']['arrayPath2']);
+		$this->assertTrue(var_get('arrayPath/arrayPath2'));
 
 		// Append
 		var_append('arrayPath', 'arrayPath3');
-		$this->assertContains('arrayPath3', $GLOBALS['arrayPath']);
+		$this->assertContains('arrayPath3', var_get('arrayPath'));
 
 		var_append(array('arrayPath', 'arrayPath2'), 'arrayPath4');
-		$this->assertContains('arrayPath4', $GLOBALS['arrayPath']['arrayPath2']);
+		$this->assertContains('arrayPath4', var_get('arrayPath/arrayPath2'));
 
 		// Array unset
 		var_unset('arrayPath/arrayPath2');
-		$this->assertArrayNotHasKey('arrayPath2', $GLOBALS['arrayPath']);
+		$this->assertArrayNotHasKey('arrayPath2', var_get('arrayPath'));
 
 		print 'done' . "\r\n";
     }

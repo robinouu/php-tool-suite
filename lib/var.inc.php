@@ -13,9 +13,14 @@ require_once('core.inc.php');
 require_once('array.inc.php');
 require_once('crypto.inc.php');
 
+/* Scoped global variables */
+function &vars() {
+	static $vars = array();
+	return $vars;
+}
 
 /**
- * Sets a global var.
+ * Sets a variable.
  *
  * @param string|array $path The variable path.
  * @param mixed $value The value to insert.
@@ -24,14 +29,13 @@ require_once('crypto.inc.php');
  */
 function var_set($path = array(), $value = null, $data = null) {
 	if( !$data ){
-		$data = $GLOBALS;
+		$data = &vars();
 	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_set($contextVar, $path, $value);
+	return array_set($data, $path, $value);
 }
 
 /**
- * Gets a global variable.
+ * Gets a variable.
  *
  * @param string|array $path The variable path.
  * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
@@ -40,10 +44,9 @@ function var_set($path = array(), $value = null, $data = null) {
  */
 function var_get($path = array(), $default = null, $data = false) {
 	if( !$data ){
-		$data = $GLOBALS;
+		$data = &vars();
 	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	if( !is_null($back = array_get($contextVar, $path)) ){
+	if( !is_null($back = array_get($data, $path)) ){
 		return $back;
 	}
 	if( is_callable($default) ){
@@ -54,7 +57,7 @@ function var_get($path = array(), $default = null, $data = false) {
 
 
 /**
- * Appends a key-value pair to a global variable.
+ * Appends a key-value pair to a variable.
  *
  * @param string|array $path The variable path.
  * @param string $key The associative key to append.
@@ -64,14 +67,13 @@ function var_get($path = array(), $default = null, $data = false) {
  */
 function var_append($path = array(), $key, $value = null, $data = null) {
 	if( !$data ){
-		$data = $GLOBALS;
+		$data = &vars();
 	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_append($contextVar, $path, $key, $value);
+	return array_append($data, $path, $key, $value);
 }
 
 /**
- * Unsets a global variable.
+ * Unsets a variable.
  *
  * @param string|array $path The variable path.
  * @param array The context array where to unset the variable. By default, and if NULL, $_GLOBALS will be used.
@@ -79,10 +81,9 @@ function var_append($path = array(), $key, $value = null, $data = null) {
  */
 function var_unset($path, $data = null) {
 	if( !$data ){
-		$data = $GLOBALS;
+		$data = &vars();
 	}
-	$contextVar = array_get($data, array_get($GLOBALS, 'var/context'));
-	return array_unset($contextVar, $path);
+	return array_unset($data, $path);
 }
 
 
@@ -222,15 +223,4 @@ function cookie_var_get($options){
 		return $asArray;
 	}
 	return $value;
-}
-
-
-
-/**
- * Adds a global context to all next variable accessor calls
- *
- * @param string|array $context The path of the context. NULL by default. 
- */
-function contextify($context = null) {
-	array_set($context, 'var/context', $GLOBALS);
 }
