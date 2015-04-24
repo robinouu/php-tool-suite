@@ -5,11 +5,14 @@
  * @subpackage response
  */
 
-function response_route($route = '/', $callback = null){
+function response_route($route = '/', $callback = null, $verbs = null){
 	$url = request_url();
 	$path = isset($url['path']) ? $url['path'] : '';
 
-	if( preg_match("#^" . $route . "$#ui", $path, $m) ){
+	if( is_string($verbs) ){
+		$verbs = array($verbs);
+	}
+	if( (is_null($verbs) || in_array($_SERVER['REQUEST_METHOD'], $verbs)) && preg_match("#^" . $route . "$#ui", $path, $m) ){
 		ob_start();
 		$callback($m);
 		$content = ob_get_contents();
