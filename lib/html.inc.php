@@ -266,6 +266,10 @@ function text($content) {
 	return nl2br(htmlspecialchars($content));
 }
 
+function paragraph($content) {
+	return tag('p', $content);
+}
+
 function span($attrs = array()) {
 	if( is_string($attrs) ){
 		$attrs = array('class' => $attrs);
