@@ -9,11 +9,15 @@ function models_to_sql($models = array()) {
 	$tables = array();
 	$manyTables = array();
 
-	foreach ($models as $mod) {
+	foreach ($models as $id => $mod) {
 		$mod = array_merge(array(
 			'comment' => null,
 			'collation' => 'utf8_general_ci'
 		), $mod);
+
+		if( !isset($mod['id']) ){
+			$mod['id'] = $id;
+		}
 
 		$foreignKeys = array();
 
@@ -99,7 +103,6 @@ function models_to_sql($models = array()) {
 		sql_create_table($manyTable);
 	}
 }
-
 
 function model_name($model) {
 	return isset($model['labels']['singular']) ? $model['labels']['singular'] : ucfirst($model['id']);
