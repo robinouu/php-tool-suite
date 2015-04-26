@@ -172,7 +172,7 @@ function sql_update($table, $fields = array(), $where = null) {
 	return $q->execute();
 }
 
-function sql_select($table, $fields = '*', $prefixed = true) {
+function sql_select($table, $fields = '*', $alias = '', $prefixed = true) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
@@ -184,7 +184,7 @@ function sql_select($table, $fields = '*', $prefixed = true) {
 		$fields = array($fields);
 	}
 
-	$query .= implode(',', $fields) . ' FROM ' . sql_quote($prefix . $table, true);
+	$query .= implode(',', $fields) . ' FROM ' . sql_quote($prefix . $table, true) . ' ' . $alias;
 	return $query;
 }
 
@@ -463,26 +463,40 @@ function sql_driver() {
 function sql_get($table, $options = array()){
 
 	$options = array_merge(array(
-		'asArray' => false
+		'alias' => '',
 	), $options);
 
 	if( is_integer($options) ){
 		$query = sql_select($table) . ' WHERE id = ' . (int)$options;
 	}elseif (is_array($options)) {
 
-		$fields = array();
+		$fields = '*';
+
 		if( isset($options['fields']) && is_string($options['fields']) ){
 			$fields = array_map('trim', explode(',', $options['fields']));
 		}
-		$query = sql_select($table, $fields);
+
+		$onlyOne = sizeof($options['fields']) !== 1;
+		$query = sql_select($table, $fields, $options['alias']);
+
+		// JOIN CLAUSE
+		if( isset($options['join']) ){
+			if( is_string($options['join']) ){
+				$query .= ' ' . $options['join'];
+			}elseif( is_array($options['join']) ){
+				$options['join'] = array_merge(array(
+					'alias' => '',
+					'left' => $options['join']['table'],
+					'right' => 'id',
+					'type' => 'INNER JOIN'), $options['join']);
+				$query .= ' ' . $options['join']['type'] . ' ' . sql_quote($options['join']['table'], true) . ' ' . $options['join']['alias'] .
+					' ON ' . ($options['join']['alias'] ? $options['join']['alias'] : sql_quote($options['join']['table'], true)) . '.' . $options['join']['right'] . ' = ' . ($options['alias'] ? $options['alias'] : sql_quote($table, true)) . '.' . $options['join']['left'];
+			}
+		}
 
 		// WHERE CLAUSE
 		if( isset($options['where']) ) {
-			if( is_string($options['where']) ){
-				$query .= ' WHERE ' . $options['where'];
-			}elseif( is_array($options['where']) ){
-				$query .= ' WHERE ' . sql_where($options['where']);
-			}
+			$query .= ' WHERE ' . sql_where($options['where']);
 		}
 
 		// ORDER BY CLAUSE
@@ -497,10 +511,7 @@ function sql_get($table, $options = array()){
 	}
 
 	//var_dump($query);
-	$res = sql_query($query);
-	if( $options['asArray'] !== true && is_array($res) && sizeof($res) == 1 ){
-		return $res[0];
-	}
+	$res = sql_query($query, null, $onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 
 	return $res;
 }
