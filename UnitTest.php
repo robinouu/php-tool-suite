@@ -120,14 +120,16 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse(sql_table_exists('user'));
 		
 		// Test schema insertion, with data relations
-		sql_create_table('signable', array(
+		sql_create_table(array(
+			'name' => 'signable', 
 			'columns' => array(
 				'login_id VARCHAR(255) NOT NULL UNIQUE',
 				'password VARCHAR(255)'
 			)
 		));
 
-		sql_create_table('user', array(
+		sql_create_table(array(
+			'name' => 'user',
 			'columns' => array(
 				'display_name VARCHAR(255) UNIQUE NOT NULL',
 				'auth int(11) UNIQUE NOT NULL '
@@ -212,10 +214,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     	// ...
 
     	csv_write("data.csv", $data);
+		
+		$loadedData = array();
+		csv_load("data.csv", function ($line) use( &$loadedData ) { $loadedData[] = $line; });
 
-    	$data2 = csv_load("data.csv");
+    	$this->assertEquals($data, $loadedData);
 
-    	$this->assertEquals($data, $data2);
     	print 'done' . "\r\n";
     }
 

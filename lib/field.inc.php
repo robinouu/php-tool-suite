@@ -10,6 +10,7 @@ require_once('html.inc.php');
 if( !var_get('field/default') ){
 	var_set('field/default', array(
 		'type' => 'text',
+		'comment' => null,
 		'maxlength' => 255,
 		'default' => null,
 		'unique' => false,
@@ -18,6 +19,8 @@ if( !var_get('field/default') ){
 		'class' => '',
 		'searchable' => true,
 		'hasMany' => false,
+		'characterSet' => null,
+		'collation' => null
 	));
 }
 
@@ -126,14 +129,8 @@ function field($field = array()) {
 
 			break;
 		case 'select':
-		//case 'relation':
 		case 'enum':
-			if( $field['type'] === 'relation' ){
-				$data = scrud_list($field['relData'], array());
-				//$fieldName = $key;
-			}else{
-				$data = $field['relData'];
-			}
+			$data = $field['data'];
 			if( is_array($data) ){
 				$id = isset($field['id']) ? $field['id'] : 'select-' . $fieldName;
 				$html .= '<select name="' . $fieldName . '" id="' . $id . '">';
@@ -142,8 +139,6 @@ function field($field = array()) {
 					$html .= '<option value="' . ($assoc ? $key : $value) . '">' . $value . '</option>';
 				}
 				$html .= '</select>';
-			}else{
-				$html .= 'Aucune donnée de type ' . $field['relData'];
 			}
 		break;
 		default:

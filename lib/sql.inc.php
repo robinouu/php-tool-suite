@@ -45,6 +45,7 @@ function sql_connect($options = array()) {
 	$sql->exec('USE ' . $options['db'] . ';');
 	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);	
+	$sql->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
 	return $sql;
 }
@@ -88,7 +89,9 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	$result = $q->execute($values);
 	if( $fetchMode != null ){
 		$res = $q->fetchAll($fetchMode);
+		$q->closeCursor();
 	}else{
+		$q->closeCursor();
 		return $result;
 	}
 	if( sizeof($res) == 0 ){
@@ -339,9 +342,9 @@ function sql_table_exists($table) {
 
 /**
  * Creates a table in database
- * @param string $table The table to create. It will automatically be prefixed.
  * @param array $options The table configuration
  * <ul>
+ * 	<li>name string The table to create. It will automatically be prefixed.</li>
  * 	<li>hasID boolean If set to TRUE, an 'id' primary column with auto-increment behaviour will be inserted at the beginning of the table. TRUE by default.</li>
  * 	<li>columns array The columns to add to the table. Example : <pre><code>array('username VARCHAR(255) NOT NULL UNIQUE');</code></pre></li>
  * 	<li>primaryKeys array An array of column names to use for primary keys.</li>
@@ -355,9 +358,10 @@ function sql_table_exists($table) {
  * </ul>
  * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
  */
-function sql_create_table($table, $options) {
+function sql_create_table($options) {
 	$options = array_merge(array(
 		'hasID' => true,
+		'comment' => null,
 		'columns' => array(),
 		'primaryKeys' => array(),
 		'foreignKeys' => array(),
@@ -391,9 +395,23 @@ function sql_create_table($table, $options) {
 		}
 	}
 
+	$comment = '';
+	if( $options['comment'] ){
+		$comment = ' COMMENT=' . sql_quote($options['comment']);
+	}
+
+	$collation = '';
+	if( $options['collation'] ){
+		$comment = ' COLLATE ' . sql_quote($options['collation']);
+	}
+
+	$engine = '';
+	if( $options['engine'] ){
+		$engine = ' ENGINE=' . sql_quote($options['engine']);
+	}
+
 	$prefix = var_get('sql/prefix', '');
-	$query = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($prefix . $table, true) . ' (' . implode(', ', $attributes) . ' ) COLLATE ' . $options['collation'] . ' ENGINE=' . $options['engine'] . ';';
-	
+	$query = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($prefix . $options['name'], true) . ' (' . implode(', ', $attributes) . ' ) ' . $comment . $collation . $engine . ';';
 	return sql_query($query, null, null);
 }
 
@@ -497,7 +515,7 @@ function sql_import_csv($options) {
 		'lineEnding' => "\n",
 		'fieldEnclosing' => '',
 		'fieldEscaping' => '',
-		'fieldEnding' => ';',
+		'fieldEnding' => ',',
 		'ignoreLines' => 0
 	), $options);
 

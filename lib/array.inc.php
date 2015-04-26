@@ -145,6 +145,9 @@ function array_unset(&$arr, $path)
 	return TRUE;
 }
 
+function array_iunique($array) {
+    return array_intersect_key($array, array_unique(array_map('strtolower', $array)));
+}
 
 function array_find_deep(array $array, $string, array &$result) {
 	foreach ($array as $key => $value) {
@@ -195,3 +198,4 @@ function array_merge_recursive_unique($array1, $array2) {
 	unset($k, $v);
 	return $array1;
 }
+
