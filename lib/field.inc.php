@@ -134,14 +134,11 @@ function field($field = array()) {
 			$data = $field['data'];
 			
 			if( is_array($data) ){
-
 				$options = '';
-
 				$assoc = is_assoc_array($data);
 				foreach ($data as $key => $value) {
-					$options .= '<option value="' . ($assoc ? $key : $value) . '">' . $value . '</option>';
+					$options .= '<option value="' . ($assoc ? $key : $value) . '">' . t($value) . '</option>';
 				}
-
 				$html .= tag('select', $options, $attrs);
 			}
 		break;

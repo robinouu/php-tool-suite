@@ -230,6 +230,7 @@ function sql_delete_table($table) {
  * @return boolean TRUE if the tables have been deleted. FALSE otherwise.
  */
 function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
+
 	$sql = sql_connect();
 	if( !$sql || (is_array($tables) && !sizeof($tables)) ){
 		return false;
@@ -455,7 +456,7 @@ function sql_alter_table($table, $options = array()) {
  * @see http://php.net/manual/fr/pdo.getavailabledrivers.php
  */
 function sql_driver() {
-	$sql = var_get('sql/dbConnection');
+	$sql = sql_connect();
 	return $sql->getAttribute(PDO::ATTR_DRIVER_NAME);
 }
 
@@ -471,12 +472,18 @@ function sql_get($table, $options = array()){
 	}elseif (is_array($options)) {
 
 		$fields = '*';
+		$onlyOne = false;
 
-		if( isset($options['fields']) && is_string($options['fields']) ){
-			$fields = array_map('trim', explode(',', $options['fields']));
+		if( isset($options['fields']) ) {
+			if( is_string($options['fields']) ){
+				$fields = array_map('trim', explode(',', $options['fields']));
+				$onlyOne = sizeof($options['fields']) == 1;
+			}elseif( is_array($options['fields']) ){
+				$fields = $options['fields'];
+				$onlyOne = sizeof($options['fields']) == 1;
+			}
 		}
 
-		$onlyOne = sizeof($options['fields']) !== 1;
 		$query = sql_select($table, $fields, $options['alias']);
 
 		// JOIN CLAUSE
@@ -484,13 +491,18 @@ function sql_get($table, $options = array()){
 			if( is_string($options['join']) ){
 				$query .= ' ' . $options['join'];
 			}elseif( is_array($options['join']) ){
-				$options['join'] = array_merge(array(
-					'alias' => '',
-					'left' => $options['join']['table'],
-					'right' => 'id',
-					'type' => 'INNER JOIN'), $options['join']);
-				$query .= ' ' . $options['join']['type'] . ' ' . sql_quote($options['join']['table'], true) . ' ' . $options['join']['alias'] .
-					' ON ' . ($options['join']['alias'] ? $options['join']['alias'] : sql_quote($options['join']['table'], true)) . '.' . $options['join']['right'] . ' = ' . ($options['alias'] ? $options['alias'] : sql_quote($table, true)) . '.' . $options['join']['left'];
+				if( is_assoc_array($options['join']) ){
+					$options['join'] = array($options['join']);
+				}
+				foreach ($options['join'] as $join) {
+					$join = array_merge(array(
+						'alias' => '',
+						'left' => $join['table'],
+						'right' => 'id',
+						'type' => 'INNER JOIN'), $join);
+					$query .= ' ' . $join['type'] . ' ' . sql_quote($join['table'], true) . ' ' . $join['alias'] .
+						' ON ' . ($join['alias'] ? $join['alias'] : sql_quote($join['table'], true)) . '.' . $join['right'] . ' = ' . ($options['alias'] ? $options['alias'] : sql_quote($table, true)) . '.' . $join['left'];
+				}
 			}
 		}
 
@@ -510,15 +522,14 @@ function sql_get($table, $options = array()){
 		}
 	}
 
-	//var_dump($query);
-	$res = sql_query($query, null, $onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
+	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 
 	return $res;
 }
 
 
 function sql_import_csv($options) {
-	$sql = var_get('sql/dbConnection');
+	$sql = sql_connect();
 	$options = array_merge(array(
 		'charset' => 'utf8',
 		'columns' => null,

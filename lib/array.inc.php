@@ -35,6 +35,7 @@ function array_get($arr, $path)
 {
 	if (!$path)
 		return $arr;
+
 	$segments = is_array($path) ? $path : explode('/', $path);
 
 	$cur =& $arr;
@@ -43,13 +44,11 @@ function array_get($arr, $path)
 		if (!isset($cur[$segment])){
 			return null;
 		}
-
 		$cur = $cur[$segment];
-
 	}
+
 	return $cur;
 }
-
 
 /**
  * Sets an array value by path
@@ -65,12 +64,11 @@ function array_set(&$arr, $path, $value)
 
 	$segments = is_array($path) ? $path : explode('/', $path);
 	$cur =& $arr;
-
 	foreach ($segments as $segment) {
-		if (!isset($cur[$segment])){
-			if( !is_array($cur) )	{
-				$cur = array();
-			}
+		if( !is_array($cur) ){
+			$cur = array($segment => array());
+		}
+		if( !isset($cur[$segment]) ){
 			$cur[$segment] = array();
 		}
 		$cur =& $cur[$segment];
@@ -96,6 +94,7 @@ function array_append(&$arr, $path, $key, $value = null)
 	$segments = is_array($path) ? $path : explode('/', $path);
 	$cur = &$arr;
 	$i = 0;
+
 	foreach ($segments as $segment) {
 		if( !is_array($cur[$segment]) ) {
 			$cur[$segment] = array();

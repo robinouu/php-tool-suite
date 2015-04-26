@@ -108,48 +108,64 @@ function detect_languages($forceDetection = true) {
 	var_set('i18n/userLanguages', $langs);
 	return array_keys($langs);
 }
-function load_gettext_translations($dir, $file = null) {
-	if( is_dir($dir) ){
-		$lang = current_locale();
-		$file = "messages";
-		bindtextdomain($file, $dir);
-		bind_textdomain_codeset($file, 'UTF-8');
-		textdomain($file);
-		var_set('i18n/domain', $file);
-		return true;
-	}
-	return false;
-}
 
-function load_translations($translations) {
-	var_set('i18n/translations', $translations);
-}
+function load_translations($options = array()) {
+	$options = array_merge(array(
+		'method' => 'array'
+	), $options);
 
-function load_sql_translations($lang = null) {
-	$lang = current_lang();
-	if( $lang ){
-		$rawTranslations = data('translation', array('where' => array('language' => $lang['id']), 'asArray' => true));
-		$translations = array();
-		if( $rawTranslations ){
-			foreach ($rawTranslations as $translation) {
-				
-				$translations[$translation['context']] = $translation;
+	if( $options['method'] === 'gettext' ){
+		
+		$options = array_merge(array(
+			'dir' => dirname(__FILE__),
+			'file' => 'messages',
+			'codeset' => 'UTF-8'
+		), $options);
+
+		hook_register('i18n/translations', function () use ($options) {
+			if( is_dir($options['dir']) ){
+				$lang = current_locale();
+				bindtextdomain($options['file'], $options['dir']);
+				bind_textdomain_codeset($options['file'], $options['codeset']);
+				textdomain($options['file']);
+				var_set('i18n/domain', $options['file']);
+				return true;
 			}
-		}
-		var_set('i18n/translations', $translations);
-		return $translations;
-	}	
-	return false;
+		});
+	}elseif( $options['method'] === 'array' ){
+		$options = array_merge(array(
+			'translations' => array()
+		), $options);
+
+		hook_register('i18n/translations', function () use (&$options) {
+			return $options['translations'];
+		});
+	}
+
+	$translations = hook_do('i18n/translations');
+
+	$tdata = new stdclass();
+	$tdata->versions = $translations;
+	var_set('i18n/translationData', $tdata);
 }
 
 function t($str, $lang = null, $castTo = 'string'){
+
 	if( var_get('i18n/domain') !== null ){
 		return gettext($str);
 	}
 	if( $castTo == 'bool' ){
-		return mb_strtolower($string) === 'true';
+		return strtolower($string) === 'true';
 	}
-	if( is_numeric($str) ){
+	if ( is_string($str) ) {
+		
+		$translations = var_get('i18n/translationData', new stdclass);
+
+		if( isset($translations->versions[$str]) ){
+			return $translations->versions[$str];
+		}
+		return $str;
+	}elseif( is_numeric($str) ){
 		if( is_double($str) ){
 			return (double)$str;
 		}elseif( is_float($str) ){
@@ -157,20 +173,6 @@ function t($str, $lang = null, $castTo = 'string'){
 		}
 	}elseif( is_null($str) || mb_strtolower($str) === 'null' ){
 		return null;
-	}elseif ( is_string($str) ) {
-		$translations = var_get('i18n/translations', array());
-		if( isset($translations[$str]['version']) ){
-			return $translations[$str]['version'];
-		}/*elseif (sql_table_exists('translation')){
-			$lang = current_lang();
-			$data = data('translation', array('where' => array('language' => $lang['id'], 'context' => $context ? $context : $str)));
-			if( $data ){
-				return $data['version'];
-			}else{
-				LOG_INFO('Could not find a traduction or version for the context "' . ($context ? $context : $str));
-			}
-		}*/
-		return $str;
 	}
 	return '';
 }
