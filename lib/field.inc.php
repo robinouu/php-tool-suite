@@ -77,10 +77,10 @@ function field($field = array()) {
 				$attrs['aria-multiline'] = 'true';
 			}else{
 				$attrs['type'] = $field['type'];
-				if( $fieldType === 'float' || $fieldType === 'double' ){
+				if( $field['type'] === 'float' || $field['type'] === 'double' ){
 					$attrs['type'] = 'number';
 					$attrs['step'] = 'any';
-				}elseif ($fieldType === 'int' ){
+				}elseif ($field['type'] === 'int' ){
 					$attrs['type'] = 'number';
 				}
 			}
@@ -130,15 +130,19 @@ function field($field = array()) {
 			break;
 		case 'select':
 		case 'enum':
+		
 			$data = $field['data'];
+			
 			if( is_array($data) ){
-				$id = isset($field['id']) ? $field['id'] : 'select-' . $fieldName;
-				$html .= '<select name="' . $fieldName . '" id="' . $id . '">';
+
+				$options = '';
+
 				$assoc = is_assoc_array($data);
 				foreach ($data as $key => $value) {
-					$html .= '<option value="' . ($assoc ? $key : $value) . '">' . $value . '</option>';
+					$options .= '<option value="' . ($assoc ? $key : $value) . '">' . $value . '</option>';
 				}
-				$html .= '</select>';
+
+				$html .= tag('select', $options, $attrs);
 			}
 		break;
 		default:
