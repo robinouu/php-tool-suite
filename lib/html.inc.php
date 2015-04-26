@@ -80,7 +80,7 @@ function html5($args) {
 	$head = tag('title', $args['title']);
 
 	foreach ($args['meta'] as $key => $value) {
-		$head .= tag('meta', '', array($key => $value), true);
+		$head .= tag('meta', '', array('name' => $key, 'content' => $value), true);
 	}
 
 	$head .= hook_do('html_stylesheets');
@@ -100,11 +100,8 @@ function html5($args) {
 }
 
 
-function block($str = '', $callback = null) {
-	if( $callback ) {
-		var_set('site/page/blocks/' . slug($str), $callback);
-	}
-	//return LOG_ERROR('Vous devez indiquer un callback d\'affichage pour le blog "' . $str . '")');
+function block($block = '', $callback = null) {
+	hook_register('html/blocks/' . object_hash($block), $callback);
 }
 
 function code($content, $language) {
@@ -119,11 +116,7 @@ function image($attrs) {
 }
 
 function block_load($block, $args = array()) {
-	$cb = var_get('site/page/blocks/' . slug($block));
-	if( is_callable($cb) ) {
-		return $cb($args);	
-	}
-	return $cb;
+	return hook_do('html/blocks/' . object_hash($block), $args);
 }
 
 function text_vars($text, $vars) {
@@ -246,35 +239,28 @@ function tag($tag, $content, $attrs = array(), $inline = false) {
 function search($options = array()) {
 	$options = array_merge(array(
 		'title' => t('Search for'),
-		'form' => array('role' => 'search', 'id' => 'search'),
+		'form' => array('role' => 'search', 'id' => 'search', 'method' => 'POST'),
 		'searchField' => array('name' => 'search', 'type' => 'search', 'placeholder' => ''),
 		'button.label' => t('Search'),
 		'button.field' => array('name' => 'search_submit')
 		), $options);
 
-	return form(
-		fieldset($options['title'], field($options['searchField']) . button_submit($options['button.label'], $options['button.field'])),
-		array($options['form'])
-	);
+	return tag('form', fieldset($options['title'], field($options['searchField']) . button_submit($options['button.label'], $options['button.field'])), $options['form']);
 }
 
-function title($label, $level = 1){
-	return '<h' . $level . '>' . $label . '</h' . $level . '>';
+function title($label, $level = 1, $attrs = array()){
+	return tag('h' . $level, $label, $attrs);
 }
 
 function text($content) {
 	return nl2br(htmlspecialchars($content));
 }
 
-function paragraph($content) {
-	return tag('p', $content);
+function paragraph($content, $attrs = array()) {
+	return tag('p', $content, $attrs);
 }
-
-function span($attrs = array()) {
-	if( is_string($attrs) ){
-		$attrs = array('class' => $attrs);
-	}
-	return '<span ' . attrs($attrs) . '></span>';
+function p($content, $attrs = array()){
+	return paragraph($content, $attrs);
 }
 
 function button($content = '', $attrs = array()) {
