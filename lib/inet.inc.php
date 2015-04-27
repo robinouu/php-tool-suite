@@ -57,6 +57,7 @@ function inet_server($options = array()) {
 	$options = array_merge(array(
 		'host' => '127.0.0.1',
 		'port' => 9050,
+		'maxClients' => -1,
 		'queueLength' => 80,
 		'clientBuffer' => 2048,
 		'onClientConnected' => null
@@ -82,11 +83,13 @@ function inet_server($options = array()) {
 				continue;
 
 			if( in_array($socket, $read) ){
-				$clients[] = $client = socket_accept($socket);
-				if( is_callable($options['onClientConnected']) ){
-					$options['onClientConnected']($client);
+				$client = socket_accept($socket);
+				if( sizeof($clients) < $options['maxClients'] ){
+					$clients[] = $client;
+					if( is_callable($options['onClientConnected']) ){
+						$options['onClientConnected']($client);
+					}
 				}
-
 				$key = array_search($socket, $read);
 				unset($read[$key]);
 			}
