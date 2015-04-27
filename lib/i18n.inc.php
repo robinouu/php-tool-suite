@@ -143,14 +143,12 @@ function load_translations($options = array()) {
 	}
 
 	$translations = hook_do('i18n/translations');
-
-	$tdata = new stdclass();
-	$tdata->versions = $translations;
-	var_set('i18n/translationData', $tdata);
+	$tData = new stdclass;
+	$tData->versions = $translations;
+	var_set('i18n/translationData', $tData);
 }
 
 function t($str, $lang = null, $castTo = 'string'){
-
 	if( var_get('i18n/domain') !== null ){
 		return gettext($str);
 	}
@@ -158,11 +156,9 @@ function t($str, $lang = null, $castTo = 'string'){
 		return strtolower($string) === 'true';
 	}
 	if ( is_string($str) ) {
-		
-		$translations = var_get('i18n/translationData', new stdclass);
-
-		if( isset($translations->versions[$str]) ){
-			return $translations->versions[$str];
+		$tData = var_get('i18n/translationData');
+		if( isset($tData->versions[$str]) ){
+			return $tData->versions[$str];
 		}
 		return $str;
 	}elseif( is_numeric($str) ){
