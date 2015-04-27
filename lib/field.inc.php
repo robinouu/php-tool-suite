@@ -135,9 +135,8 @@ function field($field = array()) {
 			
 			if( is_array($data) ){
 				$options = '';
-				$assoc = is_assoc_array($data);
-				foreach ($data as $key => $value) {
-					$options .= '<option value="' . ($assoc ? $key : $value) . '">' . t($value) . '</option>';
+				foreach ($data as $key => $v) {
+					$options .= '<option ' . ($key === $value ? ' selected="selected"' : '') . ' value="' . $key . '">' . htmlspecialchars(t($v)) . '</option>';
 				}
 				$html .= tag('select', $options, $attrs);
 			}
