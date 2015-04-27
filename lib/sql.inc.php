@@ -294,7 +294,7 @@ function sql_quote($text, $column_or_table = false){
 	if( !$sql ){
 		return false;
 	}
-	if( is_null($text) || $text === ''){
+	if( is_null($text) ){
 		return 'NULL';
 	}
 	if( !is_string($text) && is_numeric($text) ){
@@ -365,6 +365,7 @@ function sql_create_table($options) {
 		'comment' => null,
 		'columns' => array(),
 		'primaryKeys' => array(),
+		'uniqueKeys' => array(),
 		'foreignKeys' => array(),
 		'collation' => 'utf8_general_ci',
 		'engine' => 'InnoDB',
@@ -379,6 +380,15 @@ function sql_create_table($options) {
 
 	if( sizeof($options['primaryKeys']) ){
 		$attributes[] = 'PRIMARY KEY (' . implode(', ', $options['primaryKeys']) . ')';
+	}
+
+	if( sizeof($options['uniqueKeys']) ){
+		if( is_assoc_array($options['uniqueKeys']) ){
+			$options['uniqueKeys'] = array('name' => 'uniqueKeys', 'columns' => $options['uniqueKeys']);
+		}
+		foreach ($options['uniqueKeys'] as $uk) {
+			$attributes[] = 'CONSTRAINT ' . sql_quote($uk['name'], true) . ' UNIQUE (' . implode(', ', $uk['columns']) . ')';
+		}
 	}
 
 	if( sizeof($options['foreignKeys']) ){
@@ -522,8 +532,11 @@ function sql_get($table, $options = array()){
 		}
 	}
 
+	//var_dump($query);
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
-
+	if( isset($options['limit']) && $options['limit'] === 1 ){
+		return $res[0];
+	}
 	return $res;
 }
 
