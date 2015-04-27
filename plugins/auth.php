@@ -1,6 +1,6 @@
 <?php
 
-plugin_require(array('url', 'i18n'));
+plugin_require(array('request', 'i18n'));
 
 function auth() {
 
