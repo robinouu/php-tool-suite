@@ -4,7 +4,7 @@
  * @package php-tool-suite
  */
 
-function request_url() {
+function request_url($parsed = false) {
 	$url = var_get('request/url', '');
 	if( !$url && isset($_SERVER['SERVER_NAME'])){
 		$strUrl = server_is_secure() ? 'https://' : 'http://';
@@ -15,7 +15,21 @@ function request_url() {
 		}
 		var_set('request/url', $url = parse_url($strUrl));
 	}
-	return $url;
+	if( $parsed ){
+		return $url;
+	}
+	if( isset($url['scheme'], $url['host'], $url['path']) ){
+		return $url['scheme'] . '://' . $url['host'] . $url['path'];
+	}
+	return '';
+}
+
+function root_url() {
+	$url = request_url(true);
+	if( isset($url['scheme'], $url['host'], $url['path']) ){
+		return $url['scheme'] . '://' . $url['host'] . $url['path'];
+	}
+	return '';
 }
 
 function url_website($url, $noScheme = false) {
@@ -31,11 +45,6 @@ function url_website($url, $noScheme = false) {
 		return (isset($urlInfo['host']) ? $urlInfo['host'] : $urlInfo['path']) .
 				(isset($urlInfo['port']) ? ':' . $urlInfo['port'] : '');
 	}
-}
-
-function redirect($url) {
-	header('Location: ' . $url);
-	exit;
 }
 
 function request_referer() {

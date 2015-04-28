@@ -5,8 +5,13 @@
  * @subpackage response
  */
 
+function redirect($url) {
+	header('Location: ' . $url);
+	exit;
+}
+
 function response_route($route = '/', $callback = null, $verbs = null){
-	$url = request_url();
+	$url = request_url(true);
 	$path = isset($url['path']) ? $url['path'] : '';
 
 	if( is_string($verbs) ){
