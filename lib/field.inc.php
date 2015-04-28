@@ -16,7 +16,7 @@ if( !var_get('field/default') ){
 		'unique' => false,
 		'required' => false,
 		'formatter' => null,
-		'class' => '',
+		'attrs' => array(),
 		'searchable' => true,
 		'hasMany' => false,
 		'characterSet' => null,
@@ -53,6 +53,8 @@ function field($field = array()) {
 	$attrs = array();
 	$attrs['name'] = $field['name'];
 	$attrs['id'] = isset($field['id']) ? $field['id'] : 'input-' . $field['name'];
+	$attrs['class'] = '';
+	$attrs = array_merge($attrs, $field['attrs']);
 
 	$value = field_value($field);
 
@@ -98,7 +100,6 @@ function field($field = array()) {
 				}
 			}
 			
-			$attrs['class'] = $field['class'];
 			if( $field['type'] === 'datetime' ){
 				$attrs['class'] .= ' datetimepicker';
 			}elseif( $field['type'] === 'date' ){
@@ -136,7 +137,7 @@ function field($field = array()) {
 			if( is_array($data) ){
 				$options = '';
 				foreach ($data as $key => $v) {
-					$options .= '<option ' . ($key === $value ? ' selected="selected"' : '') . ' value="' . $key . '">' . htmlspecialchars(t($v)) . '</option>';
+					$options .= '<option' . ($key === $value ? ' selected="selected"' : '') . ' value="' . $key . '">' . htmlspecialchars(t($v)) . '</option>';
 				}
 				$html .= tag('select', $options, $attrs);
 			}

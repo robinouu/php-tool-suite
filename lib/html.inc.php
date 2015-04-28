@@ -293,8 +293,8 @@ function attrs($attrs = array()) {
 	}
 	$attributes = array();
 	foreach ($attrs as $key => $value) {
-		if( is_string($value) && is_string($key) ){
-			$attributes[] = $key . '="' . $value . '"';
+		if( is_string($key) ){
+			$attributes[] = $key . '="' . (string)$value . '"';
 		}
 	}
 	return implode(' ', $attributes);
