@@ -77,7 +77,7 @@ function hook_do($name, $args = array()) {
 	$backValue = null;
 	foreach (hook_get($name) as $callback) {
 		// Merge back args
-		$value = call_user_func_array($callback, $args);
+		$value = call_user_func($callback, $args);
 		if( is_array($value) ){
 			$backValue = is_null($backValue) ? $value : (is_array($backValue) ? array_merge($backValue, $value) : array_merge_recursive(array($backValue), $value));
 		}elseif( is_string($value) ){
