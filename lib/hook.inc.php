@@ -72,13 +72,13 @@ function hook_do($name, $args = array()) {
 	if( !($hook = var_get('hooks/' . $name)) ){
 		return NULL;
 	}
-	if( !is_array($args) && !($args instanceof ArrayObject) ) {
-		$args = array($args);
-	}
+		
+	$args = array($args);
+
 	$backValue = null;
 	foreach (hook_get($name) as $callback) {
 		// Merge back args
-		$value = call_user_func($callback, $args);
+		$value = call_user_func_array($callback, $args);
 		if( is_array($value) ){
 			$backValue = is_null($backValue) ? $value : (is_array($backValue) ? array_merge($backValue, $value) : array_merge_recursive(array($backValue), $value));
 		}elseif( is_string($value) ){

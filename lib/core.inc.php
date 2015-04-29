@@ -5,7 +5,7 @@
  * @subpackage core
  */
 
-plugin_require(array('var', 'file'));
+
 
 /**
  * Returns a unique hash of an object or a mixed hash value
@@ -27,7 +27,7 @@ function guid() {
 	if( function_exists('com_create_guid') ){
 		return com_create_guid();
 	}else{
-		require_once('random.inc.php');
+		plugin_require(array('random'));
 		$c = strtoupper(md5(uniqid(rand(), true)));
 		$uuid = '{' . substr($c, 0, 8) . '-' . substr($c, 8, 4) . '-' . substr($c,12, 4) . '-' . substr($c, 16, 4) . '-' . substr($c, 20, 12) . '}';
 		return $uuid;
@@ -36,14 +36,16 @@ function guid() {
 
 
 function plugin_load_dir($dir) {
+	plugin_require(array('fs', 'var'));
+
 	browse_recursive($dir, function ($file) {
 		plugin_load_file($file);
 	}, null, var_get('plugins/disabled', array()));
 }
 
 function plugin_load_file($file) {
-	if( substr($file, strlen($file) - 4) === '.php' ){		
-		require($file);
+	if( substr($file, strlen($file) - 4) === '.php' ){
+		require_once($file);
 	}
 }
 
@@ -53,7 +55,7 @@ function plugin_require($subpackages = null) {
 	}
 	if( is_array($subpackages) ){
 		foreach ($subpackages as $subpackage) {
-			require_once($subpackage . '.inc.php');
+			require_once(dirname(__FILE__). '/' . $subpackage . '.inc.php');
 		}
 	}
 }
