@@ -1,8 +1,7 @@
 <?php
 
-require_once('field.inc.php');
-require_once('sql.inc.php');
 
+plugin_require(array('field', 'sql'));
 
 function models_to_sql($models = array()) {
 

@@ -3,7 +3,8 @@
  * Sanitize
  * @package php-tool-suite
  */
-require_once('var.inc.php');
+
+plugin_require(array('var'));
 
 // Tables from http://phpcrossref.com/xref/mantisbt/library/utf8/utils/ascii.php.txt
 if( !var_get('core/toasciitable_lower') ){

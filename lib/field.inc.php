@@ -4,8 +4,8 @@
  * @package php-tool-suite
  * @subpackage fields
  */
-require_once('i18n.inc.php');
-require_once('html.inc.php');
+
+plugin_require(array('i18n', 'html'));
 
 if( !var_get('field/default') ){
 	var_set('field/default', array(

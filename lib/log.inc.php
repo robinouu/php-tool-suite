@@ -3,7 +3,6 @@
  * Logger
  * @package php-tool-suite
  */
-ini_set('xdebug.var_display_max_depth', -1);
 
 function LOG_INFO($str) {
 	print '[INFO]' . $str . '<br />';

@@ -4,9 +4,8 @@
  * @package php-tool-suite
  * @subpackage HTML helpers
  */
-require_once('hook.inc.php');
-require_once('sanitize.inc.php');
-require_once('vendor/simple_html_dom.php');
+
+plugin_require(array('hook', 'sanitize'));
 
 /**
  * Parse an HTML string into DOM.
@@ -16,6 +15,7 @@ require_once('vendor/simple_html_dom.php');
  * @see http://simplehtmldom.sourceforge.net/
  */
 function dom($html) {
+	require_once(dirname(__FILE__).'/vendor/simple_html_dom.php');
 	return @str_get_html($html, true, false, DEFAULT_TARGET_CHARSET, false);
 }
 

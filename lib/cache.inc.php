@@ -4,8 +4,8 @@
  * @package php-tool-suite
  * @subpackage cache
  */
-require_once('fs.inc.php');
-require_once('log.inc.php');
+
+plugin_require(array('fs'));
 
 /**
  * Cache data into a file, up to the specified expiration date.

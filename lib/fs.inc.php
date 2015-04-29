@@ -5,8 +5,6 @@
  * @subpackage file system
  */
 
-require_once('core.inc.php');
-
 /**
  * Creates directories recursively.
  * If the path does not exist in the file system, it will be automatically created.

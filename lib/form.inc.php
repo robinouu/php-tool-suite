@@ -3,9 +3,8 @@
  * Forms
  * @package php-tool-suite
  */
-require_once('i18n.inc.php');
-require_once('html.inc.php');
 
+plugin_require(array('i18n', 'html'));
 
 function form_errors($errors) {
 	$c = array();

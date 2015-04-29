@@ -5,6 +5,20 @@
  * @subpackage core
  */
 
+plugin_require(array('var', 'file'));
+
+/**
+ * Returns a unique hash of an object or a mixed hash value
+ * @param mixed $value an object or a mixed value (string, bool, number)
+ * @return string a unique hash to identify the value
+ */
+function object_hash($obj) {
+	if (is_object($obj)) {
+		return spl_object_hash($obj);
+	}
+	return md5(print_r($obj, true));
+}
+
 /**
  * Generates a GUID (Globally Unique Identifier)
  * @return string a unique identifier formatted like this {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
@@ -20,22 +34,35 @@ function guid() {
 	}
 }
 
+
+function plugin_load_dir($dir) {
+	browse_recursive($dir, function ($file) {
+		plugin_load_file($file);
+	}, null, var_get('plugins/disabled', array()));
+}
+
+function plugin_load_file($file) {
+	if( substr($file, strlen($file) - 4) === '.php' ){		
+		require($file);
+	}
+}
+
+function plugin_require($subpackages = null) {
+	if( is_string($subpackages) ){
+		$subpackages = array($subpackages);
+	}
+	if( is_array($subpackages) ){
+		foreach ($subpackages as $subpackage) {
+			require_once($subpackage . '.inc.php');
+		}
+	}
+}
+
+
 /**
  * Returns the security state of the current connection.
  * @return boolean TRUE if a secured connection is active. FALSE otherwhise.
  */
 function server_is_secure() {
 	return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
-}
-
-/**
- * Returns a unique hash of an object or a mixed hash value
- * @param mixed $value an object or a mixed value (string, bool, number)
- * @return string a unique hash to identify the value
- */
-function object_hash($obj) {
-	if (is_object($obj)) {
-		return spl_object_hash($obj);
-	}
-	return md5(print_r($obj, true));
 }

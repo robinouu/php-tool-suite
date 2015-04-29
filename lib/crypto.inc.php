@@ -3,8 +3,8 @@
  * Crypto
  * @package php-tool-suite
  */
-require_once('var.inc.php');
-require_once('random.inc.php');
+
+plugin_require(array('var', 'random'));
 
 function generate_key($key) {
 	return hash("SHA256", $key, true);

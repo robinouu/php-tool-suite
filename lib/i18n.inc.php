@@ -4,7 +4,8 @@
  * @package php-tool-suite
  * @subpackage Internationalization (i18n)
  */
-require_once('var.inc.php');
+
+plugin_require(array('var'));
 
 /**
  * Sets the current locale

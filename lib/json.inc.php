@@ -3,8 +3,8 @@
  * JSON
  * @package php-tool-suite
  */
-require_once('core.inc.php');
-require_once('var.inc.php');
+
+plugin_require(array('var'));
 
 function json_find($data, $key, $value, &$path = array()) {
 	foreach ($data as $k => $v) {

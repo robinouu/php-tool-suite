@@ -5,6 +5,8 @@
  * @subpackage response
  */
 
+plugin_require(array('var'));
+
 function redirect($url) {
 	header('Location: ' . $url);
 	exit;

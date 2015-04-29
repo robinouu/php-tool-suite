@@ -9,9 +9,7 @@
  * @subpackage variables
  */
 
-require_once('core.inc.php');
-require_once('array.inc.php');
-require_once('crypto.inc.php');
+plugin_require(array('array', 'crypto'));
 
 /* Scoped global variables */
 function &vars() {

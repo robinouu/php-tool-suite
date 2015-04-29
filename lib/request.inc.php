@@ -4,6 +4,8 @@
  * @package php-tool-suite
  */
 
+plugin_require(array('var'));
+
 function request_url($parsed = false) {
 	$url = var_get('request/url', '');
 	if( !$url && isset($_SERVER['SERVER_NAME'])){

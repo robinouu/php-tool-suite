@@ -4,9 +4,7 @@
  * @package php-tool-suite
  */
 
-require_once('core.inc.php');
-require_once('var.inc.php');
-require_once('url.inc.php');
+plugin_require(array('var', 'url'));
 
 var_set('crawler/HTTPCodeWhiteList', array(200, 201, 202, 203, 205, 210));
 var_set('crawler/fileExtBlackList', array('jpg', 'jpeg', 'bmp', 'png', 'gif', 'tar', 'gz', 'zip', 'xml', 'pdf', 'rar'));

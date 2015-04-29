@@ -4,7 +4,8 @@
  * @package php-tool-suite
  * @subpackage Hooks
  */
-require_once('var.inc.php');
+
+plugin_require(array('var'));
 
 /**
  * Registers a callback for a specified hook.

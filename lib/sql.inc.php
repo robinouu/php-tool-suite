@@ -4,8 +4,8 @@
  * @package php-tool-suite
  * @subpackage SQL
  */
-require_once('log.inc.php');
-require_once('var.inc.php');
+
+plugin_require(array('log', 'var'));
 
 /**
  * Connects to an SQL database using PDO, or return the current PDO object if already connected
