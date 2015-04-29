@@ -1,16 +1,16 @@
 <?php
 /**
- * Internationalization
+ * Internationalization (i18n)
  * @package php-tool-suite
+ * @subpackage Internationalization (i18n)
  */
 require_once('var.inc.php');
 
-if( !function_exists('__') ){
-	function __($str = '') {
-		return t($str);
-	}
-}
-
+/**
+ * Sets the current locale
+ * @param string|array $locale The locale to set, or an array of locales ordered by priority. By default, it is set to 'en_US'
+ * @return boolean TRUE if a locale have been set, FALSE otherwise.
+ */
 function set_locale($locales) {
 	if( !is_array($locales) ){
 		$locales = array($locales);
@@ -44,22 +44,10 @@ function set_locale($locales) {
 	return false;
 }
 
-function current_lang() {
-	$locale = current_locale();
-	if( preg_match('#^([a-z]{2})[\-_]#', $locale, $m) ){
-		return $m[1];
-	}
-	return '';
-}
-
-function preferred_lang() {
-	$locale = preferred_locale();
-	if( preg_match('#^([a-z]{2})[\-_]#', $locale, $m) ){
-		return $m[1];
-	}
-	return '';
-}
-
+/**
+ * Returns the current locale, that has been set by set_locale()
+ * @return string The current locale or an empty string.
+ */
 function current_locale() {
 	if( ($locale = session_var_get('i18n/locale')) !== null ) {
 		return $locale;
@@ -67,6 +55,10 @@ function current_locale() {
 	return '';
 }
 
+/**
+ * Returns the user preferred locale (uses detect_languages() internally)
+ * @return string The user preferred locale or an empty string.
+ */
 function preferred_locale() {
 	$languages = detect_languages();
 
@@ -82,6 +74,36 @@ function preferred_locale() {
 	return '';
 }
 
+/**
+ * Returns the current lang
+ * @return string The current lang or an empty string
+ */
+function current_lang() {
+	$locale = current_locale();
+	if( preg_match('#^([a-z]{2})[\-_]#', $locale, $m) ){
+		return $m[1];
+	}
+	return '';
+}
+
+
+/**
+ * Returns the user preferred lang (uses detect_languages() internally)
+ * @return string The user preferred lang or an empty string
+ */
+function preferred_lang() {
+	$locale = preferred_locale();
+	if( preg_match('#^([a-z]{2})[\-_]#', $locale, $m) ){
+		return $m[1];
+	}
+	return '';
+}
+
+/**
+ * Detects user preferred languages, based on HTTP_ACCEPT_LANGUAGE request variable
+ * @param $forceDetection Force re-parsing the HTTP_ACCEPT_LANGUAGE. Default to TRUE.
+ * @return array An array of detected languages, sorted by priority (q).
+ */
 function detect_languages($forceDetection = true) {
 	$langs = array();
 	if( !$forceDetection && ($langs = var_get('i18n/userLanguages')) !== null ){
@@ -109,6 +131,17 @@ function detect_languages($forceDetection = true) {
 	return array_keys($langs);
 }
 
+/**
+ * Loads translation in memory
+ * @param array $options The translation options
+ * <ul>
+ * 	<li>method string Can be 'gettext', or 'array'.</li>
+ * 	<li>dir string Used by gettext method, the directory containing the .po/.mo files</li>
+ * 	<li>file string Used by gettext method, the translation filename to load (without the extension)</li>
+ * 	<li>codeset string Used by gettext method, 'UTF-8' by default. Change it if you have set a custom locale codeset</li>
+ * 	<li>translations array Used by array method, an array of translations (the key contains the context, the value contains the translation).</li>
+ * </ul>
+ */
 function load_translations($options = array()) {
 	$options = array_merge(array(
 		'method' => 'array'
@@ -148,28 +181,30 @@ function load_translations($options = array()) {
 	var_set('i18n/translationData', $tData);
 }
 
-function t($str, $lang = null, $castTo = 'string'){
+/**
+ * Translates a string using current translation method
+ * @param string $context The string to translate
+ * @return string The translated string or the context string if not found.
+ */
+function t($str){
 	if( var_get('i18n/domain') !== null ){
 		return gettext($str);
-	}
-	if( $castTo == 'bool' ){
-		return strtolower($string) === 'true';
-	}
-	if ( is_string($str) ) {
+	}else{
 		$tData = var_get('i18n/translationData');
 		if( isset($tData->versions[$str]) ){
 			return $tData->versions[$str];
 		}
-		return $str;
-	}elseif( is_numeric($str) ){
-		if( is_double($str) ){
-			return (double)$str;
-		}elseif( is_float($str) ){
-			return (float)$str;
-		}
-	}elseif( is_null($str) || mb_strtolower($str) === 'null' ){
-		return null;
 	}
-	return '';
+	return $str;
+}
+
+
+if( !function_exists('__') ){
+	/**
+	 * An alias of t() for compatibility purpose
+	 */
+	function __($str = '') {
+		return t($str);
+	}
 }
 

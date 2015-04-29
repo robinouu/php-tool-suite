@@ -28,6 +28,11 @@ function server_is_secure() {
 	return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 }
 
+/**
+ * Returns a unique hash of an object or a mixed hash value
+ * @param mixed $value an object or a mixed value (string, bool, number)
+ * @return string a unique hash to identify the value
+ */
 function object_hash($obj) {
 	if (is_object($obj)) {
 		return spl_object_hash($obj);

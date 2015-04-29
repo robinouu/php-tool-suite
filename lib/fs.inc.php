@@ -27,6 +27,14 @@ function rmdir_recursive($dir) {
 	return browse_recursive($dir, 'unlink', 'rmdir');
 }
 
+/**
+ * Browses a directory recursively.
+ * @param string $dir The directory to browse
+ * @param callable $callback A callback to use for each file in the current directory. The current path is passed to the function.
+ * @param callable $callbackAfter A callback called after each browsed directory. The current dir is passed to the function.
+ * @param array $ignorePaths An array of paths to ignore.
+ * @return boolean TRUE if the directory has been browsed. FALSE otherwise.
+ */
 function browse_recursive($dir, $cbEach = null, $cbAfter = null, $ignorePaths = array()) {
 	$files = scandir($dir);
 	if( !$files ){
@@ -44,6 +52,7 @@ function browse_recursive($dir, $cbEach = null, $cbAfter = null, $ignorePaths = 
 		}
 	}
 	if( $cbAfter ){
-		return call_user_func($cbAfter, $dir);
+		call_user_func($cbAfter, $dir);
 	}
+	return TRUE;
 }

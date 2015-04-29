@@ -41,7 +41,19 @@ function javascript($attrs) {
 	return '<script type="text/javascript" ' . attrs($attrs) . '></script>';
 }
 
-
+/**
+ * Returns a minimal template of an HTML 5 valid page
+ * @param array $options The page options
+ * <ul>
+ *	<li>title string The page title</li>
+ *	<li>meta array An array of meta key/value pairs</li>
+ *	<li>lang string The page lang. Default to current_lang()</li>
+ *	<li>stylesheets string Appends stylesheets tags to the head</li>
+ *	<li>scripts string Appends scripts tags to the end of the body</li>
+ *	<li>body string The page content</li>
+ * </ul>
+ * @return string The HTML 5 template.
+ */
 function html5($args) {
 
 	$stylesheets_str = '';
@@ -86,13 +98,12 @@ function html5($args) {
 	$head .= hook_do('html_stylesheets');
 
 	$head .= $stylesheets_str;
-	$head .= $scripts_str;
 
 	$head .= hook_do('html_head');
 
 	$page = tag('head', $head);
 
-	$page .= tag('body', $args['body']);
+	$page .= tag('body', $args['body'] . $scripts_str);
 
 	$page .= hook_do('html_scripts');
 
@@ -128,22 +139,26 @@ function text_vars($text, $vars) {
 	return $text; 
 }
 
-function menu($items = array(), $attrs = array()) {
+/**
+ * Returns an HTML representation of a menu.
+ * @param array $items The menu items. If the array is associative, creates hyperlinks for values.
+ * @param array $attrs The ul attributes.
+ * @param callable $callback An optional callback to use to print the items content.
+ * @param boolean $isNav If set to TRUE, wraps the menu with a navigation ARIA role on a nav tag.
+ * @return An HTML representation of a menu
+ */
+function menu($items = array(), $attrs = array(), $callback = array(), $isNav = false) {
 
-	$attrs = array_merge(array('class' => 'menu', 'callback' => null), $attrs);
-
-	$cb = null;
-	if( is_callable($attrs['callback']) ){
-		$cb = $attrs['callback'];
-		unset($attrs['callback']);
+	$html = '';
+	if( $isNav ){
+		$html .= '<nav role="navigation">';
 	}
-
-	$html = '<nav role="navigation"><ul ' . attrs($attrs) . '>';
+	$html .= '<ul ' . attrs($attrs) . '>';
 	foreach ($items as $key => $value) {
 		if( is_string($value) ){
 			$html .= '<li class="item item-link">';
-			if( $cb ){
-				$html .= $cb($key, $value);
+			if( is_callable($callback) ){
+				$html .= $callback($key, $value);
 			}elseif( is_integer($key) ){
 				$html .= $value;
 			}else {
@@ -152,7 +167,10 @@ function menu($items = array(), $attrs = array()) {
 			$html .= '</li>';
 		}
 	}
-	$html .= '</ul></nav>';
+	$html .= '</ul>';
+	if( $isNav ){
+		$html .= '</nav>';
+	}
 	return $html;
 }
 
@@ -248,10 +266,22 @@ function search($options = array()) {
 	return tag('form', fieldset($options['title'], field($options['searchField']) . button_submit($options['button.label'], $options['button.field'])), $options['form']);
 }
 
+/**
+ * Returns an HTML title (hn)
+ * @param string $content The content of the hn
+ * @param int $level The hn hierarchy level (1-6)
+ * @param array $attrs The hn attributes
+ * @return The hn title tag
+ */
 function title($label, $level = 1, $attrs = array()){
 	return tag('h' . $level, $label, $attrs);
 }
 
+/**
+ * Encodes a text to its HTML representation
+ * @param string $content The text content
+ * @return The HTML representation of a text.
+ */
 function text($content) {
 	return nl2br(htmlspecialchars($content));
 }
