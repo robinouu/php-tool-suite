@@ -155,6 +155,13 @@ function field($field = array()) {
 	return $label . $html;
 }
 
+function fields($fields) {
+	$html = '';
+	foreach ($fields as $value) {
+		$html .= field($value);
+	}
+	return $html;
+}
 
 /**
  * Validates a field value.
