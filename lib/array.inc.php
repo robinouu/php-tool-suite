@@ -126,16 +126,15 @@ function array_unset(&$arr, $path)
 	$segments = is_array($path) ? $path : explode('/', $path);
 	$cur =& $arr;
 
-
 	$i = 0;
 	$size = sizeof($segments);
 	foreach ($segments as $segment) {
 		if( !isset($cur[$segment]) ){
-			return $arr;
+			return FALSE;
 		}
 		if( $i == $size - 1) {
 			unset($cur[$segment]);
-			return $arr;
+			return FALSE;
 		}
 		$cur =& $cur[$segment];
 		++$i;

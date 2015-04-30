@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 class MinimalTest extends PHPUnit_Framework_TestCase {
 
@@ -28,7 +29,9 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
     }
 
     public function test_var() {
+    	require_once('lib/core.inc.php');
     	require_once('lib/var.inc.php');
+
     	print 'var : ';
 
 		$this->assertNull(var_get('path'));
@@ -46,6 +49,13 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertTrue(var_set(array('arrayPath', 'arrayPath2'), true));
 		$this->assertTrue(var_get('arrayPath/arrayPath2'));
+
+		// Check session accessors
+		$this->assertTrue(session_var_set(array('arrayPath'), true));
+		$this->assertTrue(session_var_get('arrayPath'));
+
+		$this->assertTrue(session_var_set(array('arrayPath', 'arrayPath2'), true));
+		$this->assertTrue(session_var_get('arrayPath/arrayPath2'));
 
 		// Append
 		var_append('arrayPath', 'arrayPath3');
@@ -321,7 +331,6 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		print 'done' . "\r\n";
     }
-
 
     protected $backupGlobals = FALSE;
 }

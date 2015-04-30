@@ -22,11 +22,11 @@ function &vars() {
  *
  * @param string|array $path The variable path.
  * @param mixed $value The value to insert.
- * @param array $data The reference data array (if NULL, $_GLOBALS will be used)
+ * @param array $data The reference data array (if NULL, vars() will be used)
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
  */
 function var_set($path = array(), $value = null, $data = null) {
-	if( !$data ){
+	if( is_null($data) ){
 		$data = &vars();
 	}
 	return array_set($data, $path, $value);
@@ -37,11 +37,11 @@ function var_set($path = array(), $value = null, $data = null) {
  *
  * @param string|array $path The variable path.
  * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
- * @param array $data The context array where to find the variable. By default, and if NULL, $_GLOBALS will be used.
+ * @param array $data The context array where to find the variable. By default, and if NULL, vars() will be used.
  * @return mixed The global variable value.
  */
-function var_get($path = array(), $default = null, $data = false) {
-	if( !$data ){
+function var_get($path = array(), $default = null, $data = null) {
+	if( is_null($data) ){
 		$data = &vars();
 	}
 	if( !is_null($back = array_get($data, $path)) ){
@@ -60,11 +60,11 @@ function var_get($path = array(), $default = null, $data = false) {
  * @param string|array $path The variable path.
  * @param string $key The associative key to append.
  * @param mixed $value The associative value to append.
- * @param array $data The reference data array where to append the value. By default, and if NULL, $_GLOBALS will be used.
+ * @param array $data The reference data array where to append the value. By default, and if NULL, vars() will be used.
  * @return boolean TRUE if the variable has been added. FALSE otherwise.
  */
 function var_append($path = array(), $key, $value = null, $data = null) {
-	if( !$data ){
+	if( is_null($data) ){
 		$data = &vars();
 	}
 	return array_append($data, $path, $key, $value);
@@ -74,11 +74,11 @@ function var_append($path = array(), $key, $value = null, $data = null) {
  * Unsets a variable.
  *
  * @param string|array $path The variable path.
- * @param array The context array where to unset the variable. By default, and if NULL, $_GLOBALS will be used.
+ * @param array The context array where to unset the variable. By default, and if NULL, vars() will be used.
  * @return boolean TRUE if the variable has been unset. FALSE otherwise.
  */
 function var_unset($path, $data = null) {
-	if( !$data ){
+	if( is_null($data) ){
 		$data = &vars();
 	}
 	return array_unset($data, $path);
@@ -93,7 +93,22 @@ function var_unset($path, $data = null) {
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
  */
 function session_var_set($path = array(), $value = null) {
-	return var_set($path, $value, $_SESSION);
+	if (!$path)
+		return false;
+
+	$segments = is_array($path) ? $path : explode('/', $path);
+	$cur =& $_SESSION;
+	foreach ($segments as $segment) {
+		if( !is_array($cur) ){
+			$cur = array($segment => array());
+		}
+		if( !isset($cur[$segment]) ){
+			$cur[$segment] = array();
+		}
+		$cur =& $cur[$segment];
+	}
+	$cur = $value;
+	return true;
 }
 
 
@@ -105,7 +120,27 @@ function session_var_set($path = array(), $value = null) {
  * @return boolean TRUE if the variable has been unset. FALSE otherwise.
  */
 function session_var_unset($path = array()) {
-	return var_unset($path, $_SESSION);
+	if (!$path)
+		return false;
+
+	$segments = is_array($path) ? $path : explode('/', $path);
+	$cur =& $_SESSION;
+
+	$i = 0;
+	$size = sizeof($segments);
+	foreach ($segments as $segment) {
+		if( !isset($cur[$segment]) ){
+			return FALSE;
+		}
+		if( $i == $size - 1) {
+			unset($cur[$segment]);
+			return TRUE;
+		}
+		$cur =& $cur[$segment];
+		++$i;
+	}
+	
+	return TRUE;
 }
 
 /**
@@ -116,7 +151,18 @@ function session_var_unset($path = array()) {
  * @return mixed The variable value.
  */
 function session_var_get($path = array(), $default = null) {
-	return var_get($path, $default, $_SESSION);
+	if (!$path)
+		return $_SESSION;
+
+	$segments = is_array($path) ? $path : explode('/', $path);
+	$cur = $_SESSION;
+	foreach ($segments as $segment) {
+		if (!isset($cur[$segment])){
+			return null;
+		}
+		$cur = $cur[$segment];
+	}
+	return $cur;
 }
 
 /**
