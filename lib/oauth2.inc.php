@@ -7,16 +7,16 @@ function oauth_connect($options = array()) {
 		'authType' => 'uri',
 		'certificate' => null,
 		'redirectTo' => request_url(),
-		'params' => array()
+		'parameters' => array()
 	), $options);
 
 	$params = array_merge(array(
 		'response_type' => 'code',
 		'client_id' => $options['clientID'],
 		'redirect_uri' => $options['redirectTo'],
-	), $options['params']);
+	), $options['parameters']);
 
-	$authURL = $options['authEndPoint'] . '?' . http_build_query($params, null, '&');
+	$authURL = $options['authEndPoint'] . '?' . http_build_query($options['parameters'], null, '&');
 
 	redirect($authURL);
 }
@@ -36,7 +36,6 @@ function oauth_token(&$options = array()) {
 		'code' => $options['authorization_code']
 	), $options['params']);
 
-	// do curl stuff to get user data
 	$endPointURL = $options['tokenEndPoint'];
 
 	$res = oauth_request($endPointURL, $params);
@@ -60,12 +59,33 @@ function oauth_fetch($url, $options) {
 	return oauth_request($url, $options['params'], $options['http_method'], $options['http_headers']);
 }
 
-function oauth_request($url, $params = array(), $verb = 'POST', $headers = array()) {
+function oauth_signature($url, $params, $clientID, $clientSecret, $http_method = 'POST' ) {
+	foreach ($params as $key => $value) {
+		$params[$key] = rawurlencode($value);
+	}
+	ksort($params);
+	$parameters = array();
+	foreach ($params as $key => $value) {
+		$parameters[] = $key . '=' . $value;
+	}
+	$signature = strtoupper($http_method);
+	$signature .= '&' . rawurlencode($url) . '&' . rawurlencode(implode('&', $parameters));
 	
-	if( sizeof($params) ){
-		$params = http_build_query($params, null, '&');
+	if( !$clientID && $clientSecret ){
+		$consumer = rawurlencode($clientSecret) . '&';
+	}elseif( $clientID ){
+		$consumer = rawurlencode($clientID) . '&' . rawurlencode($clientSecret);
 	}
 
+	$hmac = base64_encode(hash_hmac('sha1', $signature, $consumer, true));
+	return $hmac;
+}
+function oauth_request($url, $params = array(), $verb = 'POST', $headers = array()) {
+
+	if( $params ){
+		$params = http_build_query($params, null, '&');
+	}
+	
 	$verb = strtoupper($verb);
 	if( $verb === 'GET' && sizeof($params) ){
 		$url .= '?' . $params;
@@ -77,13 +97,14 @@ function oauth_request($url, $params = array(), $verb = 'POST', $headers = array
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	curl_setopt($ch, CURLOPT_USERAGENT, 'OAuth2 Client');
 
 	if( is_array($headers) ){
 		$curl_headers = array();
 		foreach( $headers as $key => $value) {
 			$curl_headers[] = $key . ': ' . $value;
 		}
-		$curl_options[CURLOPT_HTTPHEADER] = $curl_headers;
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $curl_headers);
 	}
 	
 	if( $verb === 'POST' ){
