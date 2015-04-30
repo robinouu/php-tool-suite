@@ -317,9 +317,7 @@ function button_submit($label = 'Submit', $attrs = array()) {
 function attrs($attrs = array()) {
 	$html = '';
 	if( !is_array($attrs) ){
-		LOG_ARRAY($attrs);
-		print 'ERROR';
-		return $html;	
+		return '';	
 	}
 	$attributes = array();
 	foreach ($attrs as $key => $value) {
