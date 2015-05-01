@@ -13,8 +13,8 @@ function redirect($url) {
 }
 
 function response_route($route = '/', $callback = null, $verbs = null){
-	$url = request_url(true);
-	$path = isset($url['path']) ? $url['path'] : '';
+	
+	$path = request_route();
 
 	if( is_string($verbs) ){
 		$verbs = array($verbs);

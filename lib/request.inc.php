@@ -6,6 +6,11 @@
 
 plugin_require(array('var'));
 
+function request_route() {
+	request_url();
+	return var_get('request/url/path');
+}
+
 function request_url($parsed = false) {
 	$url = var_get('request/url', '');
 	if( !$url && isset($_SERVER['SERVER_NAME'])){
@@ -17,9 +22,6 @@ function request_url($parsed = false) {
 		}
 		var_set('request/url', $url = parse_url($strUrl));
 	}
-	if( $parsed ){
-		return $url;
-	}
 	if( isset($url['scheme'], $url['host'], $url['path']) ){
 		return $url['scheme'] . '://' . $url['host'] . $url['path'];
 	}
@@ -27,7 +29,8 @@ function request_url($parsed = false) {
 }
 
 function root_url() {
-	$url = request_url(true);
+	request_url();
+	$url = var_get('request/url');
 	if( isset($url['scheme'], $url['host'], $url['path']) ){
 		return $url['scheme'] . '://' . $url['host'] . $url['path'];
 	}

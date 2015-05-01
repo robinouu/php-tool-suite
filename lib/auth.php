@@ -6,9 +6,8 @@ function auth() {
 
 	$auth = hook_do('plugin/auth');
 
-	$url = request_url();
-	$url = $url['path'];
-
+	$url = request_route();
+	
 	if( isset($auth['areas']) ){
 		foreach ($auth['areas'] as $realm => $area) {
 			if( is_string($area['routes']) ){
