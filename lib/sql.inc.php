@@ -485,13 +485,14 @@ function sql_get($table, $options = array()){
 		$fields = '*';
 		$onlyOne = false;
 
-		if( isset($options['fields']) ) {
-			if( is_string($options['fields']) ){
-				$fields = array_map('trim', explode(',', $options['fields']));
-				$onlyOne = sizeof($options['fields']) == 1;
-			}elseif( is_array($options['fields']) ){
-				$fields = $options['fields'];
-				$onlyOne = sizeof($options['fields']) == 1;
+		// SELECT CLAUSE
+		if( isset($options['select']) ) {
+			if( is_string($options['select']) ){
+				$fields = array_map('trim', explode(',', $options['select']));
+				$onlyOne = sizeof($options['select']) == 1;
+			}elseif( is_array($options['select']) ){
+				$fields = $options['select'];
+				$onlyOne = sizeof($options['select']) == 1;
 			}
 		}
 
@@ -509,7 +510,7 @@ function sql_get($table, $options = array()){
 					$join = array_merge(array(
 						'alias' => '',
 						'left' => 'id',
-						'right' => 'id',
+						'right' => $table,
 						'type' => 'INNER JOIN'), $join);
 					$query .= ' ' . $join['type'] . ' ' . sql_quote($join['table'], true) . ' ' . $join['alias'] .
 						' ON ' . ($join['alias'] ? $join['alias'] : sql_quote($join['table'], true)) . '.' . $join['right'] . ' = ' . ($options['alias'] ? $options['alias'] : sql_quote($table, true)) . '.' . $join['left'];
@@ -533,7 +534,6 @@ function sql_get($table, $options = array()){
 		}
 	}
 
-	//var_dump($query);
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 	if( isset($options['limit']) && $options['limit'] === 1 ){
 		return $res[0];
