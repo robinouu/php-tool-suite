@@ -303,7 +303,7 @@ function sql_quote($text, $column_or_table = false){
 	if( !$column_or_table ){
 		return $sql->quote($text);
 	}
-	return preg_replace('/[^0-9a-zA-Z_]/', '', $text);
+	return '`' . str_replace('`', '``', $text) . '`';
 }
 
 
