@@ -158,7 +158,10 @@ function session_var_get($path = array(), $default = null) {
 	$cur = $_SESSION;
 	foreach ($segments as $segment) {
 		if (!isset($cur[$segment])){
-			return null;
+			if( is_callable($default) ){
+				return $default();
+			}
+			return $default;
 		}
 		$cur = $cur[$segment];
 	}
