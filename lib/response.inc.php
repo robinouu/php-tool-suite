@@ -20,11 +20,24 @@ function response_route($route = '/', $callback = null, $verbs = null){
 		$verbs = array($verbs);
 	}
 	if( (is_null($verbs) || in_array($_SERVER['REQUEST_METHOD'], $verbs)) && preg_match("#^" . $route . "$#ui", $path, $m) ){
+
+		// Global hook middleware
 		ob_start();
-		$callback($m);
+		hook_do('response_route');
 		$content = ob_get_contents();
 		ob_end_clean();
+
+		// Particular route middleware
+		hook_register('response_route'.$route, $callback);
+
+		ob_start();
+		hook_do('response_route'.$route, $m);
+		$content .= ob_get_contents();
+
+		ob_end_clean();
+
 		print $content;
+
 		var_set('routeFound', true);
 		return true;
 	}
