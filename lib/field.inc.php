@@ -174,83 +174,96 @@ function field_validate($field, $value = null, &$data = null){
 	$field = array_merge(var_get('field/default', array()), $field);
 
 	$key = $field['name'];
+
 	$errors = array($key => array());
 	$d = !is_null($value) ? $value : field_value($field);
 
-	if ($field['required'] && !$d ) {
-		$errors[$key][] = field_error_message($field, 'required');
-	}
+	$data = array();
 
-	switch ($field['type']) {
-		case 'int':
-		case 'float':
-		case 'double':
-			if( is_numeric($field['min']) && $d < $field['min'] ){
-				$errors[$key][] = field_error_message($field, 'min');
-			}
-			if( is_numeric($field['max']) && $d > $field['max'] ){
-				$errors[$key][] = field_error_message($field, 'max');
-			}
-		break;
-		case 'phone':
-			if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
-				$errors[$key][] = field_error_message($field);
-			}
-		break;
-		case 'data':
-		case 'datetime':
-			if( $field['required'] && !strtotime($d) ){
-				$errors[$key][] = field_error_message($field, 'date');
-			}
-		break;
-		case 'text':
-		case 'password':
-		case 'email':
-			if( $field['required'] && !is_string($d) ){
-				$errors[$key][] = field_error_message($field, 'not_string');
-			}else{
-				if( isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
-					if( strlen($d) > (int)$field['maxlength'] ){
-						$errors[$key][] = field_error_message($field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
-					}
-				}
-				if( isset($field['minlength']) && (int)$field['minlength'] > 0 ){
-					if( strlen($d) < (int)$field['minlength'] ){
-						$errors[$key][] = field_error_message($field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
-					}
-				}
-				if( $field['type'] === 'email' ){
-					require_once('lib/vendor/is_email.inc.php'); // validate an email address according to RFCs 5321, 5322 and others, by Dominic Sayers
-					if( $field['required'] || $d !== '' ){
-						if( function_exists('is_email') ){
-							$valid = is_email($d);
-						}else{
-							$valid = filter_var($d, FILTER_VALIDATE_EMAIL);
-						}
-						if( !$valid ){
-							$errors[$key][] = field_error_message($field, 'invalid_email'); //'L\'adresse email est invalide.';
-						}
-					}
-				}
-			}
-			break;
-		default:
-			# code...
-			break;
-	}
-
-	if( !sizeof($errors[$key]) ){
-		unset($errors[$key]);
-	}
-
-	if( !is_array($data) || !sizeof($data) ){
-		$data = array('data' => $d, 'errors' => $errors);
+	$hookedValidation = array();
+	$hookedValidation = hook_do('field_validate/' . $key);
+	if(is_array($hookedValidation) ){
+		$data = $hookedValidation;
+		if( !isset($data['data'][$key]) ){
+			$data['data'][$key] = $d;
+		}
 	}else{
-		$data['data'] = $d;
+		switch ($field['type']) {
+			case 'int':
+			case 'float':
+			case 'double':
+				if( is_numeric($field['min']) && $d < $field['min'] ){
+					$errors[$key][] = field_error_message($field, 'min');
+				}
+				if( is_numeric($field['max']) && $d > $field['max'] ){
+					$errors[$key][] = field_error_message($field, 'max');
+				}
+			break;
+			case 'phone':
+				if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
+					$errors[$key][] = field_error_message($field);
+				}
+			break;
+			case 'data':
+			case 'datetime':
+				if( $field['required'] && !strtotime($d) ){
+					$errors[$key][] = field_error_message($field, 'date');
+				}
+			break;
+			case 'text':
+			case 'password':
+			case 'email':
+				if( $field['required'] && !is_string($d) ){
+					$errors[$key][] = field_error_message($field, 'not_string');
+				}else{
+					if( isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
+						if( strlen($d) > (int)$field['maxlength'] ){
+							$errors[$key][] = field_error_message($field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
+						}
+					}
+					if( isset($field['minlength']) && (int)$field['minlength'] > 0 ){
+						if( strlen($d) < (int)$field['minlength'] ){
+							$errors[$key][] = field_error_message($field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
+						}
+					}
+					if( $field['type'] === 'email' ){
+					 	// validate an email address according to RFCs 5321, 5322 and others, by Dominic Sayers
+						plugin_require('vendor/is_email');
+						if( $field['required'] || $d !== '' ){
+							if( function_exists('is_email') ){
+								$valid = is_email($d);
+							}else{
+								$valid = filter_var($d, FILTER_VALIDATE_EMAIL);
+							}
+							if( !$valid ){
+								$errors[$key][] = field_error_message($field); //'L\'adresse email est invalide.';
+							}
+						}
+					}
+				}
+				break;
+			default:
+				# code...
+				break;
+		}
+
+		if( $field['required'] && !$d  && !sizeof($errors[$key]) ){
+			$errors[$key][] = field_error_message($field, 'required');
+		}
+	}
+
+	if( !sizeof($data) ){
+		$data = array('data' => array($key => $d), 'errors' => $errors);
+	}elseif( !$hookedValidation ){
+		$data['data'] = array($key => $d);
 		$data['errors'] = $errors;
 	}
 
-	return !sizeof($errors);
+	if( !sizeof($data['errors'][$key]) ){
+		unset($data['errors'][$key]);
+	}
+
+	return !sizeof($data['errors']);
 }
 
 
@@ -269,11 +282,20 @@ function fields_validate($fields, $values = null, &$data = null) {
 
 	$data = array();
 	foreach ($fields as $fieldName => $field) {
-		$field['name'] = $fieldName;
+		if( !isset($field['name']) ){
+			$field['name'] = $fieldName;
+		}
 		$back = array();
 		field_validate($field, isset($values[$fieldName]) ? $values[$fieldName] : field_value($field), $back);
 		$data = array_merge_recursive($data, $back);
 	}
+
+	$hookedValidation = array();
+	$hookedValidation = hook_do('fields_validate');
+	if( $hookedValidation ){
+		$data = array_merge_recursive($data, $hookedValidation);
+	}
+
 	return !sizeof($data['errors']);
 }
 
