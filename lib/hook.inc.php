@@ -14,13 +14,15 @@ plugin_require(array('var'));
  * @param int $priority An optional priority value of execution.
  */
 function hook_register($name, $callback, $priority = 1) {
-	if( !var_get('hooks/' . $name) ){
-		var_set('hooks/' . $name, array());
+	$name = object_hash($name);
+	if( !var_get('hooks/' . $name . '/' . $priority) ){
+		var_set('hooks/' . $name . '/' . $priority, array());
 	}
-	var_append('hooks/' . $name, $priority, array(object_hash($callback) => $callback));
+	var_append('hooks/' . $name . '/' . $priority, object_hash($callback), $callback);
 }
 
 function hook_get($name = null, $priority = null){
+	$name = object_hash($name);
 	$hooks = array();
 
 	// return all hooks for all hook names
@@ -65,6 +67,9 @@ function hook_get($name = null, $priority = null){
  * </ul>
  */
 function hook_do($name, $args = array()) {
+	$realName = $name;
+	$name = object_hash($name);
+
 	if( !($hook = var_get('hooks/' . $name)) ){
 		return NULL;
 	}
@@ -72,9 +77,10 @@ function hook_do($name, $args = array()) {
 	$args = array($args);
 
 	$backValue = null;
-	foreach (hook_get($name) as $callback) {
+	foreach (hook_get($realName) as $callback) {
 		// Merge back args
 		$value = call_user_func_array($callback, $args);
+		
 		if( is_array($value) ){
 			$backValue = is_null($backValue) ? $value : (is_array($backValue) ? array_merge($backValue, $value) : array_merge_recursive(array($backValue), $value));
 		}elseif( is_string($value) ){
@@ -98,6 +104,8 @@ function hook_do($name, $args = array()) {
  * @param string $name The hook name.
  */
 function hook_unregister($name = null, $callback = null, $priority = null) {
+	$name = object_hash($name);
+
 	//Hook::remove($name);
 	if( is_null($name) ){
 		var_set('hooks', array());
