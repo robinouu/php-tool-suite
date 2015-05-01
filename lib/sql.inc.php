@@ -421,7 +421,8 @@ function sql_create_table($options) {
 		$engine = ' ENGINE=' . sql_quote($options['engine']);
 	}
 
-	$prefix = var_get('sql/prefix', '');
+	$prefix = sql_prefix();
+
 	$query = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($prefix . $options['name'], true) . ' (' . implode(', ', $attributes) . ' ) ' . $comment . $collation . $engine . ';';
 	return sql_query($query, null, null);
 }

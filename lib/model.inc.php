@@ -8,6 +8,8 @@ function models_to_sql($models = array()) {
 	$tables = array();
 	$manyTables = array();
 
+	$prefix = sql_prefix();
+
 	foreach ($models as $id => $mod) {
 		$mod = array_merge(array(
 			'comment' => null,
@@ -42,15 +44,18 @@ function models_to_sql($models = array()) {
 				}
 
 				if( $field['hasMany'] ){
-					$manyTableName = $fieldName . '_' . $field['data'];
+					$manyTableName = $tableName . '_' . $fieldName;
 					$manyTables[] = array(
 						'name' => $manyTableName,
 						'hasID' => false,
-						'columns' => array('id_' . $fieldName . ' int(11) NOT NULL, ', 'id_' . $field['data'] . ' int(11) NOT NULL'),
-						'primaryKeys' => array('id_' . $fieldName . ',id_' . $field['data']),
+						'columns' => array(
+							'id_' . $tableName . ' int(11) NOT NULL',
+							'id_' . $fieldName . ' int(11) NOT NULL'
+						),
+						'primaryKeys' => array('id_' . $tableName . ',id_' . $fieldName),
 						'foreignKeys' => array(
-							'id_' . $fieldName => array('name' => 'FK_id_' . $manyTableName . '_' . $fieldName, 'ref' => $prefix . $fieldName.'(id)'),
-							'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
+							'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $fieldName, 'ref' => $prefix . $tableName.'(id)'),
+							'id_' . $fieldName => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
 						)
 					);
 
@@ -99,6 +104,7 @@ function models_to_sql($models = array()) {
 	}
 
 	foreach( $manyTables as $manyTable ) {
+		var_dump($manyTable);
 		sql_create_table($manyTable);
 	}
 }
