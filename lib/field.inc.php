@@ -288,21 +288,21 @@ function field_error_message($field, $error = '')
 {	
 	$label = '<strong>' . (isset($field['label']) ? $field['label'] : ucfirst($field['name'])) . '</strong>';
 	if( $error === 'required' ){
-		return t('The field') . ' ' . $label . ' ' . t('is required');
+		return t('the field %s is required', array($label));
 	}elseif( $error === 'minlength' ){
-		return t('The field') . ' ' . $label . ' ' . t('cannot contain less than') . ' ' . $field['minlength'] . ' ' . t('characters');
+		return t('the field %s cannot contain less than %d characters', array($label, $field['minlength']));
 	}elseif( $error === 'maxlength' ){
-		return t('The field') . ' ' . $label . ' ' . t('cannot contain more than') . ' ' . $field['maxlength'] . ' ' . t('characters');
+		return t('the field %s cannot contain more than %d characters', array($label, $field['maxlength']));
 	}elseif( $error === 'unique' ){
-		return t('The field') . ' ' . $label . ' ' . t('already exist in database.');
+		return t('the field %s already exists in database.', array($label));
 	}elseif( $error === 'min' ){
-		return t('The field') . ' ' . $label . ' ' . t('must be greater than') . ' ' . $field['min'];
+		return t('the field %s must be greater than %d', array($label, $field['min']));
 	}elseif( $error === 'max' ){
-		return t('The field') . ' ' . $label . ' ' . t('must be lower than') . ' ' . $field['max'];
+		return t('the field %s must be lower than %d', array($label, $field['max']));
 	}elseif( $error === 'max' ){
-		return t('The date field') . ' ' . $label . ' ' . t('is invalid');
+		return t('the date field %s is invalid', array($label));
 	}else{
-		return t('The field') . ' ' . $label . ' ' . t('is invalid');
+		return t('the field %s is invalid', array($label));
 	}
 }
 

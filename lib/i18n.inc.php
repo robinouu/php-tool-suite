@@ -185,18 +185,24 @@ function load_translations($options = array()) {
 /**
  * Translates a string using current translation method
  * @param string $context The string to translate
+ * @param array $args The argument to use for that string. This method works in fact like vsprintf() for translated strings.
+ * @see http://php.net/manual/en/function.vsprintf.php
  * @return string The translated string or the context string if not found.
  */
-function t($str){
+function t($str, $args = array()){
+	$translated = $str;
 	if( var_get('i18n/domain') !== null ){
-		return gettext($str);
+		$translated = gettext($str);
 	}else{
 		$tData = var_get('i18n/translationData');
 		if( isset($tData->versions[$str]) ){
-			return $tData->versions[$str];
+			$translated = $tData->versions[$str];
 		}
 	}
-	return $str;
+	if( sizeof($args) ){
+		return vsprintf($translated, $args);
+	}
+	return $translated;
 }
 
 

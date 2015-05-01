@@ -104,7 +104,6 @@ function models_to_sql($models = array()) {
 	}
 
 	foreach( $manyTables as $manyTable ) {
-		var_dump($manyTable);
 		sql_create_table($manyTable);
 	}
 }

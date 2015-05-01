@@ -464,7 +464,7 @@ function sql_alter_table($table, $options = array()) {
 /**
  * Returns the current PDO driver.
  * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
- * @see http://php.net/manual/fr/pdo.getavailabledrivers.php
+ * @see http://php.net/manual/en/pdo.getavailabledrivers.php
  */
 function sql_driver() {
 	$sql = sql_connect();
@@ -508,7 +508,7 @@ function sql_get($table, $options = array()){
 				foreach ($options['join'] as $join) {
 					$join = array_merge(array(
 						'alias' => '',
-						'left' => $join['table'],
+						'left' => 'id',
 						'right' => 'id',
 						'type' => 'INNER JOIN'), $join);
 					$query .= ' ' . $join['type'] . ' ' . sql_quote($join['table'], true) . ' ' . $join['alias'] .
