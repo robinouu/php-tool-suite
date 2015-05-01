@@ -259,7 +259,7 @@ function field_validate($field, $value = null, &$data = null){
 		$data['errors'] = $errors;
 	}
 
-	if( !sizeof($data['errors'][$key]) ){
+	if( isset($data['errors'][$key]) && !sizeof($data['errors'][$key]) ){
 		unset($data['errors'][$key]);
 	}
 
