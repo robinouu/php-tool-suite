@@ -25,11 +25,7 @@ function hook_get($name = null, $priority = null){
 
 	// return all hooks for all hook names
 	if( is_null($name) ){
-		foreach (array_keys(var_get('hooks', array())) as $hook_name) {
-			foreach (self::get($hook_name) as $callback) {
-				$hooks[] = $callback;
-			}
-		}
+		$hooks = array_values(var_get('hooks', array()));
 		return $hooks;
 	}
 
