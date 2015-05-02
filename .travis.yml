@@ -34,3 +34,5 @@ notifications:
 
 env:
     - IMPORT_DATA_PATH=/var/lib/mysql/datas
+
+sudo: required
