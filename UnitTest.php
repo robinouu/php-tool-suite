@@ -286,7 +286,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(sql_driver(), 'mysql');
 
 		// Test CSV import
-		csv_write('signable.csv', array(
+		csv_write(dirname(__FILE__).'/signable.csv', array(
 			array('login1', 'pass1'),
 			array('login2', 'pass2'),
 			array('login3', 'pass3')
