@@ -163,7 +163,7 @@ function sql_update($table, $fields = array(), $where = null) {
 	foreach ($fields as $key => $value) {
 		$sql_fields[] = $key . ' = ' . sql_quote($value);
 	}
-	$query .= ' SET ' . implode(',', $sql_fields) . ' ';
+	$query .= ' SET ' . implode(', ', $sql_fields) . ' ';
 	$q = $sql->prepare($query . (!is_string($where) ? '' : ' WHERE ' . $where . ';'));
 	if( !$q ){
 		print $sql->debugDumpParams();
@@ -255,28 +255,34 @@ function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
 	return $res;
 }
 
-function sql_logic($conditions) {
+function sql_logic($conditions, $op = 'AND') {
 	$res = '';
-	$lastArray = false;
+	$isArray = false;
 	foreach ($conditions as $k => $el) {
+		if( is_array($el) && $isArray ){
+			$res .= ' ' . $op;
+		}else{
+			$isArray = false;
+		}
 		if( is_numeric($k) && is_string($el) ) {
-			$res .= ' ' . $el . ' ';
-			$lastArray = false;
+			$res .= ' ' . trim($el);
 			continue;
 		}
-		if( $lastArray ){
-			$res .= ' AND ';
-		}
 		if (is_numeric($k) && is_array($el) ){
-			$res .= sql_logic($el);
+			$res .= ' ' . sql_logic($el, $op);
+			$isArray = true;
 		}else{
-			if( is_array($el) ){
+			if( is_string($k) ){
+				if( !is_array($el) ){
+					$el = array($el);
+				}
+				$el = array_map('sql_quote', $el);
 				$res .= vsprintf($k, $el);
+				$isArray = true;
 			}else{
 				$res .= $k . ' = ' . sql_quote($el);
 			}
 		}
-		$lastArray = true;
 	}
 	return trim($res);
 }
@@ -397,8 +403,11 @@ function sql_create_table($options) {
 	}
 
 	if( sizeof($options['uniqueKeys']) ){
-		if( is_assoc_array($options['uniqueKeys']) ){
-			$options['uniqueKeys'] = array('name' => 'uniqueKeys', 'columns' => $options['uniqueKeys']);
+		// array('id', 'test')
+		if( is_simple_array($options['uniqueKeys']) ){
+			$options['uniqueKeys'] = array(array('name' => 'uniqueKeys', 'columns' => $options['uniqueKeys']));
+		}elseif( is_assoc_array($options['uniqueKeys']) ){
+			$options['uniqueKeys'] = array($options['uniqueKeys']);
 		}
 		foreach ($options['uniqueKeys'] as $uk) {
 			$attributes[] = 'CONSTRAINT ' . sql_quote($uk['name'], true) . ' UNIQUE (' . implode(', ', $uk['columns']) . ')';
@@ -587,5 +596,5 @@ function sql_import_csv($options) {
 		$query .= ' (' . implode(', ', $options['columns']) . ')';
 	}
 	$query .= ';';
-	sql_query($query, null, null);
+	return sql_query($query, null, null);
 }
