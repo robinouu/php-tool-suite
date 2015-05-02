@@ -99,14 +99,16 @@ function models_to_sql(&$models) {
 			'foreignKeys' => $foreignKeys
 		);
 	}
+
+	$back = true;
 	foreach ($tables as $table) {
-		sql_create_table($table);
-
+		$back = $back && sql_create_table($table);
 	}
-
 	foreach( $manyTables as $manyTable ) {
-		sql_create_table($manyTable);
+		$back = $back && sql_create_table($manyTable);
 	}
+
+	return $back;
 }
 
 function model_name($model) {
@@ -128,7 +130,7 @@ function model_get(&$models, $modelName, $options = array()){
 	
 
 	$model = $models[$modelName];
-	$tableName = isset($model['table']) ? $model['table'] : $model['id'];
+	$tableName = isset($model['table']) ? $model['table'] : $modelName;
 	$selects = array();
 	$joins = array();
 	foreach( $model['fields'] as $fieldName => $field) {
@@ -177,7 +179,7 @@ function model_get(&$models, $modelName, $options = array()){
 function model_insert(&$models, $modelName, $datas){
 
 	$model = $models[$modelName];
-	$tableName = isset($model['table']) ? $model['table'] : $model['id'];
+	$tableName = isset($model['table']) ? $model['table'] : $modelName;
 	$relations_id = array();
 
 	foreach( $model['fields'] as $fieldName => $field) {
@@ -219,3 +221,5 @@ function model_insert(&$models, $modelName, $datas){
 
 	return $id;
 }
+
+
