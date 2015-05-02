@@ -22,13 +22,14 @@ function &vars() {
  *
  * @param string|array $path The variable path.
  * @param mixed $value The value to insert.
- * @param array $data The reference data array (if NULL, vars() will be used)
+ * @param array $data The referenced data array (if NULL, vars() will be used)
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
  */
-function var_set($path = array(), $value = null, $data = null) {
+function var_set($path = array(), $value = null, &$data = null) {
 	if( is_null($data) ){
 		$data = &vars();
 	}
+
 	return array_set($data, $path, $value);
 }
 
@@ -58,16 +59,15 @@ function var_get($path = array(), $default = null, $data = null) {
  * Appends a key-value pair to a variable.
  *
  * @param string|array $path The variable path.
- * @param string $key The associative key to append.
- * @param mixed $value The associative value to append.
+ * @param mixed $value The value to append.
  * @param array $data The reference data array where to append the value. By default, and if NULL, vars() will be used.
  * @return boolean TRUE if the variable has been added. FALSE otherwise.
  */
-function var_append($path = array(), $key, $value = null, $data = null) {
+function var_append($path = array(), $value = null, &$data = null) {
 	if( is_null($data) ){
 		$data = &vars();
 	}
-	return array_append($data, $path, $key, $value);
+	return array_append($data, $path, $value);
 }
 
 /**

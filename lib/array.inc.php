@@ -82,11 +82,10 @@ function array_set(&$arr, $path, $value)
  * Appends a value to a subarray by path
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
- * @param string $value The key to inject
  * @param mixed $value The value to inject
  * @return boolean TRUE if the variable has been correctly set. FALSE otherwise.
  */
-function array_append(&$arr, $path, $key, $value = null)
+function array_append(&$arr, $path, $value = null)
 {
 	if (!$path)
 		return false;
@@ -96,20 +95,20 @@ function array_append(&$arr, $path, $key, $value = null)
 	$i = 0;
 
 	foreach ($segments as $segment) {
-		if( !is_array($cur[$segment]) ) {
-			$cur[$segment] = array();
-		}
-		if( $i == sizeof($segments) - 1){
-			if( is_null($value) ){
-				$cur[$segment][] = $key;
-			}else{
-				$cur[$segment][$key] = $value;
-			}
+		if( is_null($cur) ){
+			$cur = array($segment => array());
+		}elseif( !is_array($cur) ){
+			return false;
 		}
 		$cur =& $cur[$segment];
 		++$i;
 	}
-	return true;
+
+	if( is_array($cur) ){
+		$cur[] = $value;
+		return true;
+	}
+	return false;
 }
 
 /**
