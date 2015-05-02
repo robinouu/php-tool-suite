@@ -1,5 +1,6 @@
 <?php
 
+require_once(dirname(__FILE__).'/core.inc.php');
 
 plugin_require(array('field', 'sql'));
 
@@ -110,4 +111,64 @@ function models_to_sql($models = array()) {
 
 function model_name($model) {
 	return isset($model['labels']['singular']) ? $model['labels']['singular'] : ucfirst($model['id']);
+}
+
+function model_fields($fields, $aliasPrefix = '') {
+	$back = array();
+	foreach ($fields as $fieldName => $field) {
+		$field = array_merge(var_get('field/default', array()), $field);
+		if( $field['type'] !== 'relation' ){
+			$back[] = $fieldName . ' AS ' . sql_quote($aliasPrefix . $fieldName, true);
+		}
+	}
+	return $back;
+}
+
+function model_get($models, $modelName, $options = array()){
+	
+
+	$model = $models[$modelName];
+	$tableName = isset($model['table']) ? $model['table'] : $model['id'];
+	$selects = array();
+	$joins = array();
+	foreach( $model['fields'] as $fieldName => $field) {
+		$field = array_merge(var_get('field/default', array()), $field);
+		
+
+		if( $field['type'] === 'relation' ){
+			if( !$field['hasMany'] ){
+				$joins[] = array(
+					'type' => ($field['required'] ? 'INNER JOIN' : 'LEFT JOIN'),
+					'tableRight' => $field['data'],
+					'aliasRight' => $fieldName,
+					'columnRight' => 'id',
+					'columnLeft' => $fieldName,
+				);
+				$selects = array_merge($selects, model_fields($models[$fieldName]['fields'], $fieldName . '.'));
+			}else{
+				$joins[] = array(
+					'tableRight' => $tableName . '_' . $fieldName,
+					'columnRight' => 'id_' . $tableName,
+				);
+				$joins[] = array(
+					'tableLeft' => $tableName . '_' . $fieldName,
+					'columnLeft' => 'id_' . $fieldName,
+					'tableRight' => $field['data'],
+					'aliasRight' => $fieldName,
+					'columnRight' => 'id'
+				);
+				$selects = array_merge($selects, model_fields($models[$field['data']]['fields'], $fieldName . '.'));
+			}
+		}else{
+			$selects[] = sql_quote($fieldName, true);
+		}
+	}
+	
+	$finalOptions['select'] = array(implode(', ', $selects));
+	$finalOptions['join'] = $joins;
+	$finalOptions['alias'] = $modelName;
+
+	$finalOptions = array_merge($finalOptions, $options);
+
+	return sql_get($modelName, $finalOptions);
 }
