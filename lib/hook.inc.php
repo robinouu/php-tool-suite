@@ -15,10 +15,9 @@ plugin_require(array('var'));
  */
 function hook_register($name, $callback, $priority = 1) {
 	$name = object_hash($name);
-	if( !var_get('hooks/' . $name . '/' . $priority) ){
-		var_set('hooks/' . $name . '/' . $priority, array());
-	}
-	var_append('hooks/' . $name . '/' . $priority, object_hash($callback), $callback);
+	$hookPath = 'hooks/' . $name . '/' . $priority;
+
+	return var_set($hookPath . '/' . object_hash($callback), $callback);
 }
 
 function hook_get($name = null, $priority = null){
