@@ -3,36 +3,56 @@ session_start();
 
 class MinimalTest extends PHPUnit_Framework_TestCase {
 
-    public function test_core() {
-    	require_once('lib/core.inc.php');
-    	print 'core : ';
-    	
-    	// Is secured server connection ?
+	public function test_core() {
+		require_once('lib/core.inc.php');
+		print 'core : ';
+		
+		// Is secured server connection ?
 		unset($_SERVER['HTTPS']);
-    	$this->assertEquals(server_is_secure(), false);
+		$this->assertEquals(server_is_secure(), false);
 
 		$_SERVER['HTTPS'] = 'off';
-    	$this->assertEquals(server_is_secure(), false);
+		$this->assertEquals(server_is_secure(), false);
+
+		$_SERVER['HTTPS'] = 'OFF';
+		$this->assertEquals(server_is_secure(), false);
 
 		$_SERVER['HTTPS'] = 'on';
-    	$this->assertEquals(server_is_secure(), true);
+		$this->assertEquals(server_is_secure(), true);
 
 		$_SERVER['HTTPS'] = 'not_empty_or_off';
-    	$this->assertEquals(server_is_secure(), true);
+		$this->assertEquals(server_is_secure(), true);
 
 		$_SERVER['SERVER_PORT'] = 443;
-    	$this->assertEquals(server_is_secure(), true);
+		$this->assertEquals(server_is_secure(), true);
 
-    	$this->assertNotEquals(guid(), guid());
+		// Are guid uniques ?
+		$this->assertNotEquals(guid(), guid());
 
-    	print 'done' . "\r\n";
-    }
+		// Are hash uniques to a particular object ?
+		$this->assertEquals(object_hash(null), object_hash(''));
+		$this->assertNotEquals(object_hash(null), object_hash(array()));
 
-    public function test_var() {
-    	require_once('lib/core.inc.php');
-    	require_once('lib/var.inc.php');
+		$this->assertEquals(object_hash('a'), object_hash('a'));
+		$this->assertNotEquals(object_hash('a'), object_hash('b'));
 
-    	print 'var : ';
+		$this->assertEquals(object_hash(array('a')), object_hash(array('a')));
+		$this->assertNotEquals(object_hash(array()), object_hash(array('a')));
+		$this->assertNotEquals(object_hash(array('a')), object_hash(array('b')));
+		$this->assertNotEquals(object_hash(array('a')), object_hash(array('b')));
+
+		$obj = new stdclass;
+		$this->assertEquals(object_hash($obj), object_hash($obj));
+		$this->assertNotEquals(object_hash($obj), object_hash(new stdclass));
+
+		print 'done' . "\r\n";
+	}
+
+	public function test_var() {
+		
+		plugin_require('var');
+
+		print 'var : ';
 
 		$this->assertNull(var_get('path'));
 
@@ -43,12 +63,20 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(var_set('path/path2', true));
 		$this->assertTrue(var_get('path/path2'));
 
+		$data = array('path' => array('path2' => null));
+		$this->assertTrue(var_set('path/path2', true, $data));
+		$this->assertTrue(var_get('path/path2', null, $data));
+
 		// Check array key path accessors
 		$this->assertTrue(var_set(array('arrayPath'), true));
 		$this->assertTrue(var_get('arrayPath'));
 
 		$this->assertTrue(var_set(array('arrayPath', 'arrayPath2'), true));
 		$this->assertTrue(var_get('arrayPath/arrayPath2'));
+
+		$data = array('arrayPath' => array('arrayPath2' => null));
+		$this->assertTrue(var_set(array('arrayPath', 'arrayPath2'), true, $data));
+		$this->assertTrue(var_get(array('arrayPath', 'arrayPath2'), null, $data));
 
 		// Check session accessors
 		$this->assertTrue(session_var_set(array('arrayPath'), true));
@@ -57,87 +85,132 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(session_var_set(array('arrayPath', 'arrayPath2'), true));
 		$this->assertTrue(session_var_get('arrayPath/arrayPath2'));
 
-		// Append
+		// Append to arrays
 		var_append('arrayPath', 'arrayPath3');
 		$this->assertContains('arrayPath3', var_get('arrayPath'));
-
+		
+		// Append only to arrays
+		$this->assertFalse(var_append(array('arrayPath', 'arrayPath2'), 'arrayPath4'));
+		
+		var_set('arrayPath/arrayPath2', array());
 		var_append(array('arrayPath', 'arrayPath2'), 'arrayPath4');
+
 		$this->assertContains('arrayPath4', var_get('arrayPath/arrayPath2'));
+
+		$data = array();
+		var_append(array('arrayPath', 'arrayPath2'), 'arrayPath4', $data);
+		$this->assertContains('arrayPath4', var_get('arrayPath/arrayPath2', null, $data));
 
 		// Array unset
 		var_unset('arrayPath/arrayPath2');
 		$this->assertArrayNotHasKey('arrayPath2', var_get('arrayPath'));
+		$this->assertArrayHasKey('arrayPath', vars());
+		
+		print 'done' . "\r\n";		
+	}
 
-		print 'done' . "\r\n";
-    }
 
-    public function test_hook() {
-    	require_once('lib/hook.inc.php');
-
-    	print 'hook : ';
+	public function test_hook() {
+		require_once('lib/hook.inc.php');
+		
+		print 'hook : ';
 
 		$this->assertNull(hook_do('my_first_hook'));
 
-    	hook_register('my_first_hook', function () {
-    		return true;
+		hook_register('my_first_hook', function () {
+			return true;
 		});
 
-    	$this->assertTrue(hook_do('my_first_hook'));
+		$this->assertTrue(hook_do('my_first_hook'));
 
-    	hook_unregister('my_first_hook');
+		hook_unregister('my_first_hook');
 
 		$this->assertNull(hook_do('my_first_hook'));
 
-
 		hook_register('my_second_hook', function () {
-    		return 'a';
+			return 'a';
 		}, 2);
 
 		hook_register('my_second_hook', function () {
-    		return 'b';
+			return 'b';
 		});
 
 		hook_register('my_second_hook', function () {
-    		return 'c';
+			return 'c';
 		}, -2);
 
 		$this->assertEquals(hook_do('my_second_hook'), 'cba');
 
-    	print 'done' . "\r\n";
-    }
+		print 'done' . "\r\n";
+	}
 
-    public function test_sanitize() {
-    	require_once('lib/sanitize.inc.php');
+	public function test_sanitize() {
+		require_once('lib/sanitize.inc.php');
 
-    	print 'sanitize : ';
+		print 'sanitize : ';
 
-    	$this->assertEquals(slug('éàç'), 'eac');
-    	$this->assertEquals(slug('éàç éàç éàç'), 'eac-eac-eac');
-    	$this->assertEquals(slug('&~#{[|`\^@-_*$^!:;,\'()./§?'), '');
-    	print 'done' . "\r\n";
-    }
+		$this->assertEquals(slug('éàç'), 'eac');
+		$this->assertEquals(slug('éàç éàç éàç'), 'eac-eac-eac');
+		$this->assertEquals(slug('éàç éàç éàç', '_'), 'eac_eac_eac');
+		$this->assertEquals(slug('éàç éàç éàç', null), 'eaceaceac');
+		$this->assertEquals(slug('&~#{[|`\^@-_*$^!:;,\'()./§?'), '');
 
-    public function test_sql() {
-    	require_once('lib/sql.inc.php');
+		print 'done' . "\r\n";
+	}
+
+	public function test_file() {
+		print 'file : ';
+
+		require_once('lib/file.inc.php');
+
+		$data[] = array( 'ISO', 'Name' );
+		$data[] = array( 'en', 'English' );
+		$data[] = array( 'fr', 'French' );
+		// ...
+
+		csv_write("data.csv", $data);
+		
+		$loadedData = array();
+		csv_load("data.csv", function ($line) use( &$loadedData ) { $loadedData[] = $line; });
+
+		$this->assertEquals($data, $loadedData);
+
+		print 'done' . "\r\n";
+	}
+
+	public function test_sql() {
+		require_once('lib/sql.inc.php');
 
 		print 'sql : ';
 
-    	$sql = sql_connect(array('db' => 'datas'));
-    	$this->assertNotNull($sql);
+		$sql = sql_connect(array('db' => 'datas'));
+		$this->assertNotNull($sql);
 
+		// Test all tables deletion
 		sql_delete_tables();
-
 		$this->assertFalse(sql_table_exists('user'));
 		
-		// Test schema insertion, with data relations
-		sql_create_table(array(
+		// Test table creation
+		$signable = array(
 			'name' => 'signable', 
 			'columns' => array(
-				'login_id VARCHAR(255) NOT NULL UNIQUE',
+				'login_id VARCHAR(255) NOT NULL',
 				'password VARCHAR(255)'
+			),
+			'uniqueKeys' => array(
+				array('name' => 'login_unique', 'columns' => array('login_id')),
+				array('name' => 'password_unique', 'columns' => array('login_id', 'password'))
 			)
-		));
+		);
 
+		sql_create_table($signable);
+		sql_delete_table('signable');
+		$this->assertFalse(sql_table_exists('signable'));
+
+		$signable['uniqueKeys'] = array('login_id');
+		sql_create_table($signable);
+
+		// foreign keys
 		sql_create_table(array(
 			'name' => 'user',
 			'columns' => array(
@@ -148,6 +221,27 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		));
 
 		$this->assertTrue(sql_table_exists('user'));
+		
+		// SQL Values quote
+		$this->assertEquals(sql_quote('test'), '\'test\'');
+		$this->assertEquals(sql_quote(1), 1);
+		$this->assertEquals(sql_quote(1.5), 1.5);
+		$this->assertEquals(sql_quote(null), 'NULL');
+
+		// Table/columns names
+		$this->assertEquals(sql_quote('test', true), '`test`');
+		$this->assertEquals(sql_quote('`test`', true), '```test```');
+
+		// Logical clauses
+		$this->assertEquals(sql_logic(array('test = 1')), 'test = 1');
+		$this->assertEquals(sql_logic(array('test = %d' => array(1))), 'test = 1');
+		$this->assertEquals(sql_logic(array(array('test = 1'), 'AND test = 2')), 'test = 1 AND test = 2');
+		$this->assertEquals(sql_logic(array(array('test = 1'), array('test = 2'))), 'test = 1 AND test = 2');
+		$this->assertEquals(sql_logic(array(array('test = 1'), array('test = 2'), 'OR', array('test = 3'))), 'test = 1 AND test = 2 OR test = 3');
+		$this->assertEquals(sql_logic(array(array('test = %d' => 1), array('test = %d' => 2), 'OR', array('test = %d' => 3))), 'test = 1 AND test = 2 OR test = 3');
+		$this->assertEquals(sql_logic(array(array(array('test = 1', 'OR'), 'test = 2'))), 'test = 1 OR test = 2');
+		$this->assertEquals(sql_logic(array(array(array(array('test = 1'), 'OR', array('test = 2')), 'AND', 'test = 3'))), 'test = 1 OR test = 2 AND test = 3');
+		$this->assertEquals(sql_logic(array('test = 1', 'OR', 'test = 2')), 'test = 1 OR test = 2');
 		
 		// check data integrity
 		$userData = array('login_id' => 'username', 'password' => sha1('my_pass'));
@@ -175,101 +269,104 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$data = $data[0];
 		$this->assertEquals($data['login_id'], 'my_new_username');	
 
-    	// TODO : We need some stuff to handle data testing, it think there is some kind of datasets with phpunit
-		
+		// SQL Getter
+		$signable = sql_get('signable', array('where' => array('id' => $userID)));
+		$this->assertNotNull($signable);
+		$this->assertFalse(is_assoc_array($signable));
+
+		$signable = sql_get('signable', array('where' => array('id' => $userID), 'limit' => 1));
+		$this->assertTrue(is_assoc_array($signable));
+
 		sql_alter_table('signable', array(
 			'columns' => array(),
 			'charset' => 'latin1',
 			'tableName' => 'authenticator'
 		));
 
-    	sql_disconnect();
+		$this->assertEquals(sql_driver(), 'mysql');
+
+		// Test CSV import
+		csv_write('signable.csv', array(
+			array('login1', 'pass1'),
+			array('login2', 'pass2'),
+			array('login3', 'pass3')
+		));
+
+		$this->assertTrue(sql_import_csv(array(
+			'table' => 'authenticator',
+			'columns' => array('login_id', 'password'),
+			'filename' => dirname(__FILE__).'/signable.csv'
+		)));
+
+		$someLogins = sql_get('authenticator', array('where' => array('login_id LIKE %s' => 'login%'), 'limit' => 2));
+		$this->assertEquals(sizeof($someLogins), 2);
+
+		sql_disconnect();
 		$this->assertNull(var_get('sql/dbConnection'));
 
 		print 'done' . "\r\n";
-    }
+	}
 
-    public function test_model() {
-
-    }
-
-    public function test_crypto() {
+	public function test_crypto() {
 
 		print 'crypto : ';
 
-    	if( extension_loaded('mcrypt') ){
+		if( extension_loaded('mcrypt') ){
 			
 			require_once('lib/crypto.inc.php');
 
-	    	$content = 'Secured content';
-	    	$decryptKey = 'MY_PRIVATE_KEY_OF_32_CHARACTERS!';
+			$content = 'Secured content';
+			$decryptKey = 'MY_PRIVATE_KEY_OF_32_CHARACTERS!';
 
-	    	encrypt($content, $decryptKey);
-	    	
-	    	$this->assertNotEquals('Secured content', $content);
-	    	
-	    	decrypt($content, $decryptKey);
+			encrypt($content, $decryptKey);
+			
+			$this->assertNotEquals('Secured content', $content);
+			
+			decrypt($content, $decryptKey);
 
-	    	$this->assertEquals('Secured content', $content);
-	    	print 'done' . "\r\n";
-    	}else{
-    		print 'mcrypt not found'. "\r\n";
-    	}
-    }
-
-    public function test_file() {
-		print 'file : ';
-
-    	require_once('lib/file.inc.php');
-
-    	$data[] = array( 'ISO', 'Name' );
-    	$data[] = array( 'en', 'English' );
-    	$data[] = array( 'fr', 'French' );
-    	// ...
-
-    	csv_write("data.csv", $data);
-		
-		$loadedData = array();
-		csv_load("data.csv", function ($line) use( &$loadedData ) { $loadedData[] = $line; });
-
-    	$this->assertEquals($data, $loadedData);
-
-    	print 'done' . "\r\n";
-    }
-
-    public function test_fs() {
-    	require_once('lib/fs.inc.php');
-		print 'fs : ';
-
-    	// Test dir creation
-    	@rmdir('tmpdir');
-    	mkdir_recursive('tmpdir');
-    	$this->assertTrue(is_dir('tmpdir'));
-
-    	// And dir deletion
-    	mkdir_recursive('tmpdir/foo/bar');
-    	touch('tmpdir/foo/bar/bar.json');
-    	rmdir_recursive('tmpdir');
-    	$this->assertFalse(is_dir('tmpdir'));
-
-    	print 'done' . "\r\n";
+			$this->assertEquals('Secured content', $content);
+			print 'done' . "\r\n";
+		}else{
+			print 'mcrypt not found'. "\r\n";
+		}
 	}
 
-    public function test_field() {
-    	require_once('lib/field.inc.php');
+	public function test_fs() {
+		require_once('lib/fs.inc.php');
+		print 'fs : ';
+
+		if( is_dir('tmpdir') ){
+			rmdir_recursive('tmpdir');
+		}
+
+		// Test dir creation
+		mkdir_recursive('tmpdir');
+		$this->assertTrue(is_dir('tmpdir'));
+
+		// And dir deletion
+		mkdir_recursive('tmpdir/foo/bar');
+		touch('tmpdir/foo/bar/bar.json');
+		rmdir_recursive('tmpdir');
+		$this->assertFalse(is_dir('tmpdir'));
+
+		print 'done' . "\r\n";
+	}
+
+	public function test_field() {
+		require_once('lib/field.inc.php');
 		print 'field : ';
 
-    	// Required fields
+		// Required fields
 		$requiredField = array('name' => 'field', 'label' => 'Required field', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
 		$this->assertTrue(field_validate($requiredField, 'not_empty'));
-    	
+		
 		$requiredField['value'] = 'not_empty';
 		$this->assertTrue(field_validate($requiredField));
 
-    	// Maxlength validator
+		// Maxlength validator
 		$maxlengthField = array('name' => 'field', 'label' => 'Maxlength field', 'maxlength' => 25);
 		$this->assertFalse(field_validate($maxlengthField, 'abcdefghijklmnopqrstuvwxyz'));
 		$this->assertTrue(field_validate($maxlengthField, ''));
@@ -281,13 +378,13 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse(field_validate($minlengthField, ''));
 		$this->assertFalse(field_validate($minlengthField, 'Something'));
 
-    	// Required fields
+		// Required fields
 		$requiredField = array('name' => 'field', 'label' => 'Required field', 'required' => true);
 
 		$this->assertFalse(field_validate($requiredField, ''));
 		$this->assertFalse(field_validate($requiredField, array()));
 		$this->assertTrue(field_validate($requiredField, 'not_empty'));
-    	
+		
 		$requiredField['value'] = 'not_empty';
 		$this->assertTrue(field_validate($requiredField));
 
@@ -314,10 +411,66 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 
 		print 'done' . "\r\n";
-    }
+	}
 
-    public function test_cache() {
-    	require_once('lib/cache.inc.php');
+	public function test_model() {
+		plugin_require('model');
+
+		$sql = sql_connect(array('db' => 'datas'));
+		sql_delete_tables();
+
+		$models = array(
+			'account' => array(
+				'fields' => array(
+					'email' => array('type' => 'email'),
+					'password' => array('type' => 'password')
+				)
+			),
+			'person' => array(
+				'fields' => array(
+					'firstname' => array(),
+					'lastname' => array(),
+					'account' => array('type' => 'relation', 'data' => 'account')
+				)
+			),
+			'ingredient' => array(
+				'fields' => array(
+					'name' => array(),
+					'type' => array('type' => 'select', 'datas' => array('fish', 'meat', '...'))
+				)
+			),
+			'recipe' => array(
+				'fields' => array(
+					'author' => array('type' => 'relation', 'data' => 'person'),
+					'ingredients' => array('type' => 'relation', 'data' => 'ingredient', 'hasMany' => true)
+				)
+			)
+		);
+
+		$this->assertTrue(models_to_sql($models));
+
+		$id = model_insert($models, 'recipe', array(
+			'author' => array(
+				'firstname' => 'Jon',
+				'lastname' => 'Silver',
+				'account' => array(
+					'email' => 'jon.silver@gmail.com',
+					'password' => 'password'
+				)
+			),
+			'ingredients' => array(
+				array('name' => 'Salmon', 'type' => 'fish'),
+				array('name' => 'Chopped steak', 'type' => 'meat')
+			)
+		));
+
+		$this->assertEquals($id, 1);
+	}
+
+	public function test_cache() {
+
+		plugin_require('cache');
+
 		print 'cache : ';
 
 		mkdir_recursive('cache');
@@ -334,8 +487,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		rmdir_recursive('cache');
 
 		print 'done' . "\r\n";
-    }
+	}
 
-    protected $backupGlobals = FALSE;
+	protected $backupGlobals = FALSE;
 }
 
