@@ -4,7 +4,7 @@ require_once(dirname(__FILE__).'/core.inc.php');
 
 plugin_require(array('field', 'sql'));
 
-function models_to_sql($models = array()) {
+function models_to_sql(&$models) {
 
 	$tables = array();
 	$manyTables = array();
@@ -113,7 +113,7 @@ function model_name($model) {
 	return isset($model['labels']['singular']) ? $model['labels']['singular'] : ucfirst($model['id']);
 }
 
-function model_fields($fields, $aliasPrefix = '') {
+function model_select_fields($fields, $aliasPrefix = '') {
 	$back = array();
 	foreach ($fields as $fieldName => $field) {
 		$field = array_merge(var_get('field/default', array()), $field);
@@ -124,7 +124,7 @@ function model_fields($fields, $aliasPrefix = '') {
 	return $back;
 }
 
-function model_get($models, $modelName, $options = array()){
+function model_get(&$models, $modelName, $options = array()){
 	
 
 	$model = $models[$modelName];
@@ -144,7 +144,7 @@ function model_get($models, $modelName, $options = array()){
 					'columnRight' => 'id',
 					'columnLeft' => $fieldName,
 				);
-				$selects = array_merge($selects, model_fields($models[$fieldName]['fields'], $fieldName . '.'));
+				$selects = array_merge($selects, model_select_fields($models[$fieldName]['fields'], $fieldName . '.'));
 			}else{
 				$joins[] = array(
 					'tableRight' => $tableName . '_' . $fieldName,
@@ -157,7 +157,7 @@ function model_get($models, $modelName, $options = array()){
 					'aliasRight' => $fieldName,
 					'columnRight' => 'id'
 				);
-				$selects = array_merge($selects, model_fields($models[$field['data']]['fields'], $fieldName . '.'));
+				$selects = array_merge($selects, model_select_fields($models[$field['data']]['fields'], $fieldName . '.'));
 			}
 		}else{
 			$selects[] = sql_quote($fieldName, true);
@@ -171,4 +171,51 @@ function model_get($models, $modelName, $options = array()){
 	$finalOptions = array_merge($finalOptions, $options);
 
 	return sql_get($modelName, $finalOptions);
+}
+
+
+function model_insert(&$models, $modelName, $datas){
+
+	$model = $models[$modelName];
+	$tableName = isset($model['table']) ? $model['table'] : $model['id'];
+	$relations_id = array();
+
+	foreach( $model['fields'] as $fieldName => $field) {
+		$field = array_merge(var_get('field/default', array()), $field);
+		
+		if( $field['type'] === 'relation' && isset($datas[$fieldName]) && is_array($data = $datas[$fieldName]) ){
+			$relation_id = null;
+			
+			if( !$field['hasMany'] ){
+				$relation_id = model_insert($models, $field['data'], $data);
+			}else{
+				$relations_id[$fieldName] = array();
+				if( is_assoc_array($data) ){
+					$relationsData = array($data);
+				}else{
+					$relationsData = &$data;
+				}
+				foreach( $relationsData as $relationData ) {
+					$relations_id[$fieldName][] = model_insert($models, $field['data'], $relationData);
+				}
+			}
+			unset($datas[$fieldName]);
+			if( $relation_id ){
+				$datas[$fieldName] = $relation_id;
+			}
+		}
+	}
+
+	sql_insert($tableName, $datas);
+	$id = sql_last_id();
+
+	if( sizeof($relations_id) ){
+		foreach( $relations_id as $fieldName => $relation_ids ) {
+			foreach ($relation_ids as $relation_id) {
+				sql_insert($tableName . '_' . $fieldName, array('id_' . $tableName => $id, 'id_' . $fieldName => $relation_id));
+			}
+		}
+	}
+
+	return $id;
 }
