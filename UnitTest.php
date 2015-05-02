@@ -289,8 +289,10 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$dataPath = getenv('IMPORT_DATA_PATH');
 		if( $dataPath === FALSE ){
 			$dataPath = dirname(__FILE__);
+		}else{
+			chown($dataPath, 'root');
 		}
-		
+
 		csv_write($dataPath.'signable.csv', array(
 			array('login1', 'pass1'),
 			array('login2', 'pass2'),
