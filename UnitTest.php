@@ -286,7 +286,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(sql_driver(), 'mysql');
 
 		// Test CSV import
-		csv_write(dirname(__FILE__).'/signable.csv', array(
+		$dataPath = getenv('IMPORT_DATA_PATH');
+		if( $dataPath === FALSE ){
+			$dataPath = dirname(__FILE__);
+		}
+		
+		csv_write($dataPath.'signable.csv', array(
 			array('login1', 'pass1'),
 			array('login2', 'pass2'),
 			array('login3', 'pass3')
@@ -295,8 +300,9 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(sql_import_csv(array(
 			'table' => 'authenticator',
 			'columns' => array('login_id', 'password'),
-			'filename' => dirname(__FILE__).'/signable.csv'
+			'filename' => $dataPath . 'signable.csv'
 		)));
+
 
 		$someLogins = sql_get('authenticator', array('where' => array('login_id LIKE %s' => 'login%'), 'limit' => 2));
 		$this->assertEquals(sizeof($someLogins), 2);

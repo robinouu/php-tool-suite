@@ -31,3 +31,6 @@ matrix:
 notifications:
     on_success: never
     on_failure: never 
+
+env:
+    - IMPORT_DATA_PATH=/var/lib/mysql/datas/
