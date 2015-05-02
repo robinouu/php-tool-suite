@@ -66,5 +66,5 @@ function plugin_require($subpackages = null) {
  * @return boolean TRUE if a secured connection is active. FALSE otherwhise.
  */
 function server_is_secure() {
-	return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+	return (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 }
