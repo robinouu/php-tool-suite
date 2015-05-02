@@ -144,7 +144,7 @@ function sql_insert($table, $fields) {
  * @param string $table The table name where to insert data. It will automatically be prefixed.
  * @param array $fields An associative array containing the columns to update
  * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
- * @param array $where An optional filter. See sql_where() for usage.
+ * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
  */
 function sql_update($table, $fields = array(), $where = null) {
@@ -164,7 +164,7 @@ function sql_update($table, $fields = array(), $where = null) {
 		$sql_fields[] = $key . ' = ' . sql_quote($value);
 	}
 	$query .= ' SET ' . implode(',', $sql_fields) . ' ';
-	$q = $sql->prepare($query . (is_null($where) ? '' : ' WHERE ' . sql_where($where)). ';');
+	$q = $sql->prepare($query . (!is_string($where) ? '' : ' WHERE ' . $where . ';'));
 	if( !$q ){
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
@@ -184,7 +184,10 @@ function sql_select($table, $fields = '*', $alias = '', $prefixed = true) {
 		$fields = array($fields);
 	}
 
-	$query .= implode(',', $fields) . ' FROM ' . sql_quote($prefix . $table, true) . ' ' . $alias;
+	$query .= implode(',', $fields) . ' FROM ' . sql_quote($prefix . $table, true);
+	if( $alias ){
+		$query .= ' ' . sql_quote($alias, true);
+	}
 	return $query;
 }
 
@@ -252,19 +255,30 @@ function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
 	return $res;
 }
 
-function sql_where($where = array(), $op = 'AND') {
-	$res = array();
-	if( is_string($where) ){
-		return $where;
-	}
-	foreach ($where as $key => $value) {
-		if( is_string($value) ) {
-			$res[] = $key . ' = ' . sql_quote($value);
-		}elseif (is_numeric($value) ) {
-			$res[] = $key . ' = ' . $value;
+function sql_logic($conditions) {
+	$res = '';
+	$lastArray = false;
+	foreach ($conditions as $k => $el) {
+		if( is_numeric($k) && is_string($el) ) {
+			$res .= ' ' . $el . ' ';
+			$lastArray = false;
+			continue;
 		}
+		if( $lastArray ){
+			$res .= ' AND ';
+		}
+		if (is_numeric($k) && is_array($el) ){
+			$res .= sql_logic($el);
+		}else{
+			if( is_array($el) ){
+				$res .= vsprintf($k, $el);
+			}else{
+				$res .= $k . ' = ' . sql_quote($el);
+			}
+		}
+		$lastArray = true;
 	}
-	return implode(' ' . $op . ' ', $res);
+	return trim($res);
 }
 
 
@@ -476,6 +490,7 @@ function sql_get($table, $options = array()){
 
 	$options = array_merge(array(
 		'alias' => '',
+		'join' => null,
 	), $options);
 
 	if( is_integer($options) ){
@@ -488,8 +503,7 @@ function sql_get($table, $options = array()){
 		// SELECT CLAUSE
 		if( isset($options['select']) ) {
 			if( is_string($options['select']) ){
-				$fields = array_map('trim', explode(',', $options['select']));
-				$onlyOne = sizeof($options['select']) == 1;
+				$fields = $options['select'];
 			}elseif( is_array($options['select']) ){
 				$fields = $options['select'];
 				$onlyOne = sizeof($options['select']) == 1;
@@ -499,7 +513,7 @@ function sql_get($table, $options = array()){
 		$query = sql_select($table, $fields, $options['alias']);
 
 		// JOIN CLAUSE
-		if( isset($options['join']) ){
+		if( $options['join'] ){
 			if( is_string($options['join']) ){
 				$query .= ' ' . $options['join'];
 			}elseif( is_array($options['join']) ){
@@ -508,19 +522,22 @@ function sql_get($table, $options = array()){
 				}
 				foreach ($options['join'] as $join) {
 					$join = array_merge(array(
-						'alias' => '',
-						'left' => 'id',
-						'right' => $table,
+						'tableLeft' => $table,
+						'aliasLeft' => '',
+						'aliasRight' => '',
+						'columnLeft' => 'id',
+						'columnRight' => $table,
 						'type' => 'INNER JOIN'), $join);
-					$query .= ' ' . $join['type'] . ' ' . sql_quote($join['table'], true) . ' ' . $join['alias'] .
-						' ON ' . ($join['alias'] ? $join['alias'] : sql_quote($join['table'], true)) . '.' . $join['right'] . ' = ' . ($options['alias'] ? $options['alias'] : sql_quote($table, true)) . '.' . $join['left'];
+					$query .= ' ' . $join['type'] . ' ' . sql_quote($join['tableRight'], true) . ($join['aliasRight'] ?  ' ' . sql_quote($join['aliasRight'], true) : '') .
+						' ON ' . ($join['aliasRight'] ? sql_quote($join['aliasRight'], true) : sql_quote($join['tableRight'], true)) . '.' . sql_quote($join['columnRight'], true) .
+						' = ' . ($join['aliasLeft'] ? sql_quote($join['aliasLeft'], true) : sql_quote($join['tableLeft'], true)) . '.' . sql_quote($join['columnLeft'], true);
 				}
 			}
 		}
 
 		// WHERE CLAUSE
 		if( isset($options['where']) ) {
-			$query .= ' WHERE ' . sql_where($options['where']);
+			$query .= ' WHERE ' . sql_logic($options['where']);
 		}
 
 		// ORDER BY CLAUSE
@@ -534,6 +551,7 @@ function sql_get($table, $options = array()){
 		}
 	}
 
+	//var_dump($query);
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 	if( isset($options['limit']) && $options['limit'] === 1 ){
 		return $res[0];

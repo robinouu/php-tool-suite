@@ -156,7 +156,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$userID = sql_last_id();
 		$this->assertNotEquals($userID, 0);
 		
-		$data = sql_query(sql_select('signable', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
+		$data = sql_query(sql_select('signable', array_keys($userData)) . ' WHERE ' . sql_logic(array('id' => $userID)));
 		$this->assertNotNull($data);
 		$this->assertTrue(sizeof($data) === 1);
 
@@ -168,7 +168,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$userData = array('login_id' => 'my_new_username');
 		$this->assertNotNull(sql_update('signable', $userData, array('id' => $userID)));
 
-		$data = sql_query(sql_select('signable', array_keys($userData)) . ' WHERE ' . sql_where(array('id' => $userID)));
+		$data = sql_query(sql_select('signable', array_keys($userData)) . ' WHERE ' . sql_logic(array('id' => $userID)));
 		$this->assertNotNull($data);
 		$this->assertTrue(sizeof($data) === 1);
 
@@ -187,6 +187,10 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertNull(var_get('sql/dbConnection'));
 
 		print 'done' . "\r\n";
+    }
+
+    public function test_model() {
+
     }
 
     public function test_crypto() {
