@@ -293,7 +293,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 			chown($dataPath, 'root');
 		}
 
-		csv_write($dataPath.'signable.csv', array(
+		csv_write($dataPath.'/signable.csv', array(
 			array('login1', 'pass1'),
 			array('login2', 'pass2'),
 			array('login3', 'pass3')
@@ -302,7 +302,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue(sql_import_csv(array(
 			'table' => 'authenticator',
 			'columns' => array('login_id', 'password'),
-			'filename' => $dataPath . 'signable.csv'
+			'filename' => $dataPath . '/signable.csv'
 		)));
 
 
