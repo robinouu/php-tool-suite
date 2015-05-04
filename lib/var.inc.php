@@ -96,7 +96,7 @@ function session_var_set($path = array(), $value = null) {
 	if (!$path)
 		return false;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 	$cur =& $_SESSION;
 	foreach ($segments as $segment) {
 		if( !is_array($cur) ){
@@ -123,7 +123,7 @@ function session_var_unset($path = array()) {
 	if (!$path)
 		return false;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 	$cur =& $_SESSION;
 
 	$i = 0;
@@ -154,7 +154,7 @@ function session_var_get($path = array(), $default = null) {
 	if (!$path)
 		return $_SESSION;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 	$cur = $_SESSION;
 	foreach ($segments as $segment) {
 		if (!isset($cur[$segment])){

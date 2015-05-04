@@ -25,6 +25,10 @@ function is_assoc_array($arr) {
 }
 
 
+function array_segments($segments){
+	return is_array($segments) ? $segments : explode('/', $segments);
+}
+
 /**
  * Gets an array value by path
  * @param array $array The reference array.
@@ -36,7 +40,7 @@ function array_get($arr, $path)
 	if (!$path)
 		return $arr;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 
 	$cur =& $arr;
 
@@ -62,7 +66,7 @@ function array_set(&$arr, $path, $value)
 	if (!$path)
 		return false;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 	$cur =& $arr;
 	foreach ($segments as $segment) {
 		if( !is_array($cur) ){
@@ -90,7 +94,7 @@ function array_append(&$arr, $path, $value = null)
 	if (!$path)
 		return false;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 	$cur = &$arr;
 	$i = 0;
 
@@ -122,7 +126,7 @@ function array_unset(&$arr, $path)
 	if (!$path)
 		return false;
 
-	$segments = is_array($path) ? $path : explode('/', $path);
+	$segments = array_segments($path);
 	$cur =& $arr;
 
 	$i = 0;
