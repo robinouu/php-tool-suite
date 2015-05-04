@@ -134,7 +134,8 @@ function sql_insert($table, $fields) {
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
 	}
-	//var_dump($query, $fields, '<hr />');
+
+	//var_dump($query);
 	return $q->execute(array_values($fields));
 }
 
@@ -147,24 +148,32 @@ function sql_insert($table, $fields) {
  * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
  */
-function sql_update($table, $fields = array(), $where = null) {
+function sql_update($table, $fields = array(), $where = null, $join = null) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
 	}
 	$prefix = var_get('sql/prefix', '');
 
-	if( !sizeof($fields) ){
-		LOG_ERROR('sql_update: no field set.');
-	}
-
 	$query = 'UPDATE ' . sql_quote($prefix . $table, true);
+	
 	$sql_fields = array();
 	foreach ($fields as $key => $value) {
 		$sql_fields[] = $key . ' = ' . sql_quote($value);
 	}
 	$query .= ' SET ' . implode(', ', $sql_fields) . ' ';
-	$q = $sql->prepare($query . (!is_string($where) ? '' : ' WHERE ' . $where . ';'));
+
+	if( $join ){
+		if( is_string($join) ){
+			$query .= ' ' . $join;
+		}elseif( is_array($options['join']) ){
+			$query .= ' ' . sql_join($join, $table);
+		}
+	}
+
+	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
+
+	$q = $sql->prepare($query . ';');
 	if( !$q ){
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
@@ -256,6 +265,9 @@ function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
 }
 
 function sql_logic($conditions, $op = 'AND') {
+	if( is_string($conditions) ){
+		return $conditions;
+	}
 	$res = '';
 	$isArray = false;
 	foreach ($conditions as $k => $el) {
@@ -287,6 +299,25 @@ function sql_logic($conditions, $op = 'AND') {
 	return trim($res);
 }
 
+function sql_join($joins, $table = ''){
+	if( is_assoc_array($joins) ){
+		$joins = array($joins);
+	}
+	$query = '';
+	foreach ($joins as $join) {
+		$join = array_merge(array(
+			'tableLeft' => $table,
+			'aliasLeft' => '',
+			'aliasRight' => '',
+			'columnLeft' => 'id',
+			'columnRight' => $table,
+			'type' => 'INNER JOIN'), $join);
+		$query .= ' ' . $join['type'] . ' ' . sql_quote($join['tableRight'], true) . ($join['aliasRight'] ?  ' ' . sql_quote($join['aliasRight'], true) : '') .
+			' ON ' . ($join['aliasRight'] ? sql_quote($join['aliasRight'], true) : sql_quote($join['tableRight'], true)) . '.' . sql_quote($join['columnRight'], true) .
+			' = ' . ($join['aliasLeft'] ? sql_quote($join['aliasLeft'], true) : sql_quote($join['tableLeft'], true)) . '.' . sql_quote($join['columnLeft'], true);
+	}
+	return ltrim($query);
+}
 
 /**
  * Lists all tables from the current database.
@@ -500,6 +531,10 @@ function sql_get($table, $options = array()){
 	$options = array_merge(array(
 		'alias' => '',
 		'join' => null,
+		'groupBy' => null,
+		'orderBy' => null,
+		'limit' => null,
+		'offset' => null
 	), $options);
 
 	if( is_integer($options) ){
@@ -511,7 +546,9 @@ function sql_get($table, $options = array()){
 
 		// SELECT CLAUSE
 		if( isset($options['select']) ) {
-			if( is_string($options['select']) ){
+			if( !$options['select'] ){
+				$fields = '*';
+			}elseif( is_string($options['select']) ){
 				$fields = $options['select'];
 			}elseif( is_array($options['select']) ){
 				$fields = $options['select'];
@@ -526,43 +563,37 @@ function sql_get($table, $options = array()){
 			if( is_string($options['join']) ){
 				$query .= ' ' . $options['join'];
 			}elseif( is_array($options['join']) ){
-				if( is_assoc_array($options['join']) ){
-					$options['join'] = array($options['join']);
-				}
-				foreach ($options['join'] as $join) {
-					$join = array_merge(array(
-						'tableLeft' => $table,
-						'aliasLeft' => '',
-						'aliasRight' => '',
-						'columnLeft' => 'id',
-						'columnRight' => $table,
-						'type' => 'INNER JOIN'), $join);
-					$query .= ' ' . $join['type'] . ' ' . sql_quote($join['tableRight'], true) . ($join['aliasRight'] ?  ' ' . sql_quote($join['aliasRight'], true) : '') .
-						' ON ' . ($join['aliasRight'] ? sql_quote($join['aliasRight'], true) : sql_quote($join['tableRight'], true)) . '.' . sql_quote($join['columnRight'], true) .
-						' = ' . ($join['aliasLeft'] ? sql_quote($join['aliasLeft'], true) : sql_quote($join['tableLeft'], true)) . '.' . sql_quote($join['columnLeft'], true);
-				}
+				$query .= ' ' . sql_join($options['join'], $table);
 			}
 		}
 
 		// WHERE CLAUSE
 		if( isset($options['where']) ) {
-			$query .= ' WHERE ' . sql_logic($options['where']);
+			$query .= $options['where'] ? ' WHERE ' . sql_logic($options['where']) : '';
+		}
+
+		// GROUP BY CLAUSE
+		if( $options['groupBy'] ){
+			$query .= ' GROUP BY ' . $options['groupBy'];
 		}
 
 		// ORDER BY CLAUSE
-		if( isset($options['orderby']) && is_string($options['orderby']) ){
-			$query .= ' ORDER BY ' . $options['orderby'];
+		if( $options['orderBy'] ){
+			$query .= ' ORDER BY ' . $options['orderBy'];
 		}
 
 		// LIMIT CLAUSE
-		if( isset($options['limit']) ){
+		if( $options['limit'] ){
 			$query .= ' LIMIT ' . (int)$options['limit'];
+			if( $options['offset'] ){
+				$query .= ' OFFSET ' . (int)$options['offset'];
+			}
 		}
 	}
 
 	//var_dump($query);
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
-	if( isset($options['limit']) && $options['limit'] === 1 ){
+	if( $options['limit'] === 1 ){
 		return $res[0];
 	}
 	return $res;
