@@ -270,11 +270,11 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($data['login_id'], 'my_new_username');	
 
 		// SQL Getter
-		$signable = sql_get('signable', array('where' => array('id' => $userID)));
+		$signable = sql_get('signable', array('where' => array('id = %d' => $userID)));
 		$this->assertNotNull($signable);
 		$this->assertFalse(is_assoc_array($signable));
 
-		$signable = sql_get('signable', array('where' => array('id' => $userID), 'limit' => 1));
+		$signable = sql_get('signable', array('where' => array('id = %d' => $userID), 'limit' => 1));
 		$this->assertTrue(is_assoc_array($signable));
 
 		sql_alter_table('signable', array(
@@ -301,7 +301,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$someLogins = sql_get('authenticator', array('where' => array('login_id LIKE %s' => 'login%'), 'limit' => 2));
 		$this->assertEquals(sizeof($someLogins), 2);
 		*/
-		
+
 		sql_disconnect();
 		$this->assertNull(var_get('sql/dbConnection'));
 
@@ -431,7 +431,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 				'fields' => array(
 					'firstname' => array(),
 					'lastname' => array(),
-					'account' => array('type' => 'relation', 'data' => 'account')
+					'account' => array('type' => 'relation', 'data' => 'account', 'hasMany' => true)
 				)
 			),
 			'ingredient' => array(
@@ -442,7 +442,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 			),
 			'recipe' => array(
 				'fields' => array(
-					'author' => array('type' => 'relation', 'data' => 'person'),
+					'name' => array(),
+					'authors' => array('type' => 'relation', 'data' => 'person', 'hasMany' => true),
 					'ingredients' => array('type' => 'relation', 'data' => 'ingredient', 'hasMany' => true)
 				)
 			)
@@ -450,8 +451,12 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertTrue(models_to_sql($models));
 
-		$id = model_insert($models, 'recipe', array(
-			'author' => array(
+		Model::$schema = &$models;
+
+		$recipe = new Model('recipe');
+		$recipe->insert(array(
+			'name' => 'salmon pasta',
+			'authors' => array(
 				'firstname' => 'Jon',
 				'lastname' => 'Silver',
 				'account' => array(
@@ -461,11 +466,66 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 			),
 			'ingredients' => array(
 				array('name' => 'Salmon', 'type' => 'fish'),
-				array('name' => 'Chopped steak', 'type' => 'meat')
+				array('name' => 'Pasta', 'type' => 'starchy')
 			)
-		));
+		))->insert(array(
+			'name' => 'another recipe',
+			'authors' => array(
+				array(
+					'firstname' => 'Georges',
+					'lastname' => 'Lucas',
+					'account' => array(1)
+				),
+				1,
+				array(
+					'firstname' => 'Lucie',
+					'lastname' => 'France',
+					'account' => array(1)
+				)
+			),
+			'ingredients' => array('name' => 'Truite', 'type' => 'fish')
+		))->commit();
 
-		$this->assertEquals($id, 1);
+		$this->assertEquals(sizeof($recipe->get()), 2);
+		$recipe->reset();
+		$this->assertTrue(is_assoc_array($recipe->limit(1)->get()));
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('authors')->get()), 4);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('authors.account')->get()), 2);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->where(array('id = %d' => 1))->get()), 1);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('authors')->where(array('authors.id = %d' => 1))->get()), 2);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('authors.account', 'accounts')->where(array('accounts.id = %d' => 1))->get()), 2);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('authors.account', 'accounts')->groupBy(array('recipe.id', 'accounts.id'))->get()), 2);
+		$recipe->reset();
+		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
+		$recipe->reset();
+
+		//$this->assertEquals($id, 1);
+/*
+		model_update($models, 'recipe', array(
+			'author' => array(
+				'account' => array('password' => 'newpassword')
+			),
+			'name' => 'The great salmon pasta recipe',
+			'ingredients' => array(
+				array('name' => 'chive', 'type' => 'herbs')
+			)
+		), array('author.account.password = %s' => 'password'));
+
+		model('recipe')
+			//->using('author.account.contact.country')
+			//->where('author.account.password = %s' => 'password')
+			->insert(array('ingredients' => array('name' => 'chive', 'type' => 'herbs')))
+			//->replace('author' => array('account' => array('email' => 'test')))
+			->commit();
+		*/
 	}
 
 	public function test_cache() {
@@ -474,6 +534,9 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		print 'cache : ';
 
+		if( is_dir('cache') ){
+			rmdir_recursive('cache');
+		}
 		mkdir_recursive('cache');
 
 		$content = 'my cached content';
