@@ -82,6 +82,7 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 		return false;
 	}
 	$q = $sql->prepare($query);
+	//var_dump($query);
 	if( !$q ){
 		print $sql->debugDumpParams();
 		print $sql->errorInfo();
@@ -141,7 +142,7 @@ function sql_insert($table, $fields) {
 
 
 /**
- * Updates a row in database.
+ * Updates rows in database.
  * @param string $table The table name where to insert data. It will automatically be prefixed.
  * @param array $fields An associative array containing the columns to update
  * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
@@ -173,6 +174,29 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
 
 	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
 
+	$q = $sql->prepare($query . ';');
+	if( !$q ){
+		print $sql->debugDumpParams();
+		print $sql->errorInfo();
+	}
+	return $q->execute();
+}
+/**
+ * Deletes rows from database.
+ * @param string $table The table name where to delete data. It will automatically be prefixed.
+ * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
+ * @return boolean TRUE if the data has been delete from the table. FALSE otherwise.
+ */
+function sql_delete($table, $where = null) {
+	$sql = sql_connect();
+	if( !$sql ){
+		return false;
+	}
+	$prefix = var_get('sql/prefix', '');
+
+	$query = 'DELETE FROM ' . sql_quote($prefix . $table, true);
+	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
+	//var_dump($query);
 	$q = $sql->prepare($query . ';');
 	if( !$q ){
 		print $sql->debugDumpParams();

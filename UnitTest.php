@@ -431,7 +431,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 				'fields' => array(
 					'firstname' => array(),
 					'lastname' => array(),
-					'account' => array('type' => 'relation', 'data' => 'account', 'hasMany' => true)
+					'accounts' => array('type' => 'relation', 'data' => 'account', 'hasMany' => true)
 				)
 			),
 			'ingredient' => array(
@@ -459,7 +459,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 			'authors' => array(
 				'firstname' => 'Jon',
 				'lastname' => 'Silver',
-				'account' => array(
+				'accounts' => array(
 					'email' => 'jon.silver@gmail.com',
 					'password' => 'password'
 				)
@@ -474,13 +474,13 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 				array(
 					'firstname' => 'Georges',
 					'lastname' => 'Lucas',
-					'account' => array(1)
+					'accounts' => array(1)
 				),
 				1,
 				array(
 					'firstname' => 'Lucie',
 					'lastname' => 'France',
-					'account' => array(1)
+					'accounts' => array(1)
 				)
 			),
 			'ingredients' => array('name' => 'Truite', 'type' => 'fish')
@@ -492,7 +492,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$recipe->reset();
 		$this->assertEquals(sizeof($recipe->using('authors')->get()), 4);
 		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors.account')->get()), 2);
+		$this->assertEquals(sizeof($recipe->using('authors.accounts')->get()), 4);
 		$recipe->reset();
 		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
 		$recipe->reset();
@@ -500,32 +500,17 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$recipe->reset();
 		$this->assertEquals(sizeof($recipe->using('authors')->where(array('authors.id = %d' => 1))->get()), 2);
 		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors.account', 'accounts')->where(array('accounts.id = %d' => 1))->get()), 2);
+		$this->assertEquals(sizeof($recipe->using('authors.accounts', 'accounts')->where(array('accounts.id = %d' => 1))->groupBy('id')->get()), 2);
 		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors.account', 'accounts')->groupBy(array('recipe.id', 'accounts.id'))->get()), 2);
+		$this->assertEquals(sizeof($recipe->using('authors.accounts', 'accounts')->groupBy(array('recipe.id', 'accounts.id'))->get()), 2);
 		$recipe->reset();
 		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
+
 		$recipe->reset();
-
-		//$this->assertEquals($id, 1);
-/*
-		model_update($models, 'recipe', array(
-			'author' => array(
-				'account' => array('password' => 'newpassword')
-			),
-			'name' => 'The great salmon pasta recipe',
-			'ingredients' => array(
-				array('name' => 'chive', 'type' => 'herbs')
-			)
-		), array('author.account.password = %s' => 'password'));
-
-		model('recipe')
-			//->using('author.account.contact.country')
-			//->where('author.account.password = %s' => 'password')
-			->insert(array('ingredients' => array('name' => 'chive', 'type' => 'herbs')))
-			//->replace('author' => array('account' => array('email' => 'test')))
-			->commit();
-		*/
+		$recipe->delete('authors.accounts')->delete('authors')->delete('ingredients')->delete()->commit();
+		$this->assertFalse($recipe->get());
+		
+		//$recipe->using('authors.accounts', 'aa')->where('aa.id = 1')->delete('aa')->commit();
 	}
 
 	public function test_cache() {
