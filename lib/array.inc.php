@@ -25,6 +25,28 @@ function is_assoc_array($arr) {
 }
 
 
+function assoc_array_shuffle(&$array) {
+	$keys = array_keys($array);
+	shuffle($keys);
+	foreach($keys as $key) {
+		$new[$key] = $array[$key];
+	}
+	$array = $new;
+	return true;
+}
+
+function assoc_array_slice($assoc, $start, $len = null) {
+	if( $len === null ){
+		$len = sizeof($assoc);
+	}
+	$arr = array();
+	for( $i = $start; $i < $len; ++$i){
+		$arr[key($assoc)] = current($assoc);
+		next($assoc);
+	}
+	return $arr;
+}
+
 function array_segments($segments){
 	return is_array($segments) ? $segments : explode('/', $segments);
 }
