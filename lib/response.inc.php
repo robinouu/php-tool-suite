@@ -12,8 +12,13 @@ function redirect($url) {
 	exit;
 }
 
+function route($route = '/', $callback = null, $verbs = null){
+	return response_route($route, $callback, $verbs);
+}
+
 function response_route($route = '/', $callback = null, $verbs = null){
 	
+	plugin_require('request');
 	$path = request_route();
 
 	if( is_string($verbs) ){
@@ -21,20 +26,10 @@ function response_route($route = '/', $callback = null, $verbs = null){
 	}
 	if( (is_null($verbs) || in_array($_SERVER['REQUEST_METHOD'], $verbs)) && preg_match("#^" . $route . "$#ui", $path, $m) ){
 
-		// Particular route middleware
-		hook_register('response_route'.$route, $callback);
-
-		hook_do('response_route_before');
-		
 		ob_start();
-		hook_do('response_route'.$route, $m);
+		$callback($m);
 		$content = ob_get_contents();
 		ob_end_clean();
-
-		$afterContent = hook_do('response_route_after', $content);
-		if( $afterContent ){
-			$content = $afterContent;
-		}
 		
 		print $content;
 
@@ -43,6 +38,8 @@ function response_route($route = '/', $callback = null, $verbs = null){
 	}
 	return false;
 }
+
+
 
 function response_download_bytes($filename, $bytes = null) {
 	if( $filename ){
