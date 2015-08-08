@@ -131,9 +131,7 @@ function field($field = array()) {
 			break;
 		case 'select':
 		case 'enum':
-		
 			$data = $field['data'];
-			
 			if( is_array($data) ){
 				$options = '';
 				foreach ($data as $key => $v) {
@@ -141,6 +139,12 @@ function field($field = array()) {
 				}
 				$html .= tag('select', $options, $attrs);
 			}
+		break;
+		case 'checkbox':
+		case 'boolean':
+			$attrs['value'] = $value;
+			$attrs['type'] = 'checkbox';
+			$html .= tag('input', '', $attrs, true);
 		break;
 		default:
 			# code...
@@ -155,9 +159,15 @@ function field($field = array()) {
 	return $label . $html;
 }
 
-function fields($fields) {
+function fields($fields, &$datas = array()) {
 	$html = '';
-	foreach ($fields as $value) {
+	foreach ($fields as $key => $value) {
+		if( !isset($value['name']) ){
+			$value['name'] = $key;
+			if( isset($datas[$key]) ){
+				$value['value'] = $datas[$key];
+			}
+		}
 		$html .= field($value);
 	}
 	return $html;
