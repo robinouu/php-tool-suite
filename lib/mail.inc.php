@@ -21,6 +21,12 @@ function email($options) {
 		$from = $options['from'];
 	}
 
+	if( is_array($options['to']) ){
+		$to = implode(', ', $options['to']);
+	}else{
+		$to = $options['to'];
+	}
+
 	$msg = 'From: ' . $from . "\n";
 	$msg .= 'MIME-Version: 1.0'. "\n";
 	$msg .= "Content-Type: multipart/mixed; boundary=\"".$mime_boundary."\"". "\n"; 
@@ -51,7 +57,7 @@ function email($options) {
 		}
 	}
 
-	return mail($options['to'], $options['subject'], '', $msg);
+	return mail($to, $options['subject'], '', $msg);
 }
 
 ?>
