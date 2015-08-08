@@ -77,7 +77,7 @@ function var_append($path = array(), $value = null, &$data = null) {
  * @param array The context array where to unset the variable. By default, and if NULL, vars() will be used.
  * @return boolean TRUE if the variable has been unset. FALSE otherwise.
  */
-function var_unset($path, $data = null) {
+function var_unset($path, &$data = null) {
 	if( is_null($data) ){
 		$data = &vars();
 	}
