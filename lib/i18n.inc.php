@@ -1,11 +1,11 @@
 <?php
 /**
- * Internationalization (i18n)
+ * i18n
  * @package php-tool-suite
- * @subpackage Internationalization (i18n)
+ * @subpackage i18n
  */
 
-plugin_require(array('var'));
+plugin_require(array('var', 'hook'));
 
 /**
  * Sets the current locale
@@ -174,12 +174,15 @@ function load_translations($options = array()) {
 		hook_register('i18n/translations', function () use (&$options) {
 			return $options['translations'];
 		});
+	}else{
+		return false;
 	}
 
 	$translations = hook_do('i18n/translations');
 	$tData = new stdclass;
 	$tData->versions = $translations;
 	var_set('i18n/translationData', $tData);
+	return true;
 }
 
 /**
