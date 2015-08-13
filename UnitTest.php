@@ -406,10 +406,10 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		// multiple field validation
 		$emailField['value'] = 'x.x@x.x';
-		$this->assertTrue(fields_validate(array($emailField, $requiredField)));
-		$emailField['value'] = 'x';
-		$this->assertFalse(fields_validate(array($emailField, $requiredField)));
-
+		$fieldsToValidate = array($emailField, $requiredField);
+		$this->assertTrue(fields_validate($fieldsToValidate));
+		$fieldsToValidate[0]['value'] = 'x';
+		$this->assertFalse(fields_validate($fieldsToValidate));
 
 		print 'done' . "\r\n";
 	}
@@ -507,10 +507,20 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
 
 		$recipe->reset();
+
+		
+		/*$recipe->replace(array(
+			'name' => 'Trout with almonds',
+			'ingredients' => array(3, array('name' => 'Almond', 'type' => 'fruit')),
+			'authors' => array('accounts' => array(1, 1))
+		))->where('recipe.id = 2')->commit();
+
+		
+		$recipe->reset();
 		$recipe->delete('authors.accounts')->delete('authors')->delete('ingredients')->delete()->commit();
 		$this->assertFalse($recipe->get());
-		
-		//$recipe->using('authors.accounts', 'aa')->where('aa.id = 1')->delete('aa')->commit();
+		*/
+	
 	}
 
 	public function test_cache() {

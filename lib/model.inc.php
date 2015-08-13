@@ -28,19 +28,30 @@ function models_to_sql(&$models) {
 
 		$tableName = isset($mod['table']) ? $mod['table'] : $mod['id'];
 
-		foreach ($mod['fields'] as $fieldName => $field) {
+		foreach ($mod['fields'] as $key => $field) {
 			$field = array_merge(var_get('field/default', array()), $field);
+			$fieldModel = var_get('fields/' . $field['type']);
+			if( !$fieldModel && $field['type'] !== 'relation' ){
+				continue;
+			}
+			$fieldName = is_string($key) ? $key : $field['name'];
 
+			$sqlField = array();
+			
+			if( isset($fieldModel['extends']) ){
+				$parentFieldModel = var_get('fields/' . $fieldModel['extends']);
+				$parentFieldModel['convertTo']['sql']($field, $sqlField);
+			}
+			if( isset($fieldModel['convertTo']['sql']) && is_callable($fieldModel['convertTo']['sql']) ){
+				$fieldModel['convertTo']['sql']($field, $sqlField);
+			}
+			
 			$column = sql_quote($fieldName, true);
 
-			$fieldType = 'VARCHAR(255)';
-			if( $field['maxlength'] > 255 || $field['maxlength'] === -1 ){
-				$fieldType = 'TEXT';
-			}elseif (in_array($field['type'], array('int', 'float', 'double', 'bool', 'datetime', 'date'))){
-				$fieldType = $field['type'];
-			}elseif( $field['type'] === 'relation' ){
-				$fieldType = 'INT(11)';
-				if( !is_numeric($field['default']) ){ 
+
+			if( $field['type'] === 'relation' ){
+				$sqlField['type'] = 'int(11)';
+				if( !isset($field['default']) || !is_numeric($field['default']) ){ 
 					$field['default'] = 0;
 				}
 
@@ -64,23 +75,21 @@ function models_to_sql(&$models) {
 				}
 			}
 
-			$column .= ' ' . $fieldType;
+			$column .= ' ' . $sqlField['type'];
 
 			if( isset($field['unique']) && $field['unique'] === true ){
 				$column .= ' UNIQUE';
 			}
-
 			if( isset($field['required']) && $field['required'] === true ){
 				$column .= ' NOT NULL';
 			}
-
-			if( $field['comment'] ){
+			if( isset($field['comment']) ){
 				$column .= ' COMMENT ' . sql_quote($field['comment']);
 			}
 
-			if( $field['characterSet'] ){
+			if( isset($field['characterSet']) ){
 				$column .= ' CHARACTER SET ' . sql_quote($field['characterSet']);
-			}elseif( $field['collation'] ){
+			}elseif( isset($field['collation']) ){
 				$column .= ' COLLATE ' . sql_quote($field['collation']);
 			}
 
@@ -98,6 +107,7 @@ function models_to_sql(&$models) {
 			'comment' => $mod['comment'],
 			'foreignKeys' => $foreignKeys
 		);
+
 	}
 
 	$back = true;
@@ -145,7 +155,6 @@ class Model {
 		$this->modelName = $modelName;
 
 		$model = &Model::$schema[$modelName];
-
 		$tableName = Model::getTableName($modelName);
 
 		foreach( $model['fields'] as $fieldName => $field) {
@@ -249,7 +258,7 @@ class Model {
 			$this->using[$usingKey] = true;
 			
 			
-			if( !$usingModelField['hasMany'] ){
+			if( !isset($usingModelField['hasMany']) || !$usingModelField['hasMany'] ){
 				$this->join(array(
 					'type' => 'JOIN',
 					'tableLeft' => $parentTableName,
@@ -317,6 +326,7 @@ class Model {
 
 	public function get(){
 		$options = $this->prepareGet();
+		//var_dump($options);
 		return sql_get(Model::getTableName($this->modelName), $options);
 	}
 
@@ -337,8 +347,15 @@ class Model {
 		return $this;
 	}
 
-	public function replace(array $data) {
-		$this->replacements[] = $data;
+	public function replace($modelPath, array $data) {
+
+		if( isset($this->aliases[$modelPath]) ){
+			$modelPath = explode('.', $this->aliases[$modelPath]);
+		}else{
+			$modelPath = $this->getModelPath($modelPath);
+		}
+		$this->using($modelPath);
+		$this->replacements[] = array($modelPath, $data);
 		return $this;
 	}
 	
@@ -357,29 +374,19 @@ class Model {
 	
 	public function commit() {
 		if( sizeof($this->deletions) ){
-			$this->inserted_ids = array();
-			$where = implode(' AND ', $this->filters);
 			foreach ($this->deletions as $index => $deletion) {
-			 	$this->doDeletion($index, $where);
+			 	$this->doDeletion($deletion);
 		 	}
 		}
 		if( sizeof($this->replacements) ){
-			$options = $this->prepareGet();
-			$tableName = Model::getTableName($this->modelName);
-			$options['select'] = $tableName . '.id';
-			$tmp_ids = sql_get($tableName, $options);
-			$replace_ids = array();
-			foreach ($tmp_ids as $row) {
-				$replace_ids[] = (int)$row['id'];
-			}
 			foreach ($this->replacements as $index => $replacement) {
-			 	$this->doReplacement($index);
+			 	$this->doReplacement($replacement[0], $replacement[1]);
 		 	}
 		}
 		if( sizeof($this->insertions) ){
 			$this->inserted_ids = array();
 			foreach ($this->insertions as $index => $insertion) {
-			 	$this->doInsertion($index);
+			 	$this->doInsertion(null, $insertion);
 		 	}
 		}
 		$this->reset();
@@ -400,12 +407,10 @@ class Model {
 		return $this;
 	}
 
-	private function doDeletion($index, $where) {
-		$modelPath = $this->deletions[$index];
+	private function doDeletion($modelPath) {
 		
 		$options = $this->prepareGet();
 
-		$where = '';
 		$idName = 'id';
 		$tableToDelete = $tableName = Model::getTableName($this->modelName);
 
@@ -440,18 +445,11 @@ class Model {
 				$ids[] = (int)$row['id'];
 			}
 			$ids = array_unique($ids);
-			sql_delete($tableToDelete, $where . $idName . ' IN (' . implode(', ', $ids) . ')');
+			sql_delete($tableToDelete, $idName . ' IN (' . implode(', ', $ids) . ')');
 		}
 	}
 
-	private function doInsertion($index, $modelName = null, $subKeys = null) {
-
-		$datas = $this->insertions[$index];
-		if( $subKeys ){
-			$datas = var_get($subKeys, null, $datas);
-		}else{
-			$subKeys = array();
-		}
+	private function doInsertion($modelName = null, $datas = array()) {
 
 		if( !$modelName ){
 			$modelName = $this->modelName;
@@ -469,7 +467,11 @@ class Model {
 				$data = $datas[$fieldName];
 				$relation_id = null;
 				if( !$field['hasMany'] ){
-					$relation_id = $this->doInsertion($index, $field['data'], array_merge($subKeys, array($fieldName)));
+					if( is_array($data) ){
+						$relation_id = $this->doInsertion($field['data'], $data);
+					}elseif( is_numeric($data) ){
+						$relation_id = $data;
+					}
 				}else{
 					$relations_ids[$fieldName] = array();
 					if( is_array($data) ){
@@ -480,7 +482,7 @@ class Model {
 						}
 						foreach( $relationsData as $key => $relationData ) {
 							if( is_array($relationData) ){
-								$relations_ids[$fieldName][] = $this->doInsertion($index, $field['data'], array_merge($subKeys, is_numeric($key) ? array($fieldName, $key) : array($fieldName)));
+								$relations_ids[$fieldName][] = $this->doInsertion($field['data'], is_numeric($key) ? $datas[$fieldName][$key] : $datas[$fieldName]);
 							}else{
 								$relations_ids[$fieldName][] = $relationData;
 							}
@@ -513,74 +515,27 @@ class Model {
 		return $id;
 	}
 
-	private function doReplacement($index, $modelName = null, $subKeys = null, $replacement_ids = array()) {
-		// SOON...
-		/*
-		$datas = $this->replacements[$index];
-		if( $subKeys ){
-			$datas = var_get($subKeys, null, $datas);
-		}else{
-			$subKeys = array();
-		}
-
+	private function doReplacement($modelName = null, $datas) {
 		if( !$modelName ){
 			$modelName = $this->modelName;
 		}
-
 		$model = &Model::$schema[$modelName];
 		$tableName = Model::getTableName($modelName);
 		$fields = &$model['fields'];
 
-		$relations_ids = array();
-
-		foreach( $fields as $fieldName => $field) {
-			$field = array_merge(var_get('field/default', array()), $field);
-			if( $field['type'] === 'relation' && isset($datas[$fieldName]) ){
-				$data = $datas[$fieldName];
-				$relation_id = null;
-				if( !$field['hasMany'] ){
-					$relation_id = $this->doInsertion($index, $field['data'], array_merge($subKeys, array($fieldName)));
-				}else{
-					$relations_ids[$fieldName] = array();
-					if( is_array($data) ){
-						if( is_assoc_array($data) ){
-							$relationsData = array('data' => $data);
-						}else{
-							$relationsData = &$data;
-						}
-						foreach( $relationsData as $key => $relationData ) {
-							if( is_array($relationData) ){
-								$relations_ids[$fieldName][] = $this->doInsertion($index, $field['data'], array_merge($subKeys, is_numeric($key) ? array($fieldName, $key) : array($fieldName)));
-							}else{
-								$relations_ids[$fieldName][] = $relationData;
-							}
-						}
-					}else{
-						$relations_ids[$fieldName][] = $data;
-					}
-				}
-				unset($datas[$fieldName]);
-				if( $relation_id ){
-					$datas[$fieldName] = $relation_id;
-				}
-			}
+		$options = $this->prepareGet($tableName);
+		$options['select'] = 'id';
+		$tmp_ids = sql_get($tableName, $options);
+		if( is_assoc_array($tmp_ids) ){
+			$tmp_ids = array($tmp_ids);
 		}
-
-		sql_update($tableName, $datas, implode(' OR ', $replacement_ids));
-		$id = sql_last_id();
-
-		if( sizeof($relations_ids) ){
-			foreach( $relations_ids as $fieldName => $relation_ids ) {
-				$this->inserted_ids[$fieldName] = array();
-				foreach ($relation_ids as $relation_id) {
-					sql_insert($tableName . '_' . $fieldName, array('id_' . $tableName => $id, 'id_' . $model['fields'][$fieldName]['data'] => $relation_id));
-					$this->inserted_ids[$fieldName][] = sql_last_id();
-				}
+		if( $tmp_ids ){
+			$ids = array();
+			foreach ($tmp_ids as $row) {
+				$ids[] = (int)$row['id'];
 			}
+			$ids = array_unique($ids);
+			sql_update($tableName, $datas, 'id IN (' . implode(', ', $ids) . ')');
 		}
-
-		$this->inserted_ids[] = $id;
-		return $id;
-		*/
 	}	
 };

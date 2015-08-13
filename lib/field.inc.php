@@ -7,20 +7,455 @@
 
 plugin_require(array('i18n', 'html'));
 
+
+var_set('fields', array(
+	'text' => array(
+		'labels' => array('singular' => t('Texte'), 'plural' => t('Textes')),
+		'validate' => function (&$instance, &$str) {
+			if( !is_string($str) ){
+				$instance['errors']['invalid'] = t('le champ %s n\'est pas une chaîne de charactères', array($instance['label']));
+			}else{
+				if( isset($instance['maxlength']) && strlen($str) > (int)$instance['maxlength'] ){
+					$instance['errors']['maxlength'] = t('le champ %s ne peut comporter plus de %d charactères', array($instance['label'], $instance['maxlength']));
+				}elseif( isset($instance['minlength']) && strlen($str) < (int)$instance['minlength'] ){
+					$instance['errors']['minlength'] = t('le champ %s ne peut comporter moins de %d charactères', array($instance['label'], $instance['minlength']));
+				}
+				elseif( isset($instance['required']) && trim($str) === '' ){
+					$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+				}
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array(
+					'type' => 'text',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);				
+
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
+					$attrs['placeholder'] = $instance['placeholder'];
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['maxlength']) ){
+					if( $instance['maxlength'] > 255 ){
+						$isTextArea = true;
+						$attrs['role'] = 'textbox';
+						$attrs['aria-multiline'] = 'true';
+					}
+					$attrs['maxlength'] = $instance['maxlength'];
+				}
+				if( isset($isTextArea) && $isTextArea ){
+					$value = $attrs['value'];
+					unset($attrs['value']);
+					$html = tag('textarea', $value, $attrs);
+				}else{
+					$html = tag('input', '', $attrs, true);
+				}
+				return $html;
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$maxlength = isset($instance['maxlength']) ? $instance['maxlength'] : 256;
+				if( $maxlength > 256 || $maxlength < 0 ){
+					$sqlField['type'] = 'text';
+				}else{
+					$sqlField['type'] = 'varchar(' . (int)$maxlength . ')';
+				}
+			}
+		)
+	),
+	'int' => array(
+		'labels' => array('singular' => t('Nombre entier'), 'plural' => t('Nombres entiers')),
+		'validate' => function (&$instance, &$int) {
+			if( !is_int($int) ){
+				$instance['errors']['invalid'] = t('le champ %s n\'est pas un nombre entier', array($instance['label']));
+			}else{
+				if( isset($instance['minValue']) && $int < (int)$instance['minValue'] ){
+					$instance['errors']['minValue'] = t('le champ %s doit être supérieur à %d', array($instance['label'], $instance['value']));
+				}elseif( isset($instance['minValue']) && $int > (int)$instance['maxValue'] ){
+					$instance['errors']['minValue'] = t('le champ %s doit être inférieur à %d', array($instance['label'], $instance['value']));
+				}
+			}
+		},
+		'convertTo' => array(
+			'field' => function (&$instance) {
+				$attrs = array(
+					'type' => 'number',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
+					$attrs['placeholder'] = $instance['placeholder'];
+				}
+				if( isset($instance['minValue']) ){
+					$attrs['min'] = $instance['minValue'];
+				}
+				if( isset($instance['maxValue']) ){
+					$attrs['max'] = $instance['maxValue'];
+				}
+				if( isset($instance['step']) ){
+					$attrs['step'] = $instance['step'];
+				}
+				return tag('input', '', $attrs, true);
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$sqlField['type'] = 'int(11)';
+			}
+		)
+	),
+	'boolean' => array(
+		'labels' => array('singular' => t('Booléen'), 'plural' => t('Booléens')),
+		'validate' => function (&$instance, &$boolean) {
+			if( !is_bool($boolean) ){
+				$instance['errors']['invalid'] = t('le champ %s n\'est pas un booléen');
+			}
+		},
+		'convertTo' => array(
+			'field' => function (&$instance) {
+				$attrs = array(
+					'type' => 'checkbox',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				return tag('input', '', $attrs, true);
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$sqlField['type'] = 'bool';
+			}
+		)
+	),
+	'password' => array(
+		'labels' => array('singular' => t('Mot de passe'), 'plural' => t('Mots de passe')),
+		'extends' => 'text',
+		'convertTo' => array(
+			'field' => function (&$instance) {
+				$attrs = array(
+					'type' => 'password',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
+					$attrs['placeholder'] = $instance['placeholder'];
+				}
+				$html = tag('input', '', $attrs, true);
+				return $html;
+			}
+		)
+	),
+	'email' => array(
+		'labels' => array('singular' => t('Email'), 'plural' => t('Emails')),
+		'extends' => 'text',
+		'validate' => function (&$instance, &$email) {
+			plugin_require('vendor/is_email');
+			$empty = trim($email) === '';
+			if( isset($instance['required']) && $empty ){
+				$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+			}elseif( !$empty && !is_email($email) ){
+				$instance['errors']['invalid'] = t('le champ %s n\'est pas une adresse e-mail valide.', array($instance['label']));
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array(
+					'type' => 'email',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
+					$attrs['placeholder'] = $instance['placeholder'];
+				}
+				$html = tag('input', '', $attrs, true);
+				return $html;
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$sqlField['type'] = 'varchar(256)';
+			}
+		)
+	),
+	'phoneNumber' => array(
+		'labels' => array('singular' => t('Numéro de téléphone'), 'plural' => t('Numéros de téléphone')),
+		'extends' => 'text',
+		'validate' => function (&$instance, &$phoneNumber) {
+			if( isset($instance['required']) && trim($phoneNumber) === '' ){
+				$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+			}elseif( !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $phoneNumber) ){
+				$instance['errors']['invalid'] = t('le champ %s n\'est pas un numéro de téléphone valide.', array($instance['label']));
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array(
+					'type' => 'tel',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
+					$attrs['placeholder'] = $instance['placeholder'];
+				}
+				$html = tag('input', '', $attrs, true);
+				return $html;
+			}
+		)
+	),
+	'date' => array(
+		'labels' => array('singular' => t('Date'), 'plural' => t('Dates')),
+		'validate' => function (&$instance, &$date) {
+			if( isset($instance['required']) && trim($date) === '' ){
+				$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+			}else{
+				$format = isset($instance['format']) ? $instance['format'] : 'Y-m-d';
+				$d = DateTime::createFromFormat($format, $date);
+				$valid = $d && $d->format($format) == $date;
+				if( !$valid ){
+					$instance['errors']['invalid'] = t('le champ %s n\'est pas une date valide.', array($instance['label']));
+				}elseif( isset($instance['min']) ){
+					$dMin = DateTime::createFromFormat($format, $instance['min']);
+					if( $d < $dMin ){
+						$instance['errors']['min'] = t('la date %s est plus ancienne que la date minimale acceptée (%s).', array($date, $instance['min']));
+					}
+				}elseif( isset($instance['max']) ){
+					$dMax = DateTime::createFromFormat($format, $instance['max']);
+					if( $d > $dMax ){
+						$instance['errors']['max'] = t('la date %s est plus récente que la date maximale acceptée (%s).', array($date, $instance['max']));
+					}
+				}
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array(
+					'type' => 'date',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['min']) && is_string($instance['min']) ) {
+					$attrs['min'] = $instance['min'];
+				}
+				if( isset($instance['max']) && is_string($instance['max']) ) {
+					$attrs['max'] = $instance['max'];
+				}
+				$html = tag('input', '', $attrs, true);
+				return $html;
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$sqlField['type'] = 'date';
+			}
+		)
+	),
+	'datetime' => array(
+		'labels' => array('singular' => t('Date et heure'), 'plural' => t('Dates et heures')),
+		'validate' => function (&$instance, &$datetime) {
+			if( isset($instance['required']) && trim($datetime) === '' ){
+				$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+			}else{
+				$format = isset($instance['format']) ? $instance['format'] : 'Y-m-d H:i:s';
+				$d = DateTime::createFromFormat($format, $datetime);
+				$valid = $d && $d->format($format) == $datetime;
+				if( !$valid ){
+					$instance['errors']['invalid'] = t('le champ %s n\'est pas une date valide.', array($instance['label']));
+				}elseif( isset($instance['min']) ){
+					$dMin = DateTime::createFromFormat($format, $instance['min']);
+					if( $d < $dMin ){
+						$instance['errors']['min'] = t('la date %s est plus ancienne que la date minimale acceptée (%s).', array($datetime, $instance['min']));
+					}
+				}elseif( isset($instance['max']) ){
+					$dMax = DateTime::createFromFormat($format, $instance['max']);
+					if( $d > $dMax ){
+						$instance['errors']['max'] = t('la date %s est plus récente que la date maximale acceptée (%s).', array($datetime, $instance['max']));
+					}
+				}
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array(
+					'type' => 'datetime',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['min']) && is_string($instance['min']) ) {
+					$attrs['min'] = $instance['min'];
+				}
+				if( isset($instance['max']) && is_string($instance['max']) ) {
+					$attrs['max'] = $instance['max'];
+				}
+				$html = tag('input', '', $attrs, true);
+				return $html;
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$sqlField['type'] = 'datetime';
+			}
+		)
+	),
+	'time' => array(
+		'labels' => array('singular' => t('Heure'), 'plural' => t('Heures')),
+		'validate' => function (&$instance, &$datetime) {
+			if( isset($instance['required']) && trim($datetime) === '' ){
+				$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+				return false;
+			}else{
+				$format = isset($instance['format']) ? $instance['format'] : 'H:i:s';
+				$d = DateTime::createFromFormat($format, $datetime);
+				$valid = $d && $d->format($format) == $datetime;
+				if( !$valid ){
+					$instance['errors']['invalid'] = t('le champ %s n\'est pas une date valide.', array($instance['label']));
+				}elseif( isset($instance['min']) ){
+					$dMin = DateTime::createFromFormat($format, $instance['min']);
+					if( $d < $dMin ){
+						$instance['errors']['min'] = t('la date %s est plus ancienne que la date minimale acceptée (%s).', array($datetime, $instance['min']));
+					}
+				}elseif( isset($instance['max']) ){
+					$dMax = DateTime::createFromFormat($format, $instance['max']);
+					if( $d > $dMax ){
+						$instance['errors']['max'] = t('la date %s est plus récente que la date maximale acceptée (%s).', array($datetime, $instance['max']));
+					}
+				}
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array(
+					'type' => 'time',
+					'value' => isset($instance['value']) ? $instance['value'] : ''
+				);
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['min']) && is_string($instance['min']) ) {
+					$attrs['min'] = $instance['min'];
+				}
+				if( isset($instance['max']) && is_string($instance['max']) ) {
+					$attrs['max'] = $instance['max'];
+				}
+				$html = tag('input', '', $attrs, true);
+				return $html;
+			},
+			'sql' => function (&$instance, &$sqlField) {
+				$sqlField['type'] = 'time';
+			}
+		)
+	),
+	'select' => array(
+		'labels' => array('singular' => t('Sélection'), 'plural' => t('Sélections')),
+		'extends' => 'text',
+		'validate' => function (&$instance, &$select) {
+			if( isset($instance['required']) && trim($select) === '' ){
+				$instance['errors']['required'] = t('le champ %s est requis', array($instance['label']));
+			}elseif( !in_array($select, $instance['datas']) ){
+				$instance['errors']['invalid'] = t('la valeur %s ne fait pas parti de la liste de sélection.', array($select));
+			}
+		},
+		'convertTo' => array(
+			'field' => function(&$instance) {
+				$attrs = array();
+				if( isset($instance['readonly']) && $instance['readonly'] === true ){
+					$attrs['readonly'] = 'readonly';
+					$attrs['aria-readonly'] = 'true';
+				}
+				if( isset($instance['required']) && $instance['required'] === true ){
+					$attrs['aria-required'] = 'true';
+				}
+				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
+					$attrs['disabled'] = $instance['disabled'];
+				}
+				$content = '';
+				foreach ($instance['datas'] as $key => $value) {
+					$key = is_string($key) ? $key : $value;
+					$optAttrs = array('value' => $key);
+					if( isset($instance['value']) && $instance['value'] === $key ){
+						$optAttrs['selected'] = 'selected';
+					}
+					$content .= tag('option', $value, $optAttrs);
+				}
+				return tag('select', $content, $attrs);
+			}
+		)
+	)
+));
+
+
 if( !var_get('field/default') ){
 	var_set('field/default', array(
-		'type' => 'text',
-		'comment' => null,
-		'maxlength' => 255,
-		'default' => null,
-		'unique' => false,
-		'required' => false,
-		'formatter' => null,
-		'attrs' => array(),
-		'searchable' => true,
-		'hasMany' => false,
-		'characterSet' => null,
-		'collation' => null
+		'type' => 'text'
 	));
 }
 
@@ -30,14 +465,12 @@ if( !var_get('field/default') ){
  * @return mixed The field value or default value. NULL otherwise
  */
 function field_value($field) {
-
 	$value = null;
 	if( isset($field['value']) ){
 		$value = $field['value'];
 	}else{
 		$value = isset($field['default']) ? $field['default'] : null;
 	}
-
 	return $value;
 }
 
@@ -47,128 +480,32 @@ function field_value($field) {
  * @return string The generated HTML for the value, generally along with a label.
  */
 function field($field = array()) {
-	$field = array_merge(var_get('field/default', array()), $field);
-
-	$html = '';
-	$attrs = array();
-	$attrs['name'] = $field['name'];
-	$attrs['id'] = isset($field['id']) ? $field['id'] : 'input-' . $field['name'];
-	$attrs['class'] = '';
-	$attrs = array_merge($attrs, $field['attrs']);
-
-	$value = field_value($field);
-
-	switch ($field['type']) {
-		case 'text':
-		case 'hidden':
-		case 'password':
-		case 'date':
-		case 'datetime':
-		case 'search':
-		case 'float':
-		case 'double':
-		case 'int':
-		case 'tel':
-		case 'email':
-		case 'url':
-			$isTextArea = false;
-		
-			if( $field['type'] === 'text' && isset($field['maxlength']) && $field['maxlength'] > 255){
-				$isTextArea = true;
-				$attrs['role'] = 'textbox';
-				$attrs['aria-multiline'] = 'true';
-			}else{
-				$attrs['type'] = $field['type'];
-				if( $field['type'] === 'float' || $field['type'] === 'double' ){
-					$attrs['type'] = 'number';
-					$attrs['step'] = 'any';
-				}elseif ($field['type'] === 'int' ){
-					$attrs['type'] = 'number';
-				}
-			}
-
-			if( in_array($field['type'], array('int','float','double')) ){
-				if( isset($field['minValue']) && is_numeric($field['minValue']) ){
-					$attrs['min'] = $field['minValue'];
-				}
-				if( isset($field['maxValue']) && is_numeric($field['maxValue']) ){
-					$attrs['max'] = $field['maxValue'];
-				}
-			}else{
-				if( isset($field['maxlength']) && is_numeric($field['maxlength']) ){
-					$attrs['maxlength'] = $field['maxlength'];
-				}
-			}
-			
-			if( $field['type'] === 'datetime' ){
-				$attrs['class'] .= ' datetimepicker';
-			}elseif( $field['type'] === 'date' ){
-				$attrs['class'] .= ' datepicker';
-			}
-
-			if( isset($field['readOnly']) && $field['readOnly'] === true ){
-				$attrs['readonly'] = 'readonly';
-				$attrs['aria-readonly'] = 'true';
-			}
-
-			if( isset($field['placeholder']) && is_string($field['placeholder']) ) {
-				$attrs['placeholder'] = $field['placeholder'];
-			}else{
-				$attrs['placeholder'] = (isset($field['label']) ? $field['label'] : '');
-			}
-
-			if( isset($field['required']) ){
-				$attrs['aria-required'] = 'true';
-			}
-
-			if( !$isTextArea ){
-				$attrs['value'] = $value;
-				$html = tag('input', '', $attrs, true);
-			}else{
-				$html = tag('textarea', $value, $attrs);
-			}
-
-			break;
-		case 'select':
-		case 'enum':
-			$data = $field['data'];
-			if( is_array($data) ){
-				$options = '';
-				foreach ($data as $key => $v) {
-					$options .= '<option' . ($key === $value ? ' selected="selected"' : '') . ' value="' . $key . '">' . htmlspecialchars(t($v)) . '</option>';
-				}
-				$html .= tag('select', $options, $attrs);
-			}
-		break;
-		case 'checkbox':
-		case 'boolean':
-			$attrs['value'] = $value;
-			$attrs['type'] = 'checkbox';
-			$html .= tag('input', '', $attrs, true);
-		break;
-		default:
-			# code...
-			break;
-	}
+	$fieldModel = var_get('fields/' . $field['type']);
+	if( $fieldModel ){
+		$html = $field['convertTo']['field']($field);
 	
-	if( isset($field['label']) && $field['type'] !== 'hidden' ){
-		$label = tag('label', $field['label'], array('for' => $attrs['id']));
-	}else{
-		$label = '';
+		if( !isset($field['label']) || (isset($field['hidden']) && $field['hidden'] !== true) ){
+			$label = '';
+		}else{
+			$attrs = array();
+			if( isset($field['id']) ){
+				$attrs['id'] = $field['id'];
+			}
+			$label = tag('label', $field['label'], array('for' => $attrs));
+		}
+		return $label . $html;
 	}
-	return $label . $html;
+	return '';
 }
 
 function fields($fields, &$datas = array()) {
 	$html = '';
-	foreach ($fields as $key => $value) {
-		if( !isset($value['name']) ){
-			$value['name'] = $key;
-			if( isset($datas[$key]) ){
-				$value['value'] = $datas[$key];
-			}
+	foreach ($fields as $key => $field) {
+		$fieldName = is_string($key) ? $key : $field['name'];
+		if( isset($datas[$fieldName]) ){
+			$value['value'] = $datas[$fieldName];
 		}
-		$html .= field($value);
+		$html .= field($field);
 	}
 	return $html;
 }
@@ -177,103 +514,24 @@ function fields($fields, &$datas = array()) {
  * Validates a field value.
  * @param array $field The field reference 
  * @param array $value An optional value. If NULL, use field_value().
- * @param array $data The returned validation data.
- * @return boolean TRUE if the value has been validated. FALSE otherwise. Error details can be found in $data['errors'].
+ * @return boolean TRUE if the value has been validated. FALSE otherwise. Error details can be found in $field['errors'].
  */
-function field_validate($field, $value = null, &$data = null){
+function field_validate(&$field, $value = null){
 	$field = array_merge(var_get('field/default', array()), $field);
-
-	$key = $field['name'];
-
-	$errors = array($key => array());
-	$d = !is_null($value) ? $value : field_value($field);
-
-	$data = array();
-
-	$hookedValidation = array();
-	$hookedValidation = hook_do('field_validate/' . $key);
-	if(is_array($hookedValidation) ){
-		$data = $hookedValidation;
-		if( !isset($data['data'][$key]) ){
-			$data['data'][$key] = $d;
+	$fieldModel = var_get('fields/' . $field['type']);
+	if( $fieldModel ){
+		$value = is_null($value) ? field_value($field) : $value;
+		unset($field['errors']);
+		if( isset($fieldModel['extends']) ){
+			$parentFieldModel = var_get('fields/' . $fieldModel['extends']);
+			$parentFieldModel['validate']($field, $value);
 		}
-	}else{
-		switch ($field['type']) {
-			case 'int':
-			case 'float':
-			case 'double':
-				if( is_numeric($field['min']) && $d < $field['min'] ){
-					$errors[$key][] = field_error_message($field, 'min');
-				}
-				if( is_numeric($field['max']) && $d > $field['max'] ){
-					$errors[$key][] = field_error_message($field, 'max');
-				}
-			break;
-			case 'phone':
-				if( $field['required'] && !preg_match('#\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$#', $d)){
-					$errors[$key][] = field_error_message($field);
-				}
-			break;
-			case 'data':
-			case 'datetime':
-				if( $field['required'] && !strtotime($d) ){
-					$errors[$key][] = field_error_message($field, 'date');
-				}
-			break;
-			case 'text':
-			case 'password':
-			case 'email':
-				if( $field['required'] && !is_string($d) ){
-					$errors[$key][] = field_error_message($field, 'not_string');
-				}else{
-					if( isset($field['maxlength']) && (int)$field['maxlength'] > 0 && (int)$field['maxlength'] !== -1){
-						if( strlen($d) > (int)$field['maxlength'] ){
-							$errors[$key][] = field_error_message($field, 'maxlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter plus de ' . $field['maxlength'] . ' caractères';
-						}
-					}
-					if( isset($field['minlength']) && (int)$field['minlength'] > 0 ){
-						if( strlen($d) < (int)$field['minlength'] ){
-							$errors[$key][] = field_error_message($field, 'minlength'); //'Le champ "' . $field['label'] . '" ne peut pas comporter moins de ' . $field['minlength'] . ' caractères';
-						}
-					}
-					if( $field['type'] === 'email' ){
-					 	// validate an email address according to RFCs 5321, 5322 and others, by Dominic Sayers
-						plugin_require('vendor/is_email');
-						if( $field['required'] || $d !== '' ){
-							if( function_exists('is_email') ){
-								$valid = is_email($d);
-							}else{
-								$valid = filter_var($d, FILTER_VALIDATE_EMAIL);
-							}
-							if( !$valid ){
-								$errors[$key][] = field_error_message($field); //'L\'adresse email est invalide.';
-							}
-						}
-					}
-				}
-				break;
-			default:
-				# code...
-				break;
-		}
-
-		if( $field['required'] && !$d  && !sizeof($errors[$key]) ){
-			$errors[$key][] = field_error_message($field, 'required');
+		if( isset($fieldModel['validate']) && is_callable($fieldModel['validate']) ){
+			$fieldModel['validate']($field, $value);
 		}
 	}
-
-	if( !sizeof($data) ){
-		$data = array('data' => array($key => $d), 'errors' => $errors);
-	}elseif( !$hookedValidation ){
-		$data['data'] = array($key => $d);
-		$data['errors'] = $errors;
-	}
-
-	if( isset($data['errors'][$key]) && !sizeof($data['errors'][$key]) ){
-		unset($data['errors'][$key]);
-	}
-
-	return !sizeof($data['errors']);
+	$hasErrors = isset($field['errors']) && sizeof($field['errors']);
+	return !$hasErrors;
 }
 
 
@@ -282,229 +540,18 @@ function field_validate($field, $value = null, &$data = null){
  * @param array $field An array of fields to validate
  * @param array $value An optional associate array containing the field keys and values to test for.
  * @param array $data The returned validation data.
- * @return boolean TRUE if the values have been validated. FALSE otherwise. Error details can be found in $data['errors'].
+ * @return boolean TRUE if the values have been validated. FALSE otherwise. Error details can be found in each field. See field_validate().
  */
-function fields_validate($fields, $values = null, &$data = null) {
+function fields_validate(&$fields, $values = null) {
 	// try the default $_REQUEST values
-	if( !$values ){
-		$values = $_REQUEST; 
+	if( is_null($values) ){
+		$values = $_REQUEST;
 	}
-
-	$data = array();
-	foreach ($fields as $fieldName => $field) {
-		if( !isset($field['name']) ){
-			$field['name'] = $fieldName;
-		}
-		$back = array();
-		field_validate($field, isset($values[$fieldName]) ? $values[$fieldName] : field_value($field), $back);
-		$data = array_merge_recursive($data, $back);
+	$valid = true;
+	foreach ($fields as $key => &$field) {
+		$key = is_string($key) ? $key : $field['name'];
+		$valid = $valid && field_validate($field, isset($values[$key]) ? $values[$key] : null);
 	}
-
-	$hookedValidation = array();
-	$hookedValidation = hook_do('fields_validate');
-	if( $hookedValidation ){
-		$data = array_merge_recursive($data, $hookedValidation);
-	}
-
-	return !sizeof($data['errors']);
+	return $valid;
 }
 
-
-/**
- * Gets a human readable message from a field error code
- * @param array $field The field reference
- * @param string $error The error code
- * @return string An internationalized human readable error message.
- */
-function field_error_message($field, $error = '')
-{	
-	$label = '<strong>' . (isset($field['label']) ? $field['label'] : ucfirst($field['name'])) . '</strong>';
-	if( $error === 'required' ){
-		return t('the field %s is required', array($label));
-	}elseif( $error === 'minlength' ){
-		return t('the field %s cannot contain less than %d characters', array($label, $field['minlength']));
-	}elseif( $error === 'maxlength' ){
-		return t('the field %s cannot contain more than %d characters', array($label, $field['maxlength']));
-	}elseif( $error === 'unique' ){
-		return t('the field %s already exists in database.', array($label));
-	}elseif( $error === 'min' ){
-		return t('the field %s must be greater than %d', array($label, $field['min']));
-	}elseif( $error === 'max' ){
-		return t('the field %s must be lower than %d', array($label, $field['max']));
-	}elseif( $error === 'max' ){
-		return t('the date field %s is invalid', array($label));
-	}else{
-		return t('the field %s is invalid', array($label));
-	}
-}
-
-
-/*
-function fields_to_sql($fields, $forceDeletion = false) {
-	$prefix = var_get('sql/prefix', '');
-	$defaultSqlField = var_get('sql/defaultField');
-	$tables = sql_list_tables();
-
-	if( $forceDeletion === true ){
-		$newContentTypes = array_keys($schema);
-		foreach( $tables as $table ) {
-			$ct = substr($table, strlen($prefix));
-			if( substr($table, 0, strlen($prefix)) === $prefix && !in_array($ct, $newContentTypes) ){
-				sql_delete_table($ct);
-				continue;
-			}
-		}
-	}
-
-	foreach ($fields as $contenttype => $info) {
-		
-		$fields = $info['fields'];
-		if( $forceDeletion === true ){
-			$fieldKeys = array_keys($fields);
-		}
-
-		$tableName = $prefix.$contenttype;
-
-		$tableExists = in_array($tableName, $tables);
-		
-		if( $tableExists ) {
-			$tableDescribe = sql_describe($tableName);
-			$oldFieldTypes = array();
-			$oldFieldNames = array();
-			foreach ($tableDescribe as $tableField) {
-				if( $tableField['Field'] === 'id' ){
-					continue;
-				}
-				$oldFieldTypes[$tableField['Field']] = $tableField['Type'];
-				$oldFieldNames[] = $tableField['Field'];
-			}
-		}
-		
-		$inject = array();
-		$uniques = array();
-		$rel = array();
-		$many = array();
-		$lastColumn = 'id';
-		$i = 0;
-		foreach ($fields as $fieldName => $field) {
-			$default = '';
-			$field = array_merge($defaultSqlField, $field);
-			$fieldType = 'VARCHAR(' . $field['maxlength'] . ')';
-			if( $field['type'] == 'text' && $field['maxlength'] > 255 || $field['type'] === 'password' || $field['maxlength'] === -1 ){
-				$fieldType = 'TEXT';
-			}elseif( $field['type'] == 'relation' ){
-				$fieldType = 'INT(11)';
-				if( !is_numeric($field['default']) ){ 
-					$field['default'] = 0;
-				}
-				if( $field['hasMany'] ){
-					$manyTableName = $contenttype . '_' . $fieldName;
-					
-					$many[] = 'CREATE TABLE IF NOT EXISTS ' . sql_quote($manyTableName, true) . ' (' . 
-						'id_' . $contenttype . ' int(11) NOT NULL, ' . 
-						'id_' . $field['data'] . ' int(11) NOT NULL, 
-						PRIMARY KEY(id_' . $contenttype . ',id_' . $field['data'] . '),
-						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $contenttype, true) . '` (id_'.$contenttype.') REFERENCES `' . sql_quote($prefix . $contenttype, true) . '`(`id`),
-						FOREIGN KEY `' . sql_quote('FK_id_' . $manyTableName . '_' . $field['data'], true) . '` (id_'.$field['data'].') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`)
-						) COLLATE utf8_general_ci ENGINE=InnoDB;';
-					continue;
-				}
-			}elseif (in_array($field['type'], array('int', 'float', 'double', 'bool', 'datetime', 'date'))){
-				if( $field['type'] === 'int' ){
-					$fieldType = 'int(11)';
-				}else{
-					$fieldType = $field['type'];
-				}
-				if( !is_numeric($field['default']) ){ 
-					$field['default'] = 0;
-				}
-			}
-
-			if( isset($field['unique']) && $field['unique'] === true ){
-				$uniques[] = ' UNIQUE ('.$fieldName.') ';
-			}
-
-
-			$notnull = '';
-			if( isset($field['required']) && $field['required'] === true ){
-				$notnull .= ' NOT NULL';
-			}
-
-			if( !$tableExists ){
-
-				$inject[] = $fieldName . ' ' . $fieldType . $default . $notnull . ' COLLATE utf8_general_ci';
-				if( $field['type'] == 'relation' && !$field['hasMany'] ){
-					$rel[] = ' FOREIGN KEY `' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . '` ('.$fieldName.') REFERENCES `' . sql_quote($prefix . $field['data'], true) . '`(`id`) ';
-				}
-
-			}elseif( !isset($oldFieldTypes[$fieldName]) || mb_strtolower($fieldType) !== mb_strtolower($oldFieldTypes[$fieldName]) ){
-				if( in_array($fieldName, $oldFieldNames) ){
-					$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' MODIFY COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull;
-				}else{
-					if( !$field['hasMany'] ){
-						$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD COLUMN ' . sql_quote($fieldName, true) . ' ' . $fieldType . $default . $notnull . ' AFTER ' . sql_quote($lastColumn, true);
-						if( $field['type'] == 'relation' ){
-							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true);
-							$inject[] = 'ALTER TABLE ' . sql_quote($tableName, true) . ' ADD CONSTRAINT ' . sql_quote('FK_id_' . $contenttype . '_' . $fieldName, true) . ' FOREIGN KEY (`' . $fieldName . '`) REFERENCES ' . sql_quote($prefix . $field['data'], true) . '(`id`) ';
-						}
-					}
-				}				
-			}else{
-				
-			}
-
-			$lastColumn = $fieldName;
-			++$i;
-		}
-
-		$rel = array_merge($rel, $uniques);
-
-		if( !$tableExists ){
-			$primaryKey = array('id');
-			if( isset($info['primaryKey']) ){
-				if( is_array($info['primaryKey']) ){
-					$primaryKey = $info['primaryKey'];
-				}elseif( is_string($info['primaryKey']) ){
-					$primaryKey = array($info['primaryKey']);
-				}
-			}
-			if( in_array('id', $primaryKey) ){
-				array_unshift($inject, 'id INT NOT NULL AUTO_INCREMENT');
-			} 
-			$primaryKey = implode(', ', $primaryKey);
-			$query = 'CREATE TABLE ' . sql_quote($tableName, true) . ' (' . implode(',', $inject) . ', PRIMARY KEY(' . $primaryKey . ')' . (sizeof($rel) ? ',' . implode(',', $rel) : '') . ') COLLATE utf8_general_ci ENGINE=InnoDB;';
-			//print ($query);
-			sql_query($query, null, null);
-		}
-		else {
-			if ($forceDeletion){
-				$fieldsToDelete = array_keys($fields);
-				$fieldsCopy = $oldFieldNames;
-				foreach ($fieldsCopy as $key => $v) {
-					if( $v == 'id'){
-						unset($fieldsCopy[$key]);
-					}
-				}
-
-				$diff = array_diff($fieldsCopy, $fieldsToDelete);
-
-				if( sizeof($diff) ){
-					foreach ($diff as $value) {
-						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP FOREIGN KEY `FK_id_' . sql_quote($contenttype . '_' . $value, true) . '`');
-						array_unshift($inject, 'ALTER TABLE ' . sql_quote($tableName, true) . ' DROP COLUMN ' . sql_quote($value, true) . ';');
-					}
-				}
-			}
-
-			foreach ($inject as $query) {
-				sql_query($query, null, null);
-			}
-		}
-	}
-
-	// execute many relations
-	foreach ($many as $query) {
-		sql_query($query, null, null);
-	}
-}
-*/
