@@ -65,25 +65,26 @@ function hook_get($name = null, $priority = null){
  *  <li>Arrays use recursive merging</li>
  * </ul>
  */
-function hook_do($name, $args = array()) {
+function hook_do($name, $args = null) {
 	$realName = $name;
 	$name = object_hash($name);
 
 	if( !($hook = var_get('hooks/' . $name)) ){
-		return NULL;
+		return $args;
 	}
-		
-	$args = array($args);
 
-	$backValue = null;
-	foreach (hook_get($realName) as $callback) {
+	$backValue = $args;	
+	$args = array($args);
+	
+	$hooks = hook_get($realName);
+
+	foreach ($hooks as &$callback) {
 		// Merge back args
 		$value = call_user_func_array($callback, $args);
-		
 		if( is_array($value) ){
 			$backValue = is_null($backValue) ? $value : (is_array($backValue) ? array_merge($backValue, $value) : array_merge_recursive(array($backValue), $value));
 		}elseif( is_string($value) ){
-			$backValue = (string)$backValue . $value;
+			$backValue = (is_string($backValue) ? $backValue : '') . $value;
 		}elseif( is_integer($value) ){
 			$backValue += (int)$backValue + $value;
 		}elseif( is_float($value) ){
