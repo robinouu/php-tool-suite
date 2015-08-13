@@ -20,6 +20,7 @@ function inet_client($options = array()) {
 	$options = array_merge(array(
 		'host' => '127.0.0.1',
 		'port' => 9050,
+		'onInit' => null,
 		'onData' => null,
 		'bufferLength' => 2048
 	), $options);
@@ -30,6 +31,11 @@ function inet_client($options = array()) {
 		print inet_error($socket);
 	}else{
 		$isRunning = true;
+
+		if( is_callable($options['onInit']) ){
+			$options['onInit']($socket);
+		}
+		
 		do {
 
 			if( ($buf = @socket_read($socket, $options['bufferLength'])) === FALSE ){
@@ -37,7 +43,7 @@ function inet_client($options = array()) {
 				$isRunning = false;
 			}else{
 				if( is_callable($options['onData']) ){
-					$options['onData']($buf);
+					$isRunning = $options['onData']($buf);
 				}else{
 					print $buf;
 				}
@@ -46,6 +52,10 @@ function inet_client($options = array()) {
 	}
 
 	inet_close($socket);
+}
+
+function inet_write($socket, $msg) {
+	socket_write($socket, $msg, strlen($msg));
 }
 
 function inet_close($socket) {
@@ -95,7 +105,7 @@ function inet_server($options = array()) {
 			}
 
 			foreach ($read as $readable_client) {
-				$data = @socket_read($readable_client, $options['clientBuffer'], PHP_NORMAL_READ);
+				$data = @socket_read($readable_client, $options['clientBuffer'], PHP_BINARY_READ);
 
 				if( $data === FALSE ){
 					if( $options['onClientDisconnected'] ){
@@ -105,7 +115,6 @@ function inet_server($options = array()) {
 					unset($clients[$key]);
 					continue;
 				}
-
 				if( is_callable($options['onClientData']) ){
 					$options['onClientData']($readable_client, $data);
 				}
