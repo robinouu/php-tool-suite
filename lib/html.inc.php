@@ -27,7 +27,12 @@ function dom($html) {
  * 		<link rel="stylesheet" type="text/css" src="jquery.min.css" />
  */
 function stylesheet($attrs){
-	return '<link rel="stylesheet" type="text/css" ' . attrs($attrs) . ' />';
+	$attrs = array_merge(array(
+		'media' => 'screen,projection,tv',
+		'rel' => 'stylesheet',
+		'href' => ''
+	), $attrs);
+	return tag('link', '', $attrs, true);
 }
 
 
@@ -37,8 +42,12 @@ function stylesheet($attrs){
  * @return an HTML external javascript tag
  * 		<script type="text/javascript" src="jquery.min.js"></script>
  */
-function javascript($attrs) {
-	return '<script type="text/javascript" ' . attrs($attrs) . '></script>';
+function javascript($attrs, $content = '') {
+	$attrs = array_merge(array(
+		'type' => 'text/javascript',
+		'src' => '',
+	), $attrs);
+	return tag('script', $content, $attrs);
 }
 
 /**
@@ -57,11 +66,15 @@ function javascript($attrs) {
 function html5($args) {
 
 	$stylesheets_str = '';
-	if( isset($args['stylesheets']) && is_array($args['stylesheets'])) {
-		foreach ($args['stylesheets'] as $stylesheet) {
-			$stylesheets_str .= stylesheet(array('href' => $stylesheet));
+	if( isset($args['stylesheets']) ){
+		if( is_array($args['stylesheets']) ) {
+			foreach ($args['stylesheets'] as $stylesheet) {
+				$stylesheets_str .= stylesheet(array('href' => $stylesheet));
+			}
+			unset($args['stylesheets']);
+		}else{
+			$stylesheets_str = (string)$args['stylesheets'];
 		}
-		unset($args['stylesheets']);
 	}
 	$stylesheets_str .= hook_do('html/stylesheets');
 
@@ -95,17 +108,15 @@ function html5($args) {
 		$head .= tag('meta', '', array('name' => $key, 'content' => $value), true);
 	}
 
-	$head .= hook_do('html_stylesheets');
+	$head .= hook_do('html_stylesheets', '');
 
 	$head .= $stylesheets_str;
 
-	$head .= hook_do('html_head');
+	$head .= hook_do('html_head', '');
 
 	$page = tag('head', $head);
 
 	$page .= tag('body', $args['body'] . $scripts_str);
-
-	$page .= hook_do('html_scripts');
 
 	return '<!DOCTYPE html>' . tag('html', $page, array('lang' => $args['lang'], 'xml:lang' => $args['lang'] ));
 }
@@ -116,14 +127,14 @@ function block($block = '', $callback = null) {
 }
 
 function code($content, $language) {
-	return '<pre><code data-language="' . $language . '">' . $content . '</code></pre>';
+	return tag('pre', tag('code', $content, array('data-language' => $language)));
 }
 
 function image($attrs) {
 	$attrs = array_merge(array(
 		'alt' => '',
 		'src' => ''), $attrs);
-	return '<img ' . attrs($attrs) . ' />';
+	return tag('img', '', $attrs, true);
 }
 
 function block_load($block, $args = array()) {
@@ -156,7 +167,7 @@ function menu($items = array(), $attrs = array(), $callback = array(), $isNav = 
 	$html .= '<ul ' . attrs($attrs) . '>';
 	foreach ($items as $key => $value) {
 		if( is_string($value) ){
-			$html .= '<li class="item item-link">';
+			$html .= '<li>';
 			if( is_callable($callback) ){
 				$html .= $callback($key, $value);
 			}elseif( is_integer($key) ){
@@ -174,16 +185,6 @@ function menu($items = array(), $attrs = array(), $callback = array(), $isNav = 
 	return $html;
 }
 
-function hidden($name, $value, $attrs = array()) {
-	$attrs = array_merge(array('type' => 'hidden', 'name' => $name, 'value' => $value), $attrs);
-	return tag('input', '', $attrs);
-}
-
-
-function format_date($d = 'now', $format = '%d %B %Y, %H:%M') {
-	$datetime = strtotime($d);
-	return strftime($format, $datetime);
-}
 
 function timetag($content = '', $attrs = array()) {
 	if( is_string($attrs) ){
@@ -231,11 +232,11 @@ function hyperlink($content = 'Link', $attrs = array()){
 }
 
 function br() {
-	return '<br />'."\r\n";
+	return '<br />';
 }
 
 function hr() {
-	return '<hr />' . "\r\n";
+	return '<hr />';
 }
 
 /**
@@ -252,18 +253,6 @@ function tag($tag, $content, $attrs = array(), $inline = false) {
 	}else{
 		return '<' . $tag . (sizeof($attrs) ? ' ' . attrs($attrs) : '') . '>' . $content . '</' . $tag . '>';
 	}
-}
-
-function search($options = array()) {
-	$options = array_merge(array(
-		'title' => t('Search for'),
-		'form' => array('role' => 'search', 'id' => 'search', 'method' => 'POST'),
-		'searchField' => array('name' => 'search', 'type' => 'search', 'placeholder' => ''),
-		'button.label' => t('Search'),
-		'button.field' => array('name' => 'search_submit')
-		), $options);
-
-	return tag('form', fieldset($options['title'], field($options['searchField']) . button_submit($options['button.label'], $options['button.field'])), $options['form']);
 }
 
 /**
@@ -299,12 +288,11 @@ function button($content = '', $attrs = array()) {
 }
 
 function button_submit($label = 'Submit', $attrs = array()) {
-	//static $ids = 0;
-	if( !isset($attrs['name']) ){
-		$attrs['name'] = slug($label);
-	}
-	$attrs = array_merge(array('type' => 'submit', 'value' => $label), $attrs);
-	//++$ids;
+	$attrs = array_merge(array(
+		'type' => 'submit',
+		'name' => 'btnSubmit',
+		'value' => $label
+	), $attrs);
 	return tag('input', '', $attrs, true);
 }
 
@@ -328,11 +316,8 @@ function attrs($attrs = array()) {
 	return implode(' ', $attributes);
 }
 
-function fieldset($name = '', $content = ''){
-	$html = '<fieldset><legend>' . htmlspecialchars($name) . '</legend>';
-	$html .= $content;
-	$html .= '</fieldset>';
-	return $html;
+function fieldset($name = '', $content = '', $attrs = array()){
+	return tag('fieldset', '<legend>' . htmlspecialchars($name) . '</legend>', $attrs);
 }
 
 
