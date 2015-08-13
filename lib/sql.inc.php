@@ -136,7 +136,6 @@ function sql_insert($table, $fields) {
 		print $sql->errorInfo();
 	}
 
-	//var_dump($query);
 	return $q->execute(array_values($fields));
 }
 
@@ -160,7 +159,11 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
 	
 	$sql_fields = array();
 	foreach ($fields as $key => $value) {
-		$sql_fields[] = $key . ' = ' . sql_quote($value);
+		if( is_numeric($key) && is_string($value) ){
+			$sql_fields[] = $value;	
+		}else{
+			$sql_fields[] = $key . ' = ' . sql_quote($value);
+		}
 	}
 	$query .= ' SET ' . implode(', ', $sql_fields) . ' ';
 
