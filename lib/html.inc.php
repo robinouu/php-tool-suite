@@ -320,5 +320,69 @@ function fieldset($name = '', $content = '', $attrs = array()){
 	return tag('fieldset', '<legend>' . htmlspecialchars($name) . '</legend>', $attrs);
 }
 
+function table($options, $attrs = array()){
+
+	$options = array_merge(array(
+		'caption' => null,
+		'head' => null,
+		'body' => null,
+		'foot' => null
+	), $options);
+
+	$html = '';
+	if( is_string($options['caption']) ){
+		$html .= tag('caption', $options['caption']);
+	}
+	if( is_string($options['head']) ){
+		$html .= tag('thead', $options['head']);
+	}elseif( is_array($options['head']) ){
+		$head = '';
+		foreach ($options['head'] as $key => $value) {
+			$thAttrs = array('scope' => 'col');
+			if( is_string($key) ){
+				$thAttrs['id'] = $key;
+			}
+			$head .= tag('th', $value, $thAttrs);
+		}
+		$html .= tag('thead', tag('tr', $head));
+	}
+	
+	if( is_string($options['foot']) ){
+		$html .= tag('tfoot', $options['foot']);
+	}elseif( is_array($options['foot']) ){
+		$foot = '';
+		foreach ($options['foot'] as $key => $value) {
+			$thAttrs = array('scope' => 'col');
+			if( is_string($key) ){
+				$thAttrs['id'] = $key;
+			}
+			$foot .= tag('td', $value, $thAttrs);
+		}
+		$html .= tag('tfoot', tag('tr', $foot));
+	}
+
+	if( is_string($options['body']) ){
+		$html .= tag('body', $options['body']);
+	}elseif( is_array($options['body']) ){
+		$body = '';
+		foreach ($options['body'] as $value) {
+			$row = '';
+			if( is_array($value) ){
+				foreach ($value as $headers => $td) {
+					$tdAttr = array();
+					if( is_string($headers) ){
+						$tdAttr['headers'] = $headers;
+					}
+					$row .= tag('td', $td, $tdAttr);
+				}
+				$body .= tag('tr', $row, array('scope' => 'row'));
+			}elseif( is_string($value) ){
+				$body .= $value;
+			}
+		}
+		$html .= tag('tbody', $body);
+	}
+	return tag('table', $html, $attrs);
+}
 
 ?>
