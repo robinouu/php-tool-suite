@@ -5,6 +5,24 @@
  * @subpackage file system
  */
 
+
+/**
+ * Get a PHP file content
+ * @param string $filepath The filepath to load
+ * @return string The content served by the PHP file.
+ */
+function include_file($filepath = null) {
+	if( !is_null($filepath) ){
+		ob_start();
+
+		include($filepath);
+		$fileContent = ob_get_contents();
+		ob_end_clean();
+		return $fileContent;
+	}
+	return null;
+}
+
 /**
  * Creates directories recursively.
  * If the path does not exist in the file system, it will be automatically created.
