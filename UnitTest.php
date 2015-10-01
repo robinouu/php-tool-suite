@@ -110,36 +110,36 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	}
 
 
-	public function test_hook() {
-		require_once('lib/hook.inc.php');
+	public function test_event() {
+		require_once('lib/event.inc.php');
 		
-		print 'hook : ';
+		print 'event : ';
 
-		$this->assertNull(hook_do('my_first_hook'));
+		$this->assertNull(trigger('my_first_event'));
 
-		hook_register('my_first_hook', function () {
+		on('my_first_event', function () {
 			return true;
 		});
 
-		$this->assertTrue(hook_do('my_first_hook'));
+		$this->assertTrue(trigger('my_first_event'));
 
-		hook_unregister('my_first_hook');
+		off('my_first_event');
 
-		$this->assertNull(hook_do('my_first_hook'));
+		$this->assertNull(trigger('my_first_event'));
 
-		hook_register('my_second_hook', function () {
+		on('my_second_event', function () {
 			return 'a';
 		}, 2);
 
-		hook_register('my_second_hook', function () {
+		on('my_second_event', function () {
 			return 'b';
 		});
 
-		hook_register('my_second_hook', function () {
+		on('my_second_event', function () {
 			return 'c';
 		}, -2);
 
-		$this->assertEquals(hook_do('my_second_hook'), 'cba');
+		$this->assertEquals(trigger('my_second_event'), 'cba');
 
 		print 'done' . "\r\n";
 	}
