@@ -1,5 +1,7 @@
 <?php
 
+require_once(dirname(__FILE__).'/vendor/websockets.php');
+
 function inet_peername($socket) {
 	$host = '';
 	$port = '';
@@ -70,7 +72,9 @@ function inet_server($options = array()) {
 		'maxClients' => -1,
 		'queueLength' => 80,
 		'clientBuffer' => 2048,
-		'onClientConnected' => null
+		'onClientConnected' => null,
+		'onClientDisconnected' => null,
+		'onClientData' => null,
 	), $options);
 
 
