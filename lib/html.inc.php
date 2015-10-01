@@ -5,7 +5,7 @@
  * @subpackage HTML helpers
  */
 
-plugin_require(array('hook', 'sanitize'));
+plugin_require(array('event', 'sanitize'));
 
 /**
  * Parse an HTML string into DOM.
@@ -44,8 +44,7 @@ function stylesheet($attrs){
  */
 function javascript($attrs, $content = '') {
 	$attrs = array_merge(array(
-		'type' => 'text/javascript',
-		'src' => '',
+		'type' => 'text/javascript'
 	), $attrs);
 	return tag('script', $content, $attrs);
 }
@@ -76,7 +75,7 @@ function html5($args) {
 			$stylesheets_str = (string)$args['stylesheets'];
 		}
 	}
-	$stylesheets_str .= hook_do('html/stylesheets');
+	$stylesheets_str .= trigger('html/stylesheets');
 
 
 	$scripts_str = '';
@@ -86,7 +85,7 @@ function html5($args) {
 		}
 		unset($args['scripts']);
 	}
-	$scripts_str .= hook_do('html/scripts');
+	$scripts_str .= trigger('html/scripts');
 
 	$args = array_merge(array(
 		'title' => '',
@@ -108,11 +107,11 @@ function html5($args) {
 		$head .= tag('meta', '', array('name' => $key, 'content' => $value), true);
 	}
 
-	$head .= hook_do('html_stylesheets', '');
+	$head .= trigger('html_stylesheets', '');
 
 	$head .= $stylesheets_str;
 
-	$head .= hook_do('html_head', '');
+	$head .= trigger('html_head', '');
 
 	$page = tag('head', $head);
 
@@ -121,24 +120,24 @@ function html5($args) {
 	return '<!DOCTYPE html>' . tag('html', $page, array('lang' => $args['lang'], 'xml:lang' => $args['lang'] ));
 }
 
-
-function block($block = '', $callback = null) {
-	hook_register('html/blocks/' . object_hash($block), $callback);
-}
-
 function code($content, $language) {
 	return tag('pre', tag('code', $content, array('data-language' => $language)));
 }
 
+/* 
+ * Returns a valid W3C image tag
+ */
 function image($attrs) {
+	if( !isset($attrs['width']) && !isset($attrs['height']) ){
+		list($width, $height, $type, $attr) = getimagesize($attrs['src']);
+		$attrs['width'] = $size[0];
+		$attrs['height'] = $size[1];
+	}
 	$attrs = array_merge(array(
 		'alt' => '',
-		'src' => ''), $attrs);
+		'src' => ''
+	), $attrs);
 	return tag('img', '', $attrs, true);
-}
-
-function block_load($block, $args = array()) {
-	return hook_do('html/blocks/' . object_hash($block), $args);
 }
 
 function text_vars($text, $vars) {
@@ -197,10 +196,8 @@ function timetag($content = '', $attrs = array()) {
 
 // $list_type can be ul, ol, dl
 function datalist($name = '', $filters, $list_type = 'ul' ) {
-	//return scrud_get($name);
-
+	plugin_require('scrud');
 	$data = scrud_list($name, $filters, isset($filters['formatter']) ? array($name => $filters['formatter']) : array());
-
 	$items = '';
 	$slug_name = slug($name);
 	if( $list_type == 'ul' || $list_type === 'ol' ){
@@ -231,10 +228,16 @@ function hyperlink($content = 'Link', $attrs = array()){
 	return tag('a', $content, $attrs);
 }
 
+/**
+ * @return '<br />'
+ */
 function br() {
 	return '<br />';
 }
 
+/**
+ * @return '<hr />'
+ */
 function hr() {
 	return '<hr />';
 }
@@ -278,13 +281,19 @@ function text($content) {
 function paragraph($content, $attrs = array()) {
 	return tag('p', $content, $attrs);
 }
+
+/**
+ * @return a <p> paragraph
+ * @see paragraph()
+ */
 function p($content, $attrs = array()){
 	return paragraph($content, $attrs);
 }
 
-function button($content = '', $attrs = array()) {
+
+function btn($tag, $label, $attrs = array()) {
 	$attrs = array_merge(array('class'=> 'btn'), $attrs);
-	return tag('a', $content, $attrs);
+	return tag($tag, $label, $attrs);
 }
 
 function button_submit($label = 'Submit', $attrs = array()) {
@@ -317,9 +326,24 @@ function attrs($attrs = array()) {
 }
 
 function fieldset($name = '', $content = '', $attrs = array()){
-	return tag('fieldset', '<legend>' . htmlspecialchars($name) . '</legend>', $attrs);
+	return tag('fieldset', '<legend>' . htmlspecialchars($name) . '</legend>'.$content, $attrs);
 }
 
+/**
+ * Returns a valid W3C/WCAG table 
+ *
+ * @param $options 
+ * <ul>
+ *	<li>caption string</li>
+ *	<li>body array|string </li>
+ *	<li>meta array An array of meta key/value pairs</li>
+ *	<li>lang string The page lang. Default to current_lang()</li>
+ *	<li>stylesheets string Appends stylesheets tags to the head</li>
+ *	<li>scripts string Appends scripts tags to the end of the body</li>
+ *	<li>body string The page content</li>
+ * </ul>
+ *
+ */
 function table($options, $attrs = array()){
 
 	$options = array_merge(array(
