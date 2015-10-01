@@ -27,11 +27,19 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function(&$instance) {
-				$attrs = array(
-					'type' => 'text',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);				
-
+				$attrs = array('type' => 'text');
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -44,6 +52,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['maxlength']) ){
 					if( $instance['maxlength'] > 255 ){
@@ -87,11 +98,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function (&$instance) {
-				$attrs = array(
-					'type' => 'number',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
-
+				$attrs = array('type' => 'number');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -104,6 +120,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
 					$attrs['placeholder'] = $instance['placeholder'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['minValue']) ){
 					$attrs['min'] = $instance['minValue'];
@@ -130,10 +149,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function (&$instance) {
-				$attrs = array(
-					'type' => 'checkbox',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'checkbox');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -143,6 +168,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				return tag('input', '', $attrs, true);
 			},
@@ -156,10 +184,16 @@ var_set('fields', array(
 		'extends' => 'text',
 		'convertTo' => array(
 			'field' => function (&$instance) {
-				$attrs = array(
-					'type' => 'password',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'password');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -169,6 +203,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
 					$attrs['placeholder'] = $instance['placeholder'];
@@ -192,10 +229,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function(&$instance) {
-				$attrs = array(
-					'type' => 'email',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'email');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -205,6 +248,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
 					$attrs['placeholder'] = $instance['placeholder'];
@@ -229,10 +275,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function(&$instance) {
-				$attrs = array(
-					'type' => 'tel',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'tel');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -242,6 +294,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['placeholder']) && is_string($instance['placeholder']) ) {
 					$attrs['placeholder'] = $instance['placeholder'];
@@ -277,10 +332,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function(&$instance) {
-				$attrs = array(
-					'type' => 'date',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'date');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -290,6 +351,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['min']) && is_string($instance['min']) ) {
 					$attrs['min'] = $instance['min'];
@@ -331,10 +395,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function(&$instance) {
-				$attrs = array(
-					'type' => 'datetime',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'datetime');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -344,6 +414,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['min']) && is_string($instance['min']) ) {
 					$attrs['min'] = $instance['min'];
@@ -386,10 +459,16 @@ var_set('fields', array(
 		},
 		'convertTo' => array(
 			'field' => function(&$instance) {
-				$attrs = array(
-					'type' => 'time',
-					'value' => isset($instance['value']) ? $instance['value'] : ''
-				);
+				$attrs = array('type' => 'time');
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
+				if( isset($instance['value']) ){
+					$attrs['value'] = $instance['value'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -399,6 +478,9 @@ var_set('fields', array(
 				}
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
+				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
 				}
 				if( isset($instance['min']) && is_string($instance['min']) ) {
 					$attrs['min'] = $instance['min'];
@@ -427,6 +509,12 @@ var_set('fields', array(
 		'convertTo' => array(
 			'field' => function(&$instance) {
 				$attrs = array();
+				if( isset($instance['id']) ){
+					$attrs['id'] = $instance['id'];
+				}
+				if( isset($instance['name']) ){
+					$attrs['name'] = $instance['name'];
+				}
 				if( isset($instance['readonly']) && $instance['readonly'] === true ){
 					$attrs['readonly'] = 'readonly';
 					$attrs['aria-readonly'] = 'true';
@@ -437,14 +525,19 @@ var_set('fields', array(
 				if( isset($instance['disabled']) && $instance['disabled'] === true ) {
 					$attrs['disabled'] = $instance['disabled'];
 				}
+				if( isset($instance['hidden']) && $instance['hidden'] === true ) {
+					$attrs['type'] = 'hidden';
+				}
 				$content = '';
-				foreach ($instance['datas'] as $key => $value) {
-					$key = is_string($key) ? $key : $value;
-					$optAttrs = array('value' => $key);
-					if( isset($instance['value']) && $instance['value'] === $key ){
-						$optAttrs['selected'] = 'selected';
+				if( $instance['datas'] ){
+					foreach ($instance['datas'] as $key => $value) {
+						//$key = is_string($key) ? $key : $value;
+						$optAttrs = array('value' => $key);
+						if( isset($instance['value']) && $instance['value'] == $key ){
+							$optAttrs['selected'] = 'selected';
+						}
+						$content .= tag('option', $value, $optAttrs);
 					}
-					$content .= tag('option', $value, $optAttrs);
 				}
 				return tag('select', $content, $attrs);
 			}
@@ -455,7 +548,8 @@ var_set('fields', array(
 
 if( !var_get('field/default') ){
 	var_set('field/default', array(
-		'type' => 'text'
+		'type' => 'text',
+		'hasMany' => false
 	));
 }
 
@@ -480,18 +574,24 @@ function field_value($field) {
  * @return string The generated HTML for the value, generally along with a label.
  */
 function field($field = array()) {
+	$field = array_merge(var_get('field/default', array()), $field);
 	$fieldModel = var_get('fields/' . $field['type']);
 	if( $fieldModel ){
-		$html = $field['convertTo']['field']($field);
+		$html = $fieldModel['convertTo']['field']($field);
 	
-		if( !isset($field['label']) || (isset($field['hidden']) && $field['hidden'] !== true) ){
+		if( !isset($field['label']) || (isset($field['hidden']) && $field['hidden'] === true) ){
 			$label = '';
 		}else{
 			$attrs = array();
 			if( isset($field['id']) ){
-				$attrs['id'] = $field['id'];
+				$attrs['for'] = $field['id'];
 			}
-			$label = tag('label', $field['label'], array('for' => $attrs));
+			if( $field['type'] == 'boolean' || $field['type'] == 'radio' ){
+				$label = tag('label', $html . $field['label'], $attrs);
+				return $label;
+			}else{
+				$label = tag('label', $field['label'], $attrs);
+			}
 		}
 		return $label . $html;
 	}
@@ -503,8 +603,14 @@ function fields($fields, &$datas = array()) {
 	foreach ($fields as $key => $field) {
 		$fieldName = is_string($key) ? $key : $field['name'];
 		if( isset($datas[$fieldName]) ){
-			$value['value'] = $datas[$fieldName];
+			if( isset($field['type']) && $field['type'] == 'password'){
+				
+			}else{
+				$field['value'] = $datas[$fieldName];
+			}
 		}
+		$field['id'] = $fieldName;
+		$field['name'] = $fieldName;
 		$html .= field($field);
 	}
 	return $html;
@@ -536,10 +642,9 @@ function field_validate(&$field, $value = null){
 
 
 /**
- * Validates multiple field values
- * @param array $field An array of fields to validate
- * @param array $value An optional associate array containing the field keys and values to test for.
- * @param array $data The returned validation data.
+ * Validates multiple fields values
+ * @param array $fields An array of fields to validate.
+ * @param array $values An optional associate array containing the field keys and values to test for. $_REQUEST by default.
  * @return boolean TRUE if the values have been validated. FALSE otherwise. Error details can be found in each field. See field_validate().
  */
 function fields_validate(&$fields, $values = null) {
@@ -554,4 +659,3 @@ function fields_validate(&$fields, $values = null) {
 	}
 	return $valid;
 }
-
