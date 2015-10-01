@@ -14,7 +14,7 @@ function models_to_sql(&$models) {
 	foreach ($models as $id => $mod) {
 		$mod = array_merge(array(
 			'comment' => null,
-			'collation' => 'utf8_general_ci'
+			'collation' => 'utf8_bin'
 		), $mod);
 
 		if( !isset($mod['id']) ){
@@ -57,19 +57,34 @@ function models_to_sql(&$models) {
 
 				if( $field['hasMany'] ){
 					$manyTableName = $tableName . '_' . $fieldName;
-					$manyTables[] = array(
-						'name' => $manyTableName,
-						'hasID' => false,
-						'columns' => array(
-							'id_' . $tableName . ' int(11) NOT NULL',
-							'id_' . $field['data'] . ' int(11) NOT NULL'
-						),
-						'primaryKeys' => array('id_' . $tableName . ',id_' . $field['data']),
-						'foreignKeys' => array(
-							'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-							'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
-						)
-					);
+					if( isset($field['hasID']) ){
+						$manyTables[] = array(
+							'name' => $manyTableName,
+							'hasID' => true,
+							'columns' => array(
+								'id_' . $tableName . ' int(11) NOT NULL',
+								'id_' . $field['data'] . ' int(11) NOT NULL'
+							),
+							'foreignKeys' => array(
+								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
+								'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
+							)
+						);
+					}else{
+						$manyTables[] = array(
+							'name' => $manyTableName,
+							'hasID' => false,
+							'columns' => array(
+								'id_' . $tableName . ' int(11) NOT NULL',
+								'id_' . $field['data'] . ' int(11) NOT NULL'
+							),
+							'primaryKeys' => array('id_' . $tableName . ',id_' . $field['data']),
+							'foreignKeys' => array(
+								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
+								'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
+							)
+						);
+					}
 
 					continue;
 				}
@@ -130,11 +145,13 @@ class Model {
 	
 	static public $schema = array();
 
+	public $inserted_ids = array();
 	protected $selects = array();
 	protected $aliases = array();
 	protected $using = array();
 	protected $joins = array();
 	protected $filters = array();
+	protected $having_filters = array();
 	protected $groupBy = array();
 	protected $orderBy = array();
 	protected $limit = null;
@@ -145,7 +162,7 @@ class Model {
 	protected $replacements = array();
 
 	private $modelName;
-	private $fields;
+	public $fields;
 
 
 	const REGEX_MODEL_PATH = '#(?:`((?:[^`]|``)+)`)|([^`\.]+)#'; // matches model paths
@@ -255,8 +272,7 @@ class Model {
 				$this->aliases[$alias] = $usingKey;
 			}
 
-			$this->using[$usingKey] = true;
-			
+			$this->using[$usingKey] = true;		
 			
 			if( !isset($usingModelField['hasMany']) || !$usingModelField['hasMany'] ){
 				$this->join(array(
@@ -275,8 +291,9 @@ class Model {
 					$this->aliases[$usingModelName] = $usingKey;
 				}
 			
+				$hasID = isset($usingModelField['hasID']) && $usingModelField['hasID'];
 				$this->join(array(
-					'type' => 'LEFT OUTER JOIN',
+					'type' => $hasID ? 'INNER JOIN' : 'LEFT OUTER JOIN',
 					'tableLeft' => isset($this->aliases[$parentModelName]) ? $this->aliases[$parentModelName] : $parentTableName,
 					'tableRight' => $parentTableName . '_' . $parentName,
 					'columnRight' => 'id_' . $parentTableName,
@@ -284,7 +301,7 @@ class Model {
 
 				//$this->aliases[$parentTableName] = $aliasRight;
 				$this->join(array(
-					'type' => 'LEFT OUTER JOIN',
+					'type' => $hasID ? 'INNER JOIN' : 'LEFT OUTER JOIN',
 					'tableLeft' => $parentTableName . '_' . $parentName,
 					'columnLeft' => 'id_' . $usingModelName,
 					'tableRight' => $usingModelName,
@@ -324,10 +341,17 @@ class Model {
 		return $this;
 	}
 
+	public function having($having) {
+		$this->having_filters[] = sql_logic($having);
+		return $this;
+	}
+
 	public function get(){
 		$options = $this->prepareGet();
-		//var_dump($options);
-		return sql_get(Model::getTableName($this->modelName), $options);
+		
+		$data = sql_get(Model::getTableName($this->modelName), $options);
+		$this->reset();
+		return $data;
 	}
 
 	protected function prepareGet() {
@@ -335,6 +359,7 @@ class Model {
 		$options['select'] = sizeof($this->selects) ? implode(', ', $this->selects) : sql_quote(Model::getTableName($this->modelName), true) . '.*';
 		$options['join'] = $this->joins;
 		$options['where'] = implode(' AND ', $this->filters);
+		$options['having'] = implode(' AND ', $this->having_filters);
 		$options['groupBy'] = implode(', ', $this->groupBy);
 		$options['orderBy'] = implode(', ', $this->orderBy);
 		$options['limit'] = $this->limit;
@@ -396,7 +421,9 @@ class Model {
 	public function reset() {
 		$this->insertions = array();
 		$this->replaces = array();
+		$this->deletions = array();
 		$this->using = array();
+		$this->selects = array();
 		$this->aliases = array();
 		$this->joins = array();
 		$this->filters = array();
@@ -415,6 +442,7 @@ class Model {
 		$tableToDelete = $tableName = Model::getTableName($this->modelName);
 
 		if( is_array($modelPath) && sizeof($modelPath) ){
+
 			$columnName = array_pop($modelPath);
 			$parentModelField = $this->resolveFieldByPath($modelPath);
 			$parentModelName = $parentModelField ? $parentModelField['data'] : $this->modelName;
@@ -438,14 +466,22 @@ class Model {
 		}
 
 
+		//var_dump($options);
+		//$options['table'] = $tableToDelete;
 		$tmp_ids = sql_get($tableName, $options);
 		if( $tmp_ids ){
 			$ids = array();
+			if( is_assoc_array($tmp_ids) ){
+				$tmp_ids = array($tmp_ids);
+			}
 			foreach ($tmp_ids as $row) {
 				$ids[] = (int)$row['id'];
 			}
 			$ids = array_unique($ids);
-			sql_delete($tableToDelete, $idName . ' IN (' . implode(', ', $ids) . ')');
+			sql_delete($tableToDelete, array(
+				'where' => $idName . ' IN (' . implode(', ', $ids) . ')',
+				'limit' => $options['limit']
+			));
 		}
 	}
 
@@ -498,8 +534,15 @@ class Model {
 			}
 		}
 
-		sql_insert($tableName, $datas);
-		$id = sql_last_id();
+		if( sizeof($datas) ){
+			sql_insert($tableName, $datas);
+			$id = sql_last_id();
+		}else{
+			$options = $this->prepareGet($tableName);
+			$options['join'] = '';	
+			$id = sql_get($tableName, $options);
+			$id = $id[0]['id'];
+		}
 
 		if( sizeof($relations_ids) ){
 			foreach( $relations_ids as $fieldName => $relation_ids ) {
@@ -519,12 +562,14 @@ class Model {
 		if( !$modelName ){
 			$modelName = $this->modelName;
 		}
+
 		$model = &Model::$schema[$modelName];
 		$tableName = Model::getTableName($modelName);
 		$fields = &$model['fields'];
-
+		
 		$options = $this->prepareGet($tableName);
 		$options['select'] = 'id';
+
 		$tmp_ids = sql_get($tableName, $options);
 		if( is_assoc_array($tmp_ids) ){
 			$tmp_ids = array($tmp_ids);
@@ -535,6 +580,13 @@ class Model {
 				$ids[] = (int)$row['id'];
 			}
 			$ids = array_unique($ids);
+			foreach ($datas as $key => $value) {
+				if( !isset($model['fields'][$key]) ){
+					unset($datas[$key]);
+				}elseif( isset($model['fields'][$key]['hasMany']) && $model['fields'][$key]['hasMany'] ){
+					unset($datas[$key]);
+				}
+			}
 			sql_update($tableName, $datas, 'id IN (' . implode(', ', $ids) . ')');
 		}
 	}	
