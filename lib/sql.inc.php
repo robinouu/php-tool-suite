@@ -40,8 +40,10 @@ function sql_connect($options = array()) {
 	}
 
 	var_set('sql/dbConnection', $sql);
-
-	$sql->exec('SET NAMES ' . $options['charset'] . ';');
+	if( $options['charset'] == 'utf8'){
+		$sql->exec('SET NAMES ' . $options['charset'] . ';');
+	}
+	$sql->exec('SET CHARACTER SET ' . $options['charset'] . ';');
 	$sql->exec('USE ' . $options['db'] . ';');
 	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);	
@@ -81,12 +83,8 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	if( !$sql ){
 		return false;
 	}
+
 	$q = $sql->prepare($query);
-	//var_dump($query);
-	if( !$q ){
-		print $sql->debugDumpParams();
-		print $sql->errorInfo();
-	}
 	$result = $q->execute($values);
 	if( $fetchMode != null ){
 		$res = $q->fetchAll($fetchMode);
@@ -130,12 +128,9 @@ function sql_insert($table, $fields) {
 
 	$query = 'INSERT INTO ' . sql_quote($prefix . $table, true);
 	$query .= ' (' . implode(',', array_keys($fields)) . ') VALUES (' . implode(',', array_fill(0, sizeof($fields), '?')) . ');';
-	$q = $sql->prepare($query);
-	if( !$q ){
-		print $sql->debugDumpParams();
-		print $sql->errorInfo();
-	}
 
+	//var_dump($query, array_values($fields));
+	$q = $sql->prepare($query);
 	return $q->execute(array_values($fields));
 }
 
@@ -176,12 +171,7 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
 	}
 
 	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
-
 	$q = $sql->prepare($query . ';');
-	if( !$q ){
-		print $sql->debugDumpParams();
-		print $sql->errorInfo();
-	}
 	return $q->execute();
 }
 /**
@@ -190,21 +180,26 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
  * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been delete from the table. FALSE otherwise.
  */
-function sql_delete($table, $where = null) {
+function sql_delete($table, $options = array()) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
 	}
 	$prefix = var_get('sql/prefix', '');
 
+	$options = array_merge(array(
+		'where' => '',
+	), $options);
+
 	$query = 'DELETE FROM ' . sql_quote($prefix . $table, true);
-	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
-	//var_dump($query);
-	$q = $sql->prepare($query . ';');
-	if( !$q ){
-		print $sql->debugDumpParams();
-		print $sql->errorInfo();
+	$query .= !$options['where']? '' : ' WHERE ' . sql_logic($options['where']);
+	
+	if( isset($options['limit']) ){
+		$query .= ' LIMIT ' . (int)$options['limit'];
 	}
+
+//	var_dump($query);
+	$q = $sql->prepare($query . ';');
 	return $q->execute();
 }
 
@@ -232,14 +227,21 @@ function sql_select($table, $fields = '*', $alias = '', $prefixed = true) {
  * @param string $table The table to truncate. It will automatically be prefixed.
  * @return boolean TRUE if the table has been truncated. FALSE otherwise.
  */
-function sql_truncate_table($table) {
+function sql_truncate($table = array()) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
 	}
+	if( !is_array($table) && is_string($table) ){
+		$table = array($table);
+	}
+
 	$prefix = var_get('sql/prefix', '');
 	$sql->query('SET FOREIGN_KEY_CHECKS = 0;');
-	$res = sql_query('TRUNCATE TABLE ' . sql_quote($prefix . $table, true) . ';', null, null);
+	$res = true;
+	foreach( $table as $t ){
+		$res = $res && sql_query('TRUNCATE TABLE ' . sql_quote($prefix . $t, true) . ';', null, null);
+	}
 	$sql->query('SET FOREIGN_KEY_CHECKS = 1;');
 	return $res;
 }
@@ -432,7 +434,7 @@ function sql_table_exists($table) {
  *		'user_id' => 'user(id)',
  * 		'news_id' => array('name' => 'FK_news_ref', 'ref' => 'news(id)')
  *	);</pre></code></li>
- * 	<li>collation string The collation to use. 'utf8_general_ci' by default.</li>
+ * 	<li>collation string The collation to use. 'utf8_bin' by default.</li>
  * 	<li>engine string The engine to use. 'InnoDB' is used by default or when foreign keys have been set.</li>
  * </ul>
  * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
@@ -445,7 +447,7 @@ function sql_create_table($options) {
 		'primaryKeys' => array(),
 		'uniqueKeys' => array(),
 		'foreignKeys' => array(),
-		'collation' => 'utf8_general_ci',
+		'collation' => 'utf8_bin',
 		'engine' => 'InnoDB',
 	), $options);
 
@@ -527,9 +529,7 @@ function sql_alter_table($table, $options = array()) {
 
 	
 	$tableDescription = sql_describe($table);
-	//var_dump($tableDescription);
-
-
+	
 	if( isset($options['tableName']) && $options['tableName'] !== $table ){
 		$inject[] = 'ALTER TABLE ' . sql_quote($table, true) . ' RENAME TO ' . $options['tableName'] . ';';
 	}
@@ -557,7 +557,10 @@ function sql_get($table, $options = array()){
 
 	$options = array_merge(array(
 		'alias' => '',
+		'select' => '*',
 		'join' => null,
+		'where' => '',
+		'having' => '',
 		'groupBy' => null,
 		'orderBy' => null,
 		'limit' => null,
@@ -604,6 +607,11 @@ function sql_get($table, $options = array()){
 			$query .= ' GROUP BY ' . $options['groupBy'];
 		}
 
+		// HAVING CLAUSE
+		if( isset($options['having']) ) {
+			$query .= $options['having'] ? ' HAVING ' . sql_logic($options['having']) : '';
+		}
+
 		// ORDER BY CLAUSE
 		if( $options['orderBy'] ){
 			$query .= ' ORDER BY ' . $options['orderBy'];
@@ -617,8 +625,7 @@ function sql_get($table, $options = array()){
 			}
 		}
 	}
-
-	//var_dump($query);
+//	print '<pre><code>'.$query.'</code></pre>';
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 	if( $options['limit'] === 1 ){
 		return $res[0];
