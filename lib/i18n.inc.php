@@ -5,7 +5,7 @@
  * @subpackage i18n
  */
 
-plugin_require(array('var', 'hook'));
+plugin_require(array('var', 'event'));
 
 /**
  * Sets the current locale
@@ -156,7 +156,7 @@ function load_translations($options = array()) {
 			'codeset' => 'UTF-8'
 		), $options);
 
-		hook_register('i18n/translations', function () use ($options) {
+		on('i18n/translations', function () use ($options) {
 			if( is_dir($options['dir']) ){
 				$lang = current_locale();
 				bindtextdomain($options['file'], $options['dir']);
@@ -171,14 +171,14 @@ function load_translations($options = array()) {
 			'translations' => array()
 		), $options);
 
-		hook_register('i18n/translations', function () use (&$options) {
+		on('i18n/translations', function () use (&$options) {
 			return $options['translations'];
 		});
 	}else{
 		return false;
 	}
 
-	$translations = hook_do('i18n/translations');
+	$translations = trigger('i18n/translations');
 	$tData = new stdclass;
 	$tData->versions = $translations;
 	var_set('i18n/translationData', $tData);
