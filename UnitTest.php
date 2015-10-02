@@ -528,22 +528,19 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		plugin_require('cache');
 
 		print 'cache : ';
-
-		if( is_dir('cache') ){
-			rmdir_recursive('cache');
-		}
-		mkdir_recursive('cache');
+		
+		$this->assertTrue(is_dir(var_get('cache/dir')));
 
 		$content = 'my cached content';
-		$cachedContent = cache('cache/test.html', function () use ($content) {
-			print $content;
-		}, '+3 month');
-
-		$this->assertTrue(file_exists('cache/test.html'));
+		
+		if( !($cachedContent = cache_get('test')) ){
+			cache_set('test', $content, '+3 month');
+		}
 
 		$this->assertEquals($cachedContent, $content);
 
-		rmdir_recursive('cache');
+
+		rmdir_recursive(var_get('cache/dir'));
 
 		print 'done' . "\r\n";
 	}
