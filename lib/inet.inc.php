@@ -1,7 +1,17 @@
 <?php
-
+/**
+ * inet
+ * and PHP websockets
+ * @package php-tool-suite
+ * @subpackage inet
+ */
 require_once(dirname(__FILE__).'/vendor/websockets.php');
 
+/**
+ * Returns the peer name
+ * @param $socket The socket to search for
+ * @return string the socket peer name (host:port)
+ */
 function inet_peername($socket) {
 	$host = '';
 	$port = '';
@@ -9,14 +19,36 @@ function inet_peername($socket) {
 	return $host . ':' . $port;
 }
 
+/**
+ * Returns the last error occured on the specified socket
+ * @param $socket The socket to search for
+ * @return string The error message.
+ */
 function inet_error($socket = null) {
 	return socket_strerror(socket_last_error($socket));
 }
 
+/**
+ * Creates a basic TCP socket
+ * @param $socket The socket to search for
+ * @return string The error message.
+ */
 function inet_socket() {
 	return socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 }
 
+/**
+ * Creates a TCP client socket and wait for data.
+ * If an error occured, it stop the connection.
+ * @param array $options The connection options
+ * <ul>
+ * 	<li>host string The host. '127.0.0.1' by default.</li>
+ * 	<li>port string The port to use for the connection.</li>
+ * 	<li>onInit callback A callback when the socket is initialized.</li>
+ * 	<li>onData callback A callback when data have been received.</li>
+ * 	<li>bufferLength int The maximum size of the buffer. Take care of that setting in production.</li>
+ * </ul>
+ */
 function inet_client($options = array()) {
 
 	$options = array_merge(array(
@@ -53,24 +85,48 @@ function inet_client($options = array()) {
 		} while ($isRunning);
 	}
 
-	inet_close($socket);
+	return inet_close($socket);
 }
 
+/**
+ * Write a string message into the socket.
+ * @param $socket The socket where to send data
+ * @param $msg The message to write
+ * @return boolean TRUE if success, FALSE otherwise.
+ */
 function inet_write($socket, $msg) {
-	socket_write($socket, $msg, strlen($msg));
+	return socket_write($socket, $msg, strlen($msg));
 }
 
+
+/**
+ * Closes a socket
+ * @param $socket The socket to close
+ * @return boolean TRUE if success, FALSE otherwise.
+ */
 function inet_close($socket) {
 	@socket_shutdown($socket);
 	socket_close($socket);
 }
 
+
+/**
+ * Creates a TCP server socket and wait for connections/socket transmission.
+ * @param array $options The connection options
+ * <ul>
+ * 	<li>host string The host. '127.0.0.1' by default.</li>
+ * 	<li>port string Thet port to use for the connection.</li>
+ * 	<li>maxClients int The maximum number of connected clients at the same time.</li>
+ * 	<li>onClientConnected callback A callback called when a client successfully connected to the server.</li>
+ * 	<li>onClientData callback A callback called when data have been received for a particular client.</li>
+ * 	<li>onClientDisconnected callback A callback called when a client has disconnected from the server.</li>
+ * </ul>
+ */
 function inet_server($options = array()) {
 	$options = array_merge(array(
 		'host' => '127.0.0.1',
 		'port' => 9050,
 		'maxClients' => -1,
-		'queueLength' => 80,
 		'clientBuffer' => 2048,
 		'onClientConnected' => null,
 		'onClientDisconnected' => null,
@@ -84,7 +140,7 @@ function inet_server($options = array()) {
 
 		socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
 		socket_bind($socket, $options['host'], $options['port']);
-		socket_listen($socket, $options['queueLength']);
+		socket_listen($socket);
 
 		$clients = array($socket);
 		$isRunning = true;
