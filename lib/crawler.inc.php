@@ -48,7 +48,9 @@ var_set('crawler/keywordsBlackList', array(
 	'los', 'que', 'las', 'su', 'el', 'por',
 ));
 
-function crawler_get_url($url, $isSSL = null){
+
+
+function crawler_get_url($url, $headers = array(), $isSSL = null){
 	$metas = array();
 
 	if( strlen($url) > 2048 ){
@@ -58,12 +60,16 @@ function crawler_get_url($url, $isSSL = null){
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_USERAGENT, 'PHP Minimal Framework default user agent (' . guid() . ')');
-	//curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLOPT_USERAGENT, 'PHP Tool Suite (' . guid() . ')');
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,0);
 	curl_setopt($ch, CURLOPT_NOSIGNAL, 1); 
 	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 4500);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, (bool)$isSSL);
+	if( sizeof($headers) ){
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+	}
+
 	$result = curl_exec($ch);
 
 	$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -128,23 +134,35 @@ function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) 
 }
 
 function crawler_get_page_info($url){
-	$content = crawler_get_url(utf8_encode($url));
+	$url = utf8_encode($url);
+	$content = crawler_get_url($url);
+
+	$__BOM = pack('CCC', 239, 187, 191);
+	// Careful about the three ='s -- they're all needed.
+	while(0 === strpos($content, $__BOM))
+		$content = substr($content, 3);
+
+	$content = utf8_encode($content);
 	$base_url = parse_url($url);
 
 	$page = array();
 	$page['external_links'] = array();
 	$page['internal_links'] = array();
 
+//	$content = strip_tags($content, '<html>,<body>,<p>,<div>,<a>');
 	$dom = dom($content);
-
+	return $dom;
+	
 	if( !$dom ){
 		return $page;
 	}
-
+	
 	foreach ($dom->find('a') as $link) {
 		$link->href = htmlspecialchars($link->href);
+
 		if( preg_match('/^https?:\/\/(.*)/', $link->href, $m) ){
 			$parsed = parse_url($m[0]);
+
 			if( isset($parsed['host'], $base_url['host']) && $parsed['host'] === $base_url['host'] ){
 				$ext = explode('.', $link->href);
 				$ext = $ext[sizeof($ext)-1];
@@ -171,14 +189,14 @@ function crawler_get_page_info($url){
 		$page['title'] = sizeof($page['title']) ? trim($page['title'][0]->plaintext) : null;
 	}
 	
-	foreach( $dom->find('h1, h2, h3, h4, h5, h6, p, blockquote, li') as $txtContent ) {
-		
-		$c = trim($txtContent->plaintext);
-		$page['content'] .= $c . ' ';
+	foreach( $dom->find('#mw-content-text > *') as $txtContent ) {
+		if( $txtContent->tag === 'p') {
+			$c = trim($txtContent->plaintext);
+			$page['content'] .= $c . ' ';
+		}
 	}
 
-	$page['content'] = html_entity_decode($page['content']);
-	$words = array_map('trim', preg_split('#[\s\.;,:\(\)\[\]\"\'\!\?\/\-]#', substr($page['content'], 0, 10000)));
+	/*$words = array_map('trim', preg_split('#[\s\.;,:\(\)\[\]\"\'\!\?\/\-]#', substr($page['content'], 0, 10000)));
 	$occ = array();
 
 	$averageWordLength = 5.5;
@@ -219,7 +237,7 @@ function crawler_get_page_info($url){
 
 	// Use this as final website score
 	$page['score'] = $averageWordLength;
-
+*/
 	return $page;
 }
 
@@ -238,7 +256,7 @@ function crawler_crawl_site($siteFirstLevelDomain, $callbackFoundURL) {
 	}
 	$already_visited = array();
 
-	$maxPages = 15;
+	$maxPages = 5;
 	do {
 		$diff = array_diff($routes, $already_visited);
 		if( sizeof($diff) === 0 ){
