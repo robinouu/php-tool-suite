@@ -534,11 +534,11 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$content = 'my cached content';
 		
 		if( !($cachedContent = cache_get('test')) ){
-			cache_set('test', $content, '+3 month');
+			$res = cache_set('test', $content, '+3 month');
+			$this->assertTrue($res);
+		}else{
+			$this->assertEquals($cachedContent, $content);
 		}
-
-		$this->assertEquals($cachedContent, $content);
-
 
 		rmdir_recursive(var_get('cache/dir'));
 
