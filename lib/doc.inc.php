@@ -1,5 +1,16 @@
 <?php
+/**
+ * Doc helpers
+ * @package php-tool-suite
+ * @subpackage Doc
+ */
 
+/**
+ * Returns the tokens generated from a directory
+ * @param $dirpath string The path to explore.s
+ * @param $exclude string An optional array of paths to ignore.
+ * @return array The documentation tokens. 
+ */
 function doc_from_dir($dirpath, $exclude = array()) {
 	$directory_iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirpath));
 	$doc = array();
@@ -29,9 +40,16 @@ function doc_from_dir($dirpath, $exclude = array()) {
 			}
 		}
 	}
+
 	return $doc;
 }
 
+
+/**
+ * Returns the tokens generated from a file
+ * @param $filepath string The filepath.
+ * @return array The documentation tokens.
+ */
 function doc_from_file($filepath) {
 	$fileContent = file_get_contents($filepath);
 	$tokens = array();
