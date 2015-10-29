@@ -38,8 +38,8 @@ function inet_socket() {
 }
 
 /**
- * Creates a TCP client socket and wait for data.
- * If an error occured, it stop the connection.
+ * Creates a TCP client socket and waits for data.
+ * If an error occured, it stops the connection.
  * @param array $options The connection options
  * <ul>
  * 	<li>host string The host. '127.0.0.1' by default.</li>
@@ -89,7 +89,7 @@ function inet_client($options = array()) {
 }
 
 /**
- * Write a string message into the socket.
+ * Writes a string message into the socket.
  * @param $socket The socket where to send data
  * @param $msg The message to write
  * @return boolean TRUE if success, FALSE otherwise.
@@ -111,7 +111,7 @@ function inet_close($socket) {
 
 
 /**
- * Creates a TCP server socket and wait for connections/socket transmission.
+ * Creates a TCP server socket and waits for connections/socket transmission.
  * @param array $options The connection options
  * <ul>
  * 	<li>host string The host. '127.0.0.1' by default.</li>
@@ -186,4 +186,3 @@ function inet_server($options = array()) {
 	}
 }
 
-?>

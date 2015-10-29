@@ -1,6 +1,6 @@
 <?php
 /**
- * i18n
+ * Internationalization
  * @package php-tool-suite
  * @subpackage i18n
  */
