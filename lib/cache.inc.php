@@ -25,7 +25,6 @@ if( ($cacheDir = var_get('cache/dir')) == null ){
 
 if( !is_dir($cacheDir) ){
 	mkdir_recursive($cacheDir);
-	var_dump($cacheDir);
 }
 
 /**
@@ -52,6 +51,7 @@ function cache_set($resourceID=null, $data, $expire = null) {
 	}
 	return false;
 }
+
 
 function cache_get($resourceID=null, $defaultValue=null){
 	$value = null;

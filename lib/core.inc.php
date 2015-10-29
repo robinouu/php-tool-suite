@@ -55,7 +55,8 @@ function plugin_require($subpackages = null) {
 	}
 	if( is_array($subpackages) ){
 		foreach ($subpackages as $subpackage) {
-			require_once(dirname(__FILE__). '/' . $subpackage . '.inc.php');
+			$filename = dirname(__FILE__). '/' . $subpackage . '.inc.php';
+			require_once($filename);
 		}
 	}
 }
