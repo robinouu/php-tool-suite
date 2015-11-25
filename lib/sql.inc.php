@@ -663,3 +663,10 @@ function sql_import_csv($options) {
 	$query .= ';';
 	return sql_query($query, null, null);
 }
+
+/**
+ * Checks if a string is an sql compare operator
+ */
+function sql_is_compare_operator($op){
+	return in_array($op, array('=', 'LIKE', 'NOT LIKE', 'NOT', '<>'));
+}

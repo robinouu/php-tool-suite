@@ -8,45 +8,7 @@ plugin_require(array('var', 'request'));
 
 var_set('crawler/HTTPCodeWhiteList', array(200, 201, 202, 203, 205, 210));
 var_set('crawler/fileExtBlackList', array('jpg', 'jpeg', 'bmp', 'png', 'gif', 'tar', 'gz', 'zip', 'xml', 'pdf', 'rar'));
-
-var_set('crawler/keywordsBlackList', array(
-	
-	// Generic Version
-	'http', 'www',
-
-	// FR Version
-	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-	'je', 'tu', 'il', 'nous', 'vous', 'ils', 'elle', 'elles', 
-	'le', 'la', 'les', 'un', 'une', 'des', 'ce', 'cela', 'ceci', 'ci', 'ici', 'là', 'dont', 'aucun', 'aucune', 'concernant', 
-	'mon', 'ton', 'son', 'ma', 'ta', 'sa', 'notre', 'votre', 'leur', 'mes', 'tes', 'ses', 'nos', 'vos', 'leurs', 
-	'pas', 'pendant', 'se', 'cette', 'aux', 'avec', 'plus', 'eu', 'ne',	'de', 'et', 'du', 'en', 'que',
-	'd', 'sur', 'dans', 'pour', 'au', 'par', 'contre',
-	'qu', 'qui', 'lequel', 'quel', 'quelle', 'laquelle', 'quoi', 'quelque', 'quelques', 
-	'tout', 'toute', 'tous', 'comme', 'celles', 'on', 'ou', 'sans', 'aussi', 'tant', 'si', 'cet', 'chez', 'donc',
-	'selon', 'certains', 'entre', 'autre', 'autres', 'mais', 'lui', 'encore', 'ah', 'ces', 'afin',
-	"quand", "quant", 'toutes', 'tous', 'trop','contact', 'ni', 'jamais', 'sous',
-	'continuer', 'suite', 'lire', 'partager', 'commentaire', 'commentaires', 'commentez','télécharger', 'suivre', 
-	'twitter', 'facebook', 'google', 'pinterest', 'partage',
-	'*', 'peut', 'peuvent', 'sujet', 'objet', 'site', 'page',
-	"suis", "es", "est", "sommes", "êtes", "sont", "être", 'soit',
-	'sera', 'serons', 'serez', 'seront', 
-	"ai", "as", "avons", "avez", "ont", "avoir",
-	"fais", "fait", "faisons", "faisez", "font", "faire",
-	"va", "vas", "allons", "allez", "vont", 'peu',
-	'doit', 'devons', 'devez', 'doivent',
-	'faut',
-	
-	// EN Version
-	'comment', 'comments', 'new', 'list', 'go', 'there', 'web', 'of', 'in', 'and', 'for', 'only', 'should',
-	'no', 'yes', 'download', 'follow', 'hide', 'edit', 'invite', 'at', 'will', 'get', 'from', 'can', 'could', 'was', 'her',
-	'also', 'me', 'ago', 'discuss', 'about', 'read', 'add', 'each', 'its', 'wait', 'tell', 'public', 'how', 'make', 'do', 'than', 'view',
-	'be', 'why', 'he', 'she', 'but', 'not', 'they', 'such', 'other', 'if', 'continue', 'reading', 'so', 'when', 'where', 'them',
-	'a', 'an', 'the', 'that', 'this', 'my', 'his', 'it', 'our', 'their', 'what', 'who', 'here', 'is', 'has', 'have', 'to', 'see', 'more',
-	'share', 'us', 'you', 'we', 'are', 'am', 'or', 'any', 'may', 'use', 'your', 'by', 'with', 'these', 'all', 'were', 
-	
-	// ES Version
-	'los', 'que', 'las', 'su', 'el', 'por',
-));
+var_set('crawler/keywordsBlackList', array());
 
 
 

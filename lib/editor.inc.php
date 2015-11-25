@@ -3,7 +3,7 @@
  * Editor
  * @package php-tool-suite
  */
-require_once('hook.inc.php');
+require_once('event.inc.php');
 require_once('data.inc.php');
 
 // Permet de déclarer une zone comme étant éditable par l'utilisateur
