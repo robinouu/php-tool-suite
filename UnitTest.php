@@ -545,6 +545,31 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		print 'done' . "\r\n";
 	}
 
+	function test_data(){
+
+		plugin_require('data');
+
+		$user = data('person');
+
+		$iso_user = $user
+			->search(array(
+				array('firstname', '=', 'robin')
+			))
+			->or_search('firstname LIKE '.sql_quote('%charles%'))
+			->order_by(array('lastname ASC', 'firstname ASC'))
+			->limit(2)
+			->exec();
+
+		$this->assertNotNull($iso_user);
+
+		$is_registered = data_register('person', array(
+			'firstname' => 'Doriane',
+			'lastname' => 'XXXXX'
+		));
+		$this->assertTrue($is_registered);
+	}
+
+
 	protected $backupGlobals = FALSE;
 }
 
