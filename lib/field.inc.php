@@ -7,6 +7,7 @@
 
 plugin_require(array('i18n', 'html'));
 
+abstract class Field {
 
 	static protected $instanceID = 0;
 
