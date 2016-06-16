@@ -5,6 +5,7 @@ plugin_require(array('request', 'response'));
 function oauth_connect($options = array()) {
 	$options = array_merge(array(
 		'authType' => 'uri',
+		'clientID' => '',
 		'certificate' => null,
 		'redirectTo' => request_url(),
 		'parameters' => array()
@@ -17,7 +18,7 @@ function oauth_connect($options = array()) {
 	), $options['parameters']);
 
 	$authURL = $options['authEndPoint'] . '?' . http_build_query($options['parameters'], null, '&');
-
+	
 	redirect($authURL);
 }
 
@@ -25,16 +26,16 @@ function oauth_token(&$options = array()) {
 	$options = array_merge(array(
 		'code' => $_GET['code'],
 		'redirectTo' => request_url(),
-		'params' => array()
+		'parameters' => array()
 	), $options);
 
 	$params = array_merge(array(
-		'client_id' => $options['clientID'],
-		'client_secret' => $options['clientSecretKey'],
-		'redirect_uri' => $options['redirectTo'],
+		'client_id' => $options['parameters']['client_id'],
+		'client_secret' => isset($options['clientSecretKey']) ? $options['clientSecretKey'] : '',
+		'redirect_uri' => $options['parameters']['redirect_uri'],
 		'grant_type' => 'authorization_code',
-		'code' => $options['authorization_code']
-	), $options['params']);
+		'code' => isset($_GET['code']) ? $_GET['code'] : ''
+	), $options['parameters']);
 
 	$endPointURL = $options['tokenEndPoint'];
 
