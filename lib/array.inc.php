@@ -293,3 +293,12 @@ function array_insert_after($key, &$array, $new_key, $new_value) {
   }
   return FALSE;
 }
+
+function array_clean($arr){
+	foreach ($arr as $key => $value) {
+		if( $value == null ){
+			unset($arr[$key]);
+		}
+	}
+	return $arr;
+}
