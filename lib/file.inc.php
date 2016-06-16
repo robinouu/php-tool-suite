@@ -41,25 +41,21 @@ function csv_write($filepath, $data, $colSep = ','){
  * 	<li>the current line data</li>
  * 	<li>the current line number</li>
  * </ol>
- * @param boolean $ignoreFirstLine Set it to TRUE if you want to ignore the first line, that generally give column information.
  * @param string $columnSeparator The column separator to use. Comma by default.
  * @return array Returns the CSV data.
  */
-function csv_load($filepath, $callback = null, $ignoreFirstLine = false, $colSep = ","){
+function csv_load($filepath, $callback = null, $columnSeparator = ","){
 	$opened = false;
 	if (($handle = fopen($filepath, "r")) !== FALSE) {
 		$opened = true;
 		$l = 0;
-		while (($data = fgetcsv($handle, 0, $colSep)) !== FALSE) {
-			++$l;
-			if( $ignoreFirstLine && $l == 1 ){
-				continue;
-			}
+		while (($data = fgetcsv($handle, 0, $columnSeparator)) !== FALSE) {
 			if( is_callable($callback) ){
 				$callback($data, $l);
 			}elseif (is_string($callback) ){
 				call_user_func_array($callback, array($data, $l));
 			}
+			++$l;
 		}
 		fclose($handle);
 	}
