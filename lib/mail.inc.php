@@ -8,7 +8,8 @@ function email($options) {
 	$options = array_merge(array(
 		'to' => array(),
 		'from' => '',
-		'charset' => 'iso-8859-1',
+		'subject' => '',
+		'charset' => 'utf-8',
 		'content' => '',
 		'html' => true
 	), $options);
