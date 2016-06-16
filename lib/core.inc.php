@@ -6,6 +6,16 @@
  */
 
 
+function timer_start(){
+	return microtime(true);
+}
+function timer_end($timer){
+	return microtime(true)-$timer;
+}
+
+function deref($obj) {
+	return $obj;
+}
 
 /**
  * Returns a unique hash of an object or a mixed hash value
