@@ -10,8 +10,6 @@ var_set('crawler/HTTPCodeWhiteList', array(200, 201, 202, 203, 205, 210));
 var_set('crawler/fileExtBlackList', array('jpg', 'jpeg', 'bmp', 'png', 'gif', 'tar', 'gz', 'zip', 'xml', 'pdf', 'rar'));
 var_set('crawler/keywordsBlackList', array());
 
-
-
 function crawler_get_url($url, $headers = array(), $isSSL = null){
 	$metas = array();
 
@@ -22,12 +20,13 @@ function crawler_get_url($url, $headers = array(), $isSSL = null){
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_USERAGENT, 'PHP Tool Suite (' . guid() . ')');
+	curl_setopt($ch, CURLOPT_USERAGENT, guid());
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,0);
-	curl_setopt($ch, CURLOPT_NOSIGNAL, 1); 
+	//curl_setopt($ch, CURLOPT_NOSIGNAL, 1); 
 	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 4500);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, (bool)$isSSL);
+	
 	if( sizeof($headers) ){
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 	}
@@ -103,7 +102,6 @@ function crawler_get_page_info($url){
 	// Careful about the three ='s -- they're all needed.
 	while(0 === strpos($content, $__BOM))
 		$content = substr($content, 3);
-
 	$content = utf8_encode($content);
 	$base_url = parse_url($url);
 
@@ -113,7 +111,6 @@ function crawler_get_page_info($url){
 
 //	$content = strip_tags($content, '<html>,<body>,<p>,<div>,<a>');
 	$dom = dom($content);
-	return $dom;
 	
 	if( !$dom ){
 		return $page;
@@ -142,21 +139,22 @@ function crawler_get_page_info($url){
 
 	$page['internal_links'] = array_unique($page['internal_links']);
 	$page['external_links'] = array_unique($page['external_links']);
-	$page['content'] = '';
-	$page['title'] = $dom->find('title');
+	//$page['content'] = '';
+	$page['content'] = $dom;
+ 	$page['title'] = $dom->find('title');
 	$page['title'] = sizeof($page['title']) ? trim($page['title'][0]->plaintext) : null;
 	
 	if( $page['title'] === null ){
 		$page['title'] = $dom->find('h1');
 		$page['title'] = sizeof($page['title']) ? trim($page['title'][0]->plaintext) : null;
 	}
-	
+	/*
 	foreach( $dom->find('#mw-content-text > *') as $txtContent ) {
 		if( $txtContent->tag === 'p') {
 			$c = trim($txtContent->plaintext);
 			$page['content'] .= $c . ' ';
 		}
-	}
+	}*/
 
 	/*$words = array_map('trim', preg_split('#[\s\.;,:\(\)\[\]\"\'\!\?\/\-]#', substr($page['content'], 0, 10000)));
 	$occ = array();
