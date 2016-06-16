@@ -79,11 +79,15 @@ function html5($args) {
 
 
 	$scripts_str = '';
-	if( isset($args['scripts']) && is_array($args['scripts']) ){
-		foreach ($args['scripts'] as $script) {
-			$scripts_str .= javascript(array('src' => $script));
+	if( isset($args['scripts']) ){
+		if( is_array($args['scripts']) ){
+			foreach ($args['scripts'] as $script) {
+				$scripts_str .= javascript(array('src' => $script));
+			}
+			unset($args['scripts']);
+		}elseif( is_string($args['scripts']) ){
+			$scripts_str .= $args['scripts'];
 		}
-		unset($args['scripts']);
 	}
 	$scripts_str .= trigger('html/scripts');
 
@@ -110,12 +114,12 @@ function html5($args) {
 	$head .= trigger('html_stylesheets', '');
 
 	$head .= $stylesheets_str;
-
+	$head .= '<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />';
 	$head .= trigger('html_head', '');
 
 	$page = tag('head', $head);
 
-	$page .= tag('body', $args['body'] . $scripts_str);
+	$page .= tag('body', $args['body'] . $scripts_str, $args['bodyAttrs']);
 
 	return '<!DOCTYPE html>' . tag('html', $page, array('lang' => $args['lang'], 'xml:lang' => $args['lang'] ));
 }
