@@ -5,7 +5,6 @@
  * @package php-tool-suite
  * @subpackage inet
  */
-require_once(dirname(__FILE__).'/vendor/websockets.php');
 
 /**
  * Returns the peer name
@@ -145,7 +144,10 @@ function inet_server($options = array()) {
 		$clients = array($socket);
 		$isRunning = true;
 
+		socket_set_nonblock($socket);
+
 		while( $isRunning )	{
+			sleep(0.04);
 			$read = $clients;
 			$write = NULL;
 			$except = NULL;
@@ -163,6 +165,7 @@ function inet_server($options = array()) {
 				$key = array_search($socket, $read);
 				unset($read[$key]);
 			}
+
 
 			foreach ($read as $readable_client) {
 				$data = @socket_read($readable_client, $options['clientBuffer'], PHP_BINARY_READ);
@@ -185,4 +188,3 @@ function inet_server($options = array()) {
 		return false;
 	}
 }
-
