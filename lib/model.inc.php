@@ -4,142 +4,96 @@ require_once(dirname(__FILE__).'/core.inc.php');
 
 plugin_require(array('field', 'sql'));
 
-function models_to_sql(&$models) {
+/*if( $field['hasMany'] ){
+$manyTableName = $tableName . '_' . $fieldName;
+if( isset($field['hasID']) ){
+	$manyTables[] = array(
+		'name' => $manyTableName,
+		'hasID' => true,
+		'columns' => array(
+			'id_' . $tableName . ' int(11) NOT NULL',
+			'id_' . $field['data'] . ' int(11) NOT NULL'
+		),
+		'foreignKeys' => array(
+			'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
+			'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
+		)
+	);
+}else{
+	$manyTables[] = array(
+		'name' => $manyTableName,
+		'hasID' => false,
+		'columns' => array(
+			'id_' . $tableName . ' int(11) NOT NULL',
+			'id_' . $field['data'] . ' int(11) NOT NULL'
+		),
+		'primaryKeys' => array('id_' . $tableName . ',id_' . $field['data']),
+		'foreignKeys' => array(
+			'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
+			'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
+		)
+	);
+}*/
 
-	$tables = array();
-	$manyTables = array();
+class Schema {
 
-	$prefix = sql_prefix();
+	public $schemeDatas;
+	public function __construct($schema){
+		$this->schemeDatas = $schema;
+		Model::$schema = $schema;
+	}
 
-	foreach ($models as $id => $mod) {
-		$mod = array_merge(array(
-			'comment' => null,
-			'collation' => 'utf8_bin'
-		), $mod);
+	public function getModel($model) {
+		return new Model($model);
+	}
 
-		if( !isset($mod['id']) ){
-			$mod['id'] = $id;
-		}
+	public function generateTables() {
+		foreach ($this->schemeDatas as $tableID => $tableData) {
+			$columns = array();
+			$uniqueness = array();
+			$i = 0;
+			foreach( $tableData['fields'] as $fieldName => $field ){
+				++$i;
+				$attrs = $field->attributes;
+				$sqlField = $field->getSQLField();
 
-		$foreignKeys = array();
+				$column = sql_quote($fieldName, true);
+				$column .= ' ' . $sqlField['type'];
 
-		// Construct sql columns by field
-		$columns = array();
-
-		$tableName = isset($mod['table']) ? $mod['table'] : $mod['id'];
-
-		foreach ($mod['fields'] as $key => $field) {
-			$field = array_merge(var_get('field/default', array()), $field);
-			$fieldModel = var_get('fields/' . $field['type']);
-			if( !$fieldModel && $field['type'] !== 'relation' ){
-				continue;
-			}
-			$fieldName = is_string($key) ? $key : $field['name'];
-
-			$sqlField = array();
-			
-			if( isset($fieldModel['extends']) ){
-				$parentFieldModel = var_get('fields/' . $fieldModel['extends']);
-				$parentFieldModel['convertTo']['sql']($field, $sqlField);
-			}
-			if( isset($fieldModel['convertTo']['sql']) && is_callable($fieldModel['convertTo']['sql']) ){
-				$fieldModel['convertTo']['sql']($field, $sqlField);
-			}
-			
-			$column = sql_quote($fieldName, true);
-
-
-			if( $field['type'] === 'relation' ){
-				$sqlField['type'] = 'int(11)';
-				if( !isset($field['default']) || !is_numeric($field['default']) ){ 
-					$field['default'] = 0;
+				if( isset($attrs['required']) && $attrs['required'] === true ){
+					$column .= ' NOT NULL';
+				}
+				if( isset($sqlField['default']) ){
+					$column .= ' DEFAULT ' . sql_quote($sqlField['default']);
+				}
+				if( isset($attrs['unique']) && $attrs['unique'] === true ){
+					$uniqueness[] = array('name' => 'unique_'.$i, 'columns' => array(sql_quote($fieldName, true)));
+				}
+				if( isset($attrs['comment']) ){
+					$column .= ' COMMENT ' . sql_quote($attrs['comment']);
+				}
+				
+				if( isset($attrs['characterSet']) ){
+					$column .= ' CHARACTER SET ' . sql_quote($attrs['characterSet']);
+				}elseif( isset($attrs['collation']) ){
+					$column .= ' COLLATE ' . sql_quote($attrs['collation']);
 				}
 
-				if( $field['hasMany'] ){
-					$manyTableName = $tableName . '_' . $fieldName;
-					if( isset($field['hasID']) ){
-						$manyTables[] = array(
-							'name' => $manyTableName,
-							'hasID' => true,
-							'columns' => array(
-								'id_' . $tableName . ' int(11) NOT NULL',
-								'id_' . $field['data'] . ' int(11) NOT NULL'
-							),
-							'foreignKeys' => array(
-								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-								'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
-							)
-						);
-					}else{
-						$manyTables[] = array(
-							'name' => $manyTableName,
-							'hasID' => false,
-							'columns' => array(
-								'id_' . $tableName . ' int(11) NOT NULL',
-								'id_' . $field['data'] . ' int(11) NOT NULL'
-							),
-							'primaryKeys' => array('id_' . $tableName . ',id_' . $field['data']),
-							'foreignKeys' => array(
-								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-								'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
-							)
-						);
-					}
-
-					continue;
-				}
+				$columns[] = $column;
 			}
-
-			$column .= ' ' . $sqlField['type'];
-
-			if( isset($field['unique']) && $field['unique'] === true ){
-				$column .= ' UNIQUE';
-			}
-			if( isset($field['required']) && $field['required'] === true ){
-				$column .= ' NOT NULL';
-			}
-			if( isset($field['comment']) ){
-				$column .= ' COMMENT ' . sql_quote($field['comment']);
-			}
-
-			if( isset($field['characterSet']) ){
-				$column .= ' CHARACTER SET ' . sql_quote($field['characterSet']);
-			}elseif( isset($field['collation']) ){
-				$column .= ' COLLATE ' . sql_quote($field['collation']);
-			}
-
-			if( $field['type'] == 'relation' && !$field['hasMany'] ){
-				$foreignKeys[$fieldName] = array('name' => 'FK_' . $tableName . '_' . $fieldName, 'ref' => $field['data'] . '(id)');
-			}
-
-			$columns[] = $column;
+			$table = array(
+				'name' => isset($tableData['table']) ? $tableData['table'] : $tableID,
+				'columns' => $columns,
+				'collation' => isset($tableData['collation']) ? $tableData['collation'] : 'utf8_bin',
+				'comment' => isset($tableData['collation']) ? $tableData['collation'] : null,
+				'uniqueKeys' => $uniqueness
+			);
+			sql_create_table($table);
 		}
-
-		$tables[] = array(
-			'name' => $tableName,
-			'columns' => $columns,
-			'collation' => $mod['collation'],
-			'comment' => $mod['comment'],
-			'foreignKeys' => $foreignKeys
-		);
-
 	}
 
-	$back = true;
-	foreach ($tables as $table) {
-		$back = $back && sql_create_table($table);
-	}
-	foreach( $manyTables as $manyTable ) {
-		$back = $back && sql_create_table($manyTable);
-	}
 
-	return $back;
 }
-
-function model_name($model) {
-	return isset($model['labels']['singular']) ? $model['labels']['singular'] : ucfirst($model['id']);
-}
-
 
 class Model {
 	
@@ -164,7 +118,6 @@ class Model {
 	private $modelName;
 	public $fields;
 
-
 	const REGEX_MODEL_PATH = '#(?:`((?:[^`]|``)+)`)|([^`\.]+)#'; // matches model paths
 
 	public function __construct($modelName) {
@@ -175,7 +128,7 @@ class Model {
 		$tableName = Model::getTableName($modelName);
 
 		foreach( $model['fields'] as $fieldName => $field) {
-			$this->fields[$fieldName] = $field = array_merge(var_get('field/default', array()), $field);
+			$this->fields[$fieldName] = $field;// = array_merge(var_get('field/default', array()), $field);
 		}
 		return $this;
 	}
@@ -184,7 +137,122 @@ class Model {
 		$model = &Model::$schema[$modelName];
 		return isset($model['table']) ? $model['table'] : $modelName;
 	}
-	
+
+	public function getField($name){
+		return Model::$schema[$this->modelName]['fields'][$name];
+	}
+
+	public function generateField($field){
+		print tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
+		if( !isset($field->attributes['value']) ){
+			$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
+		}
+		print $field->getHTMLTag();
+	}
+
+	public function generateFields($fields){
+		$model = &Model::$schema[$this->modelName];
+		foreach( $model['fields'] as $fieldName => $field ){
+			if( !in_array($fieldName, $fields) ){
+				continue;
+			}
+			$field->attributes['name'] = $fieldName;
+			if( !isset($field->attributes['value']) ){
+				$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
+			}
+			print tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
+			print $field->getHTMLTag();
+		}
+	}
+
+	public function generateForm($method){
+		$model = &Model::$schema[$this->modelName];
+		if( $method == 'create' ){
+			?>
+<form action="" method="POST" class="kform">
+			<?php
+			foreach( $model['fields'] as $fieldName => $field ){
+				$field->attributes['name'] = $fieldName;
+				print tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
+				print $field->getHTMLTag();
+			}
+			?>
+</form>
+			<?php
+		}
+	}
+
+	public function crud($options=array()){
+		$self = $this;
+		$options = array_merge(array(
+			'route' => 'crud',
+			'method' => 'POST',
+		), $options);
+
+		if( $options['method'] == 'POST')
+			$formVars = $_POST;
+		elseif( $options['method'] == 'GET')
+			$formVars = $_GET;
+		else 
+			$formVars = $_REQUEST;
+		
+		route('/'.$options['route'].'/'.$this->modelName.'/create', function () use(&$formVars, &$self) {
+			$model = &Model::$schema[$self->modelName];
+			$validated = true;
+			$errors = array();
+
+			foreach( $model['fields'] as $fieldName => $field ){
+				on('error', function ($e) use(&$errors, $fieldName){
+					$errors[$fieldName] = $e;
+				});
+				$validated = $validated && $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null);
+				off('error');
+			}
+			if( $validated ){
+				$self->reset()->insert($formVars)->commit();
+				$last_id = $self->inserted_ids[0];
+				print json_encode(array('success' => $validated, 'id' => $last_id));
+			}else{
+				print json_encode(array('success' => false, 'errors' => $errors));
+			}
+			die;
+		});
+
+		route('/'.$options['route'].'/'.$this->modelName.'/read', function () use (&$self) {
+			print json_encode(array('datas' => $self->select('*')->get()));
+			die;
+		});
+
+		route('/'.$options['route'].'/'.$this->modelName.'/edit/(.*)', function ($req) use (&$formVars, &$self) {
+			if (trim($req[1])){
+				$id = $req[1];
+				$model = &Model::$schema[$self->modelName];
+				$validated = true;
+				foreach( $model['fields'] as $fieldName => $field ){
+					$validated = $validated && $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null);
+				}
+				if( $validated ){
+					$self->reset()->replace($formVars)->where('id='.(int)$id)->commit();
+				}
+				print json_encode(array('success' => $validated));
+			}else{
+				print json_encode(array('success' => false));	
+			}
+			die;
+		});
+
+		route('/'.$options['route'].'/'.$this->modelName.'/delete', function () use (&$self, &$formVars) {
+			if( isset($formVars['ids']) ){
+				$ids = $formVars['ids'];
+				$self->reset()->where('id IN ('.implode($ids, ',') . ')')->delete()->commit();
+				print json_encode(array('success' => true));
+			}else{
+				print json_encode(array('success' => false));
+			}
+			die;
+		});
+	}	
+
 	public function select($select) {
 		if( is_string($select) ){
 			$select = array($select);
@@ -497,6 +565,13 @@ class Model {
 
 		$relations_ids = array();
 
+		$keys = array_keys($fields);
+		foreach ($datas as $key => $d) {
+			if( !in_array($key, $keys) ){
+				unset($datas[$key]);
+			}
+		}
+/*
 		foreach( $fields as $fieldName => $field) {
 			$field = array_merge(var_get('field/default', array()), $field);
 			if( $field['type'] === 'relation' && isset($datas[$fieldName]) ){
@@ -533,7 +608,7 @@ class Model {
 				}
 			}
 		}
-
+*/
 		if( sizeof($datas) ){
 			sql_insert($tableName, $datas);
 			$id = sql_last_id();
@@ -571,10 +646,10 @@ class Model {
 		$options['select'] = 'id';
 
 		$tmp_ids = sql_get($tableName, $options);
-		if( is_assoc_array($tmp_ids) ){
-			$tmp_ids = array($tmp_ids);
-		}
 		if( $tmp_ids ){
+			if( is_assoc_array($tmp_ids) ){
+				$tmp_ids = array($tmp_ids);
+			}
 			$ids = array();
 			foreach ($tmp_ids as $row) {
 				$ids[] = (int)$row['id'];
@@ -583,9 +658,9 @@ class Model {
 			foreach ($datas as $key => $value) {
 				if( !isset($model['fields'][$key]) ){
 					unset($datas[$key]);
-				}elseif( isset($model['fields'][$key]['hasMany']) && $model['fields'][$key]['hasMany'] ){
+				}/*elseif( isset($model['fields'][$key]['hasMany']) && $model['fields'][$key]['hasMany'] ){
 					unset($datas[$key]);
-				}
+				}*/
 			}
 			sql_update($tableName, $datas, 'id IN (' . implode(', ', $ids) . ')');
 		}
