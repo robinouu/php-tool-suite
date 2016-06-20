@@ -48,6 +48,7 @@ class Schema {
 	}
 
 	public function generateTables() {
+		$back = true;
 		foreach ($this->schemeDatas as $tableID => $tableData) {
 			$columns = array();
 			$uniqueness = array();
@@ -88,8 +89,9 @@ class Schema {
 				'comment' => isset($tableData['collation']) ? $tableData['collation'] : null,
 				'uniqueKeys' => $uniqueness
 			);
-			sql_create_table($table);
+			$back = $back && sql_create_table($table);
 		}
+		return $back;
 	}
 
 

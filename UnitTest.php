@@ -354,62 +354,38 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function test_field() {
+
 		require_once('lib/field.inc.php');
 		print 'field : ';
 
 		// Required fields
-		$requiredField = array('name' => 'field', 'label' => 'Required field', 'required' => true);
+		$requiredField = new TextField(array('name' => 'requiredField', 'required' => true));
 
-		$this->assertFalse(field_validate($requiredField, ''));
-		$this->assertFalse(field_validate($requiredField, array()));
-		$this->assertTrue(field_validate($requiredField, 'not_empty'));
+		$this->assertFalse($requiredField->validate(''));
+		$this->assertFalse($requiredField->validate(array()));
+		$this->assertTrue($requiredField->validate('not_empty'));
 		
-		$requiredField['value'] = 'not_empty';
-		$this->assertTrue(field_validate($requiredField));
-
 		// Maxlength validator
-		$maxlengthField = array('name' => 'field', 'label' => 'Maxlength field', 'maxlength' => 25);
-		$this->assertFalse(field_validate($maxlengthField, 'abcdefghijklmnopqrstuvwxyz'));
-		$this->assertTrue(field_validate($maxlengthField, ''));
-		$this->assertTrue(field_validate($maxlengthField, 'Something'));
+		$maxlengthField = new TextField(array('name' => 'maxlengthField', 'maxlength' => 25));
+		$this->assertFalse($maxlengthField->validate('abcdefghijklmnopqrstuvwxyz'));
+		$this->assertTrue($maxlengthField->validate(''));
+		$this->assertTrue($maxlengthField->validate('Something'));
 
 		// Minlength validator
-		$minlengthField = array('name' => 'field', 'label' => 'Minlength field', 'minlength' => 25);
-		$this->assertTrue(field_validate($minlengthField, 'abcdefghijklmnopqrstuvwxyz'));
-		$this->assertFalse(field_validate($minlengthField, ''));
-		$this->assertFalse(field_validate($minlengthField, 'Something'));
-
-		// Required fields
-		$requiredField = array('name' => 'field', 'label' => 'Required field', 'required' => true);
-
-		$this->assertFalse(field_validate($requiredField, ''));
-		$this->assertFalse(field_validate($requiredField, array()));
-		$this->assertTrue(field_validate($requiredField, 'not_empty'));
-		
-		$requiredField['value'] = 'not_empty';
-		$this->assertTrue(field_validate($requiredField));
+		$minlengthField = new TextField(array('name' => 'minlengthField', 'minlength' => 25));
+		$this->assertTrue($minlengthField->validate('abcdefghijklmnopqrstuvwxyz'));
+		$this->assertFalse($minlengthField->validate(''));
+		$this->assertFalse($minlengthField->validate('Something'));
 
 		// Basic email check, 
 		// TODO : add some more test to check RFC specifications
-		$emailField = array('name' => 'field', 'label' => 'Email field', 'type' => 'email', 'value' => 'user@example.com');
-		$this->assertTrue(field_validate($emailField));
-		$emailField['value'] = '';
-		$this->assertTrue(field_validate($emailField));
-		$emailField['value'] = 'x@x.x';
-		$this->assertTrue(field_validate($emailField));
-		$emailField['value'] = 'x@';
-		$this->assertFalse(field_validate($emailField));
-		$emailField['value'] = 'x';
-		$this->assertFalse(field_validate($emailField));
-		$emailField['value'] = 'éx@x.x';
-		$this->assertFalse(field_validate($emailField));
-
-		// multiple field validation
-		$emailField['value'] = 'x.x@x.x';
-		$fieldsToValidate = array($emailField, $requiredField);
-		$this->assertTrue(fields_validate($fieldsToValidate));
-		$fieldsToValidate[0]['value'] = 'x';
-		$this->assertFalse(fields_validate($fieldsToValidate));
+		$emailField = new EmailField(array('name' => 'emailField'));
+		$this->assertTrue($emailField->validate('user@example.com'));
+		$this->assertTrue($emailField->validate(''));
+		$this->assertTrue($emailField->validate('x@x.x'));
+		$this->assertFalse($emailField->validate('x@'));
+		$this->assertFalse($emailField->validate('x'));
+		$this->assertFalse($emailField->validate('éx@x.x'));
 
 		print 'done' . "\r\n";
 	}
@@ -423,36 +399,36 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$models = array(
 			'account' => array(
 				'fields' => array(
-					'email' => array('type' => 'email'),
-					'password' => array('type' => 'password')
+					'email' => new EmailField(),
+					'password' => new PasswordField()
 				)
 			),
 			'person' => array(
 				'fields' => array(
-					'firstname' => array(),
-					'lastname' => array(),
-					'accounts' => array('type' => 'relation', 'data' => 'account', 'hasMany' => true)
+					'firstname' => new TextField(),
+					'lastname' => new TextField(),
+					'accounts' => new RelationField(array('data' => 'account', 'hasMany' => true))
 				)
 			),
 			'ingredient' => array(
 				'fields' => array(
-					'name' => array(),
-					'type' => array('type' => 'select', 'datas' => array('fish', 'meat', '...'))
+					'name' => new TextField(),
+					'type' => new SelectField(array('datas' => array('fish', 'meat', '...')))
 				)
 			),
 			'recipe' => array(
 				'fields' => array(
-					'name' => array(),
-					'authors' => array('type' => 'relation', 'data' => 'person', 'hasMany' => true),
-					'ingredients' => array('type' => 'relation', 'data' => 'ingredient', 'hasMany' => true)
+					'name' => new TextField(),
+					'authors' => new RelationField(array('data' => 'person', 'hasMany' => true)),
+					'ingredients' => new RelationField(array('data' => 'ingredient', 'hasMany' => true))
 				)
 			)
 		);
 
-		$this->assertTrue(models_to_sql($models));
+		$schema = new Schema($models);
+		$this->assertTrue($schema->generateTables());
 
-		Model::$schema = &$models;
-
+/*
 		$recipe = new Model('recipe');
 		$recipe->insert(array(
 			'name' => 'salmon pasta',
@@ -519,6 +495,8 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$recipe->reset();
 		$recipe->delete('authors.accounts')->delete('authors')->delete('ingredients')->delete()->commit();
 		$this->assertFalse($recipe->get());
+		
+
 		*/
 	
 	}
@@ -544,31 +522,6 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 		print 'done' . "\r\n";
 	}
-
-	function test_data(){
-
-		plugin_require('data');
-
-		$user = data('person');
-
-		$iso_user = $user
-			->search(array(
-				array('firstname', '=', 'robin')
-			))
-			->or_search('firstname LIKE '.sql_quote('%charles%'))
-			->order_by(array('lastname ASC', 'firstname ASC'))
-			->limit(2)
-			->exec();
-
-		$this->assertNotNull($iso_user);
-
-		$is_registered = data_register('person', array(
-			'firstname' => 'Doriane',
-			'lastname' => 'XXXXX'
-		));
-		$this->assertTrue($is_registered);
-	}
-
 
 	protected $backupGlobals = FALSE;
 }
