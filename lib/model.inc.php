@@ -4,36 +4,6 @@ require_once(dirname(__FILE__).'/core.inc.php');
 
 plugin_require(array('field', 'sql'));
 
-/*if( $field['hasMany'] ){
-$manyTableName = $tableName . '_' . $fieldName;
-if( isset($field['hasID']) ){
-	$manyTables[] = array(
-		'name' => $manyTableName,
-		'hasID' => true,
-		'columns' => array(
-			'id_' . $tableName . ' int(11) NOT NULL',
-			'id_' . $field['data'] . ' int(11) NOT NULL'
-		),
-		'foreignKeys' => array(
-			'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-			'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
-		)
-	);
-}else{
-	$manyTables[] = array(
-		'name' => $manyTableName,
-		'hasID' => false,
-		'columns' => array(
-			'id_' . $tableName . ' int(11) NOT NULL',
-			'id_' . $field['data'] . ' int(11) NOT NULL'
-		),
-		'primaryKeys' => array('id_' . $tableName . ',id_' . $field['data']),
-		'foreignKeys' => array(
-			'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-			'id_' . $field['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $field['data'], 'ref' => $prefix . $field['data'].'(id)')
-		)
-	);
-}*/
 
 class Schema {
 
@@ -49,47 +19,90 @@ class Schema {
 
 	public function generateTables() {
 		$back = true;
+		$manyTable = array();
 		foreach ($this->schemeDatas as $tableID => $tableData) {
 			$columns = array();
 			$uniqueness = array();
 			$i = 0;
+			$tableName = isset($tableData['table']) ? $tableData['table'] : $tableID;
 			foreach( $tableData['fields'] as $fieldName => $field ){
 				++$i;
 				$attrs = $field->attributes;
 				$sqlField = $field->getSQLField();
 
-				$column = sql_quote($fieldName, true);
-				$column .= ' ' . $sqlField['type'];
+				$isRelationField = isset($sqlField['relation']) && $sqlField['relation'];
+				if( $isRelationField ){
+					if( isset($attrs['hasMany']) && $attrs['hasMany'] ){
+						$manyTableName = $tableName . '_' . $fieldName;
+						if( isset($attrs['hasID']) ){
+							$manyTable[] = array(
+								'name' => $manyTableName,
+								'hasID' => true,
+								'columns' => array(
+									'id_' . $tableName . ' int(11) NOT NULL',
+									'id_' . $attrs['data'] . ' int(11) NOT NULL'
+								),
+								'foreignKeys' => array(
+									'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
+									'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
+								)
+							);
+						}else{
+							$manyTable[] = array(
+								'name' => $manyTableName,
+								'hasID' => false,
+								'columns' => array(
+									'id_' . $tableName . ' int(11) NOT NULL',
+									'id_' . $attrs['data'] . ' int(11) NOT NULL'
+								),
+								'primaryKeys' => array('id_' . $tableName . ',id_' . $attrs['data']),
+								'foreignKeys' => array(
+									'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $tableName.'(id)'),
+									'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
+								)
+							);
+						}
 
-				if( isset($attrs['required']) && $attrs['required'] === true ){
-					$column .= ' NOT NULL';
-				}
-				if( isset($sqlField['default']) ){
-					$column .= ' DEFAULT ' . sql_quote($sqlField['default']);
-				}
-				if( isset($attrs['unique']) && $attrs['unique'] === true ){
-					$uniqueness[] = array('name' => 'unique_'.$i, 'columns' => array(sql_quote($fieldName, true)));
-				}
-				if( isset($attrs['comment']) ){
-					$column .= ' COMMENT ' . sql_quote($attrs['comment']);
-				}
-				
-				if( isset($attrs['characterSet']) ){
-					$column .= ' CHARACTER SET ' . sql_quote($attrs['characterSet']);
-				}elseif( isset($attrs['collation']) ){
-					$column .= ' COLLATE ' . sql_quote($attrs['collation']);
-				}
+					}
+				}else{
 
-				$columns[] = $column;
+					$column = sql_quote($fieldName, true);
+					$column .= ' ' . $sqlField['type'];
+
+					if( isset($attrs['required']) && $attrs['required'] === true ){
+						$column .= ' NOT NULL';
+					}
+					if( isset($sqlField['default']) ){
+						$column .= ' DEFAULT ' . sql_quote($sqlField['default']);
+					}
+					if( isset($attrs['unique']) && $attrs['unique'] === true ){
+						$uniqueness[] = array('name' => 'unique_'.$i, 'columns' => array(sql_quote($fieldName, true)));
+					}
+					if( isset($attrs['comment']) ){
+						$column .= ' COMMENT ' . sql_quote($attrs['comment']);
+					}
+					
+					if( isset($attrs['characterSet']) ){
+						$column .= ' CHARACTER SET ' . sql_quote($attrs['characterSet']);
+					}elseif( isset($attrs['collation']) ){
+						$column .= ' COLLATE ' . sql_quote($attrs['collation']);
+					}
+
+					$columns[] = $column;
+				}
 			}
 			$table = array(
-				'name' => isset($tableData['table']) ? $tableData['table'] : $tableID,
+				'name' => $tableName,
 				'columns' => $columns,
 				'collation' => isset($tableData['collation']) ? $tableData['collation'] : 'utf8_bin',
 				'comment' => isset($tableData['collation']) ? $tableData['collation'] : null,
 				'uniqueKeys' => $uniqueness
 			);
 			$back = $back && sql_create_table($table);
+		}
+
+		foreach ($manyTable as $manyTableData) {
+			$back = $back && sql_create_table($manyTableData);
 		}
 		return $back;
 	}
@@ -294,7 +307,7 @@ class Model {
 		$field = null;
 		foreach ($modelPath as $path ) {
 			$field = &Model::$schema[$parent]['fields'][$path];
-			$parent = $field['data'];
+			$parent = $field->attributes['data'];
 		}
 		return $field;
 	}
@@ -328,13 +341,13 @@ class Model {
 			$this->using($modelPath);	
 			
 			$parentModelField = $this->resolveFieldByPath($modelPath);
-			$parentModelName = $parentModelField ? $parentModelField['data'] : $this->modelName;
+			$parentModelName = $parentModelField ? $parentModelField->attributes['data'] : $this->modelName;
 			$parentAliasKey = implode('.', $modelPath);
 			$parentTableName = Model::getTableName($parentModelName);
 
 			$modelPath[] = $parentName;
 			$usingModelField = $this->resolveFieldByPath($modelPath);
-			$usingModelName = $usingModelField['data'];
+			$usingModelName = $usingModelField->attributes['data'];
 			$usingTableName = Model::getTableName($usingModelName);
 			
 
@@ -344,7 +357,7 @@ class Model {
 
 			$this->using[$usingKey] = true;		
 			
-			if( !isset($usingModelField['hasMany']) || !$usingModelField['hasMany'] ){
+			if( !isset($usingModelField->attributes['hasMany']) || !$usingModelField->attributes['hasMany'] ){
 				$this->join(array(
 					'type' => 'JOIN',
 					'tableLeft' => $parentTableName,
@@ -361,7 +374,7 @@ class Model {
 					$this->aliases[$usingModelName] = $usingKey;
 				}
 			
-				$hasID = isset($usingModelField['hasID']) && $usingModelField['hasID'];
+				$hasID = isset($usingModelField->attributes['hasID']) && $usingModelField->attributes['hasID'];
 				$this->join(array(
 					'type' => $hasID ? 'INNER JOIN' : 'LEFT OUTER JOIN',
 					'tableLeft' => isset($this->aliases[$parentModelName]) ? $this->aliases[$parentModelName] : $parentTableName,
@@ -383,9 +396,9 @@ class Model {
 
 			if( $selectFields ){
 				$fields = Model::$schema[$usingTableName]['fields'];
-				foreach ($fields as $fieldName => $field) {
-					$field = array_merge(var_get('field/default', array()), $field);
-					if( $field['hasMany'] ) {
+				foreach ($fields as $fieldName => $fieldObj) {
+					$field = $fieldObj->attributes;
+					if( isset($field['hasMany']) && $field['hasMany'] ) {
 						continue;
 					}
 					$select = sql_quote($alias ? $alias : $usingTableName, true);
@@ -515,12 +528,12 @@ class Model {
 
 			$columnName = array_pop($modelPath);
 			$parentModelField = $this->resolveFieldByPath($modelPath);
-			$parentModelName = $parentModelField ? $parentModelField['data'] : $this->modelName;
+			$parentModelName = $parentModelField ? $parentModelField->attributes['data'] : $this->modelName;
 			$parentTableName = Model::getTableName($parentModelName);
 
 			$modelPath[] = $columnName;
 			$usingModelField = $this->resolveFieldByPath($modelPath);
-			$usingModelName = $usingModelField['data'];
+			$usingModelName = $usingModelField->attributes['data'];
 			$usingTableName = Model::getTableName($usingModelName);
 
 			if( $usingModelField['hasMany'] ){
@@ -573,13 +586,16 @@ class Model {
 				unset($datas[$key]);
 			}
 		}
-/*
-		foreach( $fields as $fieldName => $field) {
-			$field = array_merge(var_get('field/default', array()), $field);
-			if( $field['type'] === 'relation' && isset($datas[$fieldName]) ){
+
+		foreach( $fields as $fieldName => $fieldObj) {
+			$field = $fieldObj->attributes;
+			$sqlField = $fieldObj->getSQLField();
+
+			$isRelationField = isset($sqlField['relation']) && $sqlField['relation'];
+			if( $isRelationField && isset($datas[$fieldName]) ){
 				$data = $datas[$fieldName];
 				$relation_id = null;
-				if( !$field['hasMany'] ){
+				if( !isset($field['hasMany']) || !$field['hasMany'] ){
 					if( is_array($data) ){
 						$relation_id = $this->doInsertion($field['data'], $data);
 					}elseif( is_numeric($data) ){
@@ -610,7 +626,7 @@ class Model {
 				}
 			}
 		}
-*/
+
 		if( sizeof($datas) ){
 			sql_insert($tableName, $datas);
 			$id = sql_last_id();
@@ -625,7 +641,7 @@ class Model {
 			foreach( $relations_ids as $fieldName => $relation_ids ) {
 				$this->inserted_ids[$fieldName] = array();
 				foreach ($relation_ids as $relation_id) {
-					sql_insert($tableName . '_' . $fieldName, array('id_' . $tableName => $id, 'id_' . $model['fields'][$fieldName]['data'] => $relation_id));
+					sql_insert($tableName . '_' . $fieldName, array('id_' . $tableName => $id, 'id_' . $model['fields'][$fieldName]->attributes['data'] => $relation_id));
 					$this->inserted_ids[$fieldName][] = sql_last_id();
 				}
 			}

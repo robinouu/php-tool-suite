@@ -451,11 +451,16 @@ class DateField extends TextField {
 		if( isset($this->attributes['value']) ){
 			$properties['default'] = $this->attributes['value'];
 		}
+		return $properties;
 	}
 }
 
 class RelationField extends NumberField {
-
+	public function getSQLField(){
+		$properties['type'] = 'INT';
+		$properties['relation'] = true;
+		return $properties;
+	}
 }
 
 class DateTimeField extends DateField {

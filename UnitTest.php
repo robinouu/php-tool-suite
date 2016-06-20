@@ -428,7 +428,6 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$schema = new Schema($models);
 		$this->assertTrue($schema->generateTables());
 
-/*
 		$recipe = new Model('recipe');
 		$recipe->insert(array(
 			'name' => 'salmon pasta',
