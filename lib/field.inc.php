@@ -7,6 +7,10 @@
 
 plugin_require(array('i18n', 'html'));
 
+/**
+ * Field abstract class
+ * @subpackage Fields
+ */
 abstract class Field {
 
 	static protected $instanceID = 0;

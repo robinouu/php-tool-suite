@@ -6,11 +6,19 @@
 
 plugin_require(array('request', 'response'));
 
+/**
+ * Connects to an OAuth authentication endpoint
+ * @param array $options 
+ * <ul>
+ *   <li>clientID string The client OAuth ID</li>
+ *   <li>redirectTo string An URL to call back.</li>
+ *   <li>parameters array Additional parameters transmitted to the OAuth endpoint.</li>
+ * </ul>
+ * @subpackage OAuth2
+ */
 function oauth_connect($options = array()) {
 	$options = array_merge(array(
-		'authType' => 'uri',
 		'clientID' => '',
-		'certificate' => null,
 		'redirectTo' => request_url(),
 		'parameters' => array()
 	), $options);
@@ -26,6 +34,17 @@ function oauth_connect($options = array()) {
 	redirect($authURL);
 }
 
+/**
+ * Authenticates the user using an authorization code
+ * @param array &$options 
+ * <ul>
+ *   <li>code string The code sent by the oauth_connect response</li>
+ *   <li>redirectTo string The URL to call back</li>
+ *   <li>parameters array Additional parameters transmitted to the OAuth endpoint.</li>
+ * </ul>
+ * @return string The result of the request
+ * @subpackage OAuth2
+ */
 function oauth_token(&$options = array()) {
 	$options = array_merge(array(
 		'code' => $_GET['code'],
@@ -48,6 +67,7 @@ function oauth_token(&$options = array()) {
 	return $res;
 }
 
+/*
 function oauth_fetch($url, $options) {
 
 	$options = array_merge(array(
@@ -63,8 +83,19 @@ function oauth_fetch($url, $options) {
 
 	return oauth_request($url, $options['params'], $options['http_method'], $options['http_headers']);
 }
+*/
 
-function oauth_signature($url, $params, $clientID, $clientSecret, $http_method = 'POST' ) {
+/**
+ * Generates a signature for the OAuth protocol
+ * @param string $url The URL to fetch
+ * @param array $params Additional URL parameters
+ * @param string $clientID The client OAuth ID
+ * @param string $clientSecret The client OAuth secret phrase
+ * @param string $http_method The request method (POST by default, can be GET/POST)
+ * @return The HMAC signature for that request
+ * @subpackage OAuth2
+ */
+function oauth_signature($url, $params=array(), $clientID='', $clientSecret='', $http_method = 'POST' ) {
 	foreach ($params as $key => $value) {
 		$params[$key] = rawurlencode($value);
 	}
@@ -85,6 +116,16 @@ function oauth_signature($url, $params, $clientID, $clientSecret, $http_method =
 	$hmac = base64_encode(hash_hmac('sha1', $signature, $consumer, true));
 	return $hmac;
 }
+
+/**
+ * Requests an URL using OAuth protocol
+ * @param string $url 
+ * @param array $params Additional parameters to the URL
+ * @param string $verb HTTP method to use (POST by default, can be GET/POST)
+ * @param array $headers Additional HTTP headers
+ * @return array $json A JSON object returned by the server.
+ * @subpackage OAuth2
+ */
 function oauth_request($url, $params = array(), $verb = 'POST', $headers = array()) {
 
 	if( $params ){
@@ -125,9 +166,4 @@ function oauth_request($url, $params = array(), $verb = 'POST', $headers = array
 		return $jsonData;
 	}
 	return $result;
-}
-
-function oauth_result() {
-	
-	return $res;
 }

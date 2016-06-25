@@ -7,10 +7,21 @@
 
 plugin_require(array('var', 'random'));
 
+/**
+ * Generates a SHA256 key
+ * @param string $key Key to generate from
+ * @return string a SHA256 key.
+ */
 function generate_key($key) {
 	return hash("SHA256", $key, true);
 }
 
+/**
+ * Encrypts the content using a 256 bits key
+ * @param string &$content The content to encrypt (reference)
+ * @param string $key The key to use. You should use generate_key() for this purpose.
+ * @return bool TRUE if the encryption succeed, FALSE otherwise.
+ */
 function encrypt(&$content, $key){
 	if( !extension_loaded('mcrypt') ){
 		return false;
@@ -21,6 +32,12 @@ function encrypt(&$content, $key){
 	return (bool)$encrypted;
 }
 
+/**
+ * Decrypts the content using a 256 bits key.
+ * @param string &$content The content to decrypt
+ * @param string $key The key to use. You should use generate_key() for this purpose.
+ * @return bool TRUE if the encryption succeed, FALSE otherwise.
+ */
 function decrypt(&$content, $key) {
 	if( !extension_loaded('mcrypt') ){
 		return false;
