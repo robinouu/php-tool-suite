@@ -92,10 +92,10 @@ function doc_from_file($filepath) {
 						}
 					}else{
 						if( !$hasTag ){
-							$token['summary'] .= $c . "\r\n";
+							$token['summary'] .= $c . PHP_EOL;
 						}elseif( $value ){
 							if( ($index = sizeof($token[$value])-1) >= 0 ){
-								$token[$value][$index] .= "\r\n" . $c;
+								$token[$value][$index] .= PHP_EOL . $c;
 							}else{
 								$token[$value] = array($c);
 							}
