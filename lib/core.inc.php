@@ -82,3 +82,11 @@ function plugin_require($subpackages = null) {
 function server_is_secure() {
 	return (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 }
+
+/**
+ * Is the client in CLI mode ?
+ * @return TRUE if the client is in CLI mode. FALSE otherwise.
+ */
+function is_cli(){
+	return php_sapi_name() == "cli";
+}

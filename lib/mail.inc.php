@@ -5,6 +5,20 @@
  * @subpackage Emailing
  */
 
+/**
+ * Sends an email to one or multiple targets
+ * @param array $options
+ * <ul>
+ * 	<li>to : string|array An email list to receive the mail</li>
+ * 	<li>from : string|array An email list from which the mail was sent</li>
+ * 	<li>subjet : string The email subject</li>
+ * 	<li>charset : string The email charset (utf-8 by default)</li>
+ * 	<li>content : string The message to send</li>
+ * 	<li>html : bool Is the content an HTML template ? TRUE by default.</li>
+ * </ul>
+ * @subpackage Emailing
+ * @return type
+ */
 function email($options) {
 	$options = array_merge(array(
 		'to' => array(),
