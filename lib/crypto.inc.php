@@ -2,6 +2,7 @@
 /**
  * Crypto
  * @package php-tool-suite
+ * @subpackage Cryptography
  */
 
 plugin_require(array('var', 'random'));

@@ -3,13 +3,14 @@
  * inet
  * and PHP websockets
  * @package php-tool-suite
- * @subpackage inet
+ * @subpackage Network sockets
  */
 
 /**
  * Returns the peer name
  * @param $socket The socket to search for
  * @return string the socket peer name (host:port)
+ * @subpackage Network sockets
  */
 function inet_peername($socket) {
 	$host = '';
@@ -22,6 +23,7 @@ function inet_peername($socket) {
  * Returns the last error occured on the specified socket
  * @param $socket The socket to search for
  * @return string The error message.
+ * @subpackage Network sockets
  */
 function inet_error($socket = null) {
 	return socket_strerror(socket_last_error($socket));
@@ -31,6 +33,7 @@ function inet_error($socket = null) {
  * Creates a basic TCP socket
  * @param $socket The socket to search for
  * @return string The error message.
+ * @subpackage Network sockets
  */
 function inet_socket() {
 	return socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
@@ -47,6 +50,7 @@ function inet_socket() {
  * 	<li>onData callback A callback when data have been received.</li>
  * 	<li>bufferLength int The maximum size of the buffer. Take care of that setting in production.</li>
  * </ul>
+ * @subpackage Network sockets
  */
 function inet_client($options = array()) {
 
@@ -92,6 +96,7 @@ function inet_client($options = array()) {
  * @param $socket The socket where to send data
  * @param $msg The message to write
  * @return boolean TRUE if success, FALSE otherwise.
+ * @subpackage Network sockets
  */
 function inet_write($socket, $msg) {
 	return socket_write($socket, $msg, strlen($msg));
@@ -102,6 +107,7 @@ function inet_write($socket, $msg) {
  * Closes a socket
  * @param $socket The socket to close
  * @return boolean TRUE if success, FALSE otherwise.
+ * @subpackage Network sockets
  */
 function inet_close($socket) {
 	@socket_shutdown($socket);
@@ -120,6 +126,7 @@ function inet_close($socket) {
  * 	<li>onClientData callback A callback called when data have been received for a particular client.</li>
  * 	<li>onClientDisconnected callback A callback called when a client has disconnected from the server.</li>
  * </ul>
+ * @subpackage Network sockets
  */
 function inet_server($options = array()) {
 	$options = array_merge(array(

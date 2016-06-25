@@ -2,6 +2,7 @@
 /**
  * JSON
  * @package php-tool-suite
+ * @subpackage JSON
  */
 
 plugin_require(array('var'));

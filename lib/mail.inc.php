@@ -2,6 +2,7 @@
 /**
  * Emailing
  * @package php-tool-suite
+ * @subpackage Emailing
  */
 
 function email($options) {

@@ -2,7 +2,7 @@
 /**
  * Fields
  * @package php-tool-suite
- * @subpackage fields
+ * @subpackage Fields
  */
 
 plugin_require(array('i18n', 'html'));

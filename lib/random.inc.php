@@ -2,6 +2,7 @@
 /**
  * Random
  * @package php-tool-suite
+ * @subpackage Random
  */
 
 if (version_compare(phpversion(), '4.2.0', '<') ) {

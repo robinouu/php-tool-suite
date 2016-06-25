@@ -2,6 +2,7 @@
 /**
  * Forms
  * @package php-tool-suite
+ * @subpackage Forms
  */
 
 function form_token($tokenName) {

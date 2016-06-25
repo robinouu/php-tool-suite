@@ -18,6 +18,7 @@ plugin_require(array('log', 'var'));
  * 	<li>charset string The connection charset to use. 'utf8' by default.</li>
  * </ul>
  * @return mixed The PDO object used for the connection or FALSE if the connection could not be established.
+ * @subpackage SQL
  */
 function sql_connect($options = array()) {
 	
@@ -55,6 +56,7 @@ function sql_connect($options = array()) {
 /**
  * Disconnects from the SQL connection started with sql_connect()
  * @return boolean TRUE if the connection has been unset. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_disconnect() {
 	if( ($sql = var_set('sql/dbConnection')) !== null ){
@@ -66,6 +68,7 @@ function sql_disconnect() {
 /**
  * Returns the current table prefix.
  * @return string The current table prefix.
+ * @subpackage SQL
  */
 function sql_prefix() {
 	return var_get('sql/prefix');
@@ -77,6 +80,7 @@ function sql_prefix() {
  * @param array $values The values to prepare. See 
  * @param int $fetchMode The PDO fetch mode. Default to PDO::FETCH_ASSOC.
  * @return mixed The actual result of the query, or a boolean result if $fetchMode is NULL.
+ * @subpackage SQL
  */
 function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	$sql = sql_connect();
@@ -102,6 +106,7 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 /**
  * Returns the last auto-incremented field inserted in database.
  * @return int The last auto-incremented field inserted in database.
+ * @subpackage SQL
  */
 function sql_last_id() {
 	$sql = sql_connect();
@@ -118,6 +123,7 @@ function sql_last_id() {
  * @param array $fields An associative array containing the data to insert
  * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
  * @return boolean TRUE if the data has been inserted in the table. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_insert($table, $fields) {
 	$sql = sql_connect();
@@ -142,6 +148,7 @@ function sql_insert($table, $fields) {
  * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
  * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_update($table, $fields = array(), $where = null, $join = null) {
 	$sql = sql_connect();
@@ -179,6 +186,7 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
  * @param string $table The table name where to delete data. It will automatically be prefixed.
  * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been delete from the table. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_delete($table, $options = array()) {
 	$sql = sql_connect();
@@ -226,6 +234,7 @@ function sql_select($table, $fields = '*', $alias = '', $prefixed = true) {
  * Truncates a table.
  * @param string $table The table to truncate. It will automatically be prefixed.
  * @return boolean TRUE if the table has been truncated. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_truncate($table = array()) {
 	$sql = sql_connect();
@@ -250,6 +259,7 @@ function sql_truncate($table = array()) {
  * Deletes a table.
  * @param string $table The table to delete. It will automatically be prefixed.
  * @return boolean TRUE if the table has been deleted. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_delete_table($table) {
 	$sql = sql_connect();
@@ -269,6 +279,7 @@ function sql_delete_table($table) {
  * @param boolean $foreignKeyCheck By default, and if set to FALSE, foreign key checks will be ignored.
  * @param array $table The tables to delete. They will automatically be prefixed. By default, and if set to NULL, all tables are deleted.
  * @return boolean TRUE if the tables have been deleted. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
 
@@ -351,6 +362,7 @@ function sql_join($joins, $table = ''){
 /**
  * Lists all tables from the current database.
  * @return array An array of tables that exist in database.
+ * @subpackage SQL
  */
 function sql_list_tables() {
 	$sql = sql_connect();
@@ -368,6 +380,7 @@ function sql_list_tables() {
  * @param mixed $value The value to convert. 
  * @param boolean $column_or_table If set to TRUE, sanitize the string to accept a column or table name.
  * @return mixed Returns the SQL representation of a value. If the value is NULL, returns 'NULL'. Otherwhise, PDO::quote is used.
+ * @subpackage SQL
  */
 function sql_quote($text, $column_or_table = false){
 	$sql = sql_connect();
@@ -392,6 +405,7 @@ function sql_quote($text, $column_or_table = false){
  * @param string $table The table to describe.
  * @return array Returns the table description (Column name, column type, Nullable, Key type, Default value, Extra)
  * @see https://dev.mysql.com/doc/refman/4.1/en/describe.html
+ * @subpackage SQL
  */
 function sql_describe($table) {
 	$sql = sql_connect();
@@ -406,6 +420,7 @@ function sql_describe($table) {
  * Checks if the table exists in the database.
  * @param string $table The table to check for existence.
  * @return boolean Returns TRUE if the table exists. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_table_exists($table) {
 	$sql = sql_connect();
@@ -438,6 +453,7 @@ function sql_table_exists($table) {
  * 	<li>engine string The engine to use. 'InnoDB' is used by default or when foreign keys have been set.</li>
  * </ul>
  * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
+ * @subpackage SQL
  */
 function sql_create_table($options) {
 	$options = array_merge(array(
@@ -546,6 +562,7 @@ function sql_alter_table($table, $options = array()) {
  * Returns the current PDO driver.
  * @return boolean Returns TRUE if the table has been created. FALSE otherwise.
  * @see http://php.net/manual/en/pdo.getavailabledrivers.php
+ * @subpackage SQL
  */
 function sql_driver() {
 	$sql = sql_connect();
@@ -625,7 +642,8 @@ function sql_get($table, $options = array()){
 			}
 		}
 	}
-//	print '<pre><code>'.$query.'</code></pre>';
+	// print '<pre><code>'.$query.'</code></pre>';
+	// print $query . PHP_EOL. PHP_EOL;
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 	if( $options['limit'] === 1 ){
 		return $res[0];
@@ -666,6 +684,7 @@ function sql_import_csv($options) {
 
 /**
  * Checks if a string is an sql compare operator
+ * @subpackage SQL
  */
 function sql_is_compare_operator($op){
 	return in_array($op, array('=', 'LIKE', 'NOT LIKE', 'NOT', '<>'));

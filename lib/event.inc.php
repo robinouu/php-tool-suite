@@ -12,6 +12,7 @@ plugin_require(array('var'));
  * @param string $name The event name.
  * @param callable $callback A callback that will be executed on event_do call. 
  * @param int $priority An optional priority value of execution.
+ * @subpackage Events
  */
 function on($name, $callback, $priority = 1) {
 	$name = object_hash($name);
@@ -64,6 +65,7 @@ function event_get($name = null, $priority = null){
  *  <li>Boolean values use the AND logical operation.</li>
  *  <li>Arrays use recursive merging</li>
  * </ul>
+ * @subpackage Events
  */
 function trigger($name, $args = null) {
 	$realName = $name;
@@ -100,8 +102,11 @@ function trigger($name, $args = null) {
 
 
 /**
- * Unregisters a event and the associated callbacks.
+ * Unregisters an event or a specific callback.
  * @param string $name The event name.
+ * @param callable $callback A callback that will be unregistered. 
+ * @param int $priority An optional priority value of execution to search for.
+ * @subpackage Events
  */
 function off($name = null, $callback = null, $priority = null) {
 	$name = object_hash($name);

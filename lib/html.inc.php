@@ -2,7 +2,7 @@
 /**
  * HTML Helpers
  * @package php-tool-suite
- * @subpackage HTML helpers
+ * @subpackage HTML
  */
 
 plugin_require(array('event', 'sanitize'));
@@ -13,6 +13,7 @@ plugin_require(array('event', 'sanitize'));
  * @param string $html The HTML string to parse.
  * @return a DOM representation of the HTML data
  * @see http://simplehtmldom.sourceforge.net/
+ * @subpackage HTML
  */
 function dom($html) {
 	require_once(dirname(__FILE__).'/vendor/simple_html_dom.php');
@@ -25,6 +26,7 @@ function dom($html) {
  * @param array $attrs The link tag attributes ('src', 'media'...)
  * @return an HTML stylesheet link
  * 		<link rel="stylesheet" type="text/css" src="jquery.min.css" />
+ * @subpackage HTML
  */
 function stylesheet($attrs){
 	$attrs = array_merge(array(
@@ -41,6 +43,7 @@ function stylesheet($attrs){
  * @param array $attrs The script tag attributes ('src', 'defer', 'async'...)
  * @return an HTML external javascript tag
  * 		<script type="text/javascript" src="jquery.min.js"></script>
+ * @subpackage HTML
  */
 function javascript($attrs, $content = '') {
 	$attrs = array_merge(array(
@@ -61,6 +64,7 @@ function javascript($attrs, $content = '') {
  *	<li>body string The page content</li>
  * </ul>
  * @return string The HTML 5 template.
+ * @subpackage HTML
  */
 function html5($args) {
 
@@ -130,6 +134,7 @@ function code($content, $language) {
 
 /* 
  * Returns a valid W3C image tag
+ * @subpackage HTML
  */
 function image($attrs) {
 	if( !isset($attrs['width']) && !isset($attrs['height']) ){
@@ -160,6 +165,7 @@ function text_vars($text, $vars) {
  * @param callable $callback An optional callback to use to print the items content.
  * @param boolean $isNav If set to TRUE, wraps the menu with a navigation ARIA role on a nav tag.
  * @return An HTML representation of a menu
+ * @subpackage HTML
  */
 function menu($items = array(), $attrs = array(), $callback = array(), $isNav = false) {
 
@@ -234,6 +240,7 @@ function hyperlink($content = 'Link', $attrs = array()){
 
 /**
  * @return '<br />'
+ * @subpackage HTML
  */
 function br() {
 	return '<br />';
@@ -241,6 +248,7 @@ function br() {
 
 /**
  * @return '<hr />'
+ * @subpackage HTML
  */
 function hr() {
 	return '<hr />';
@@ -253,6 +261,7 @@ function hr() {
  * @param array $attrs The tag attributes
  * @param boolean $inline If TRUE if specified, the HTML inline format will be used. (for tags like link,br,hr...)
  * @return a properly formatted HTML tag
+ * @subpackage HTML
  */
 function tag($tag, $content, $attrs = array(), $inline = false) {
 	if( $inline ){
@@ -268,6 +277,7 @@ function tag($tag, $content, $attrs = array(), $inline = false) {
  * @param int $level The hn hierarchy level (1-6)
  * @param array $attrs The hn attributes
  * @return The hn title tag
+ * @subpackage HTML
  */
 function title($label, $level = 1, $attrs = array()){
 	return tag('h' . $level, $label, $attrs);
@@ -277,6 +287,7 @@ function title($label, $level = 1, $attrs = array()){
  * Encodes a text to its HTML representation
  * @param string $content The text content
  * @return The HTML representation of a text.
+ * @subpackage HTML
  */
 function text($content) {
 	return nl2br(htmlspecialchars($content));
@@ -289,6 +300,7 @@ function paragraph($content, $attrs = array()) {
 /**
  * @return a <p> paragraph
  * @see paragraph()
+ * @subpackage HTML
  */
 function p($content, $attrs = array()){
 	return paragraph($content, $attrs);
@@ -314,6 +326,7 @@ function button_submit($label = 'Submit', $attrs = array()) {
  * Returns an HTML tag attributes.
  * @param array $attrs The attributes with their respective string values.
  * @return string an HTML list of attributes, joined by spaces.
+ * @subpackage HTML
  */
 function attrs($attrs = array()) {
 	$html = '';
@@ -346,6 +359,7 @@ function fieldset($name = '', $content = '', $attrs = array()){
  *	<li>scripts string Appends scripts tags to the end of the body</li>
  *	<li>body string The page content</li>
  * </ul>
+ * @subpackage HTML
  *
  */
 function table($options, $attrs = array()){

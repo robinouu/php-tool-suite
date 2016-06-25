@@ -2,7 +2,7 @@
 /**
  * Internationalization
  * @package php-tool-suite
- * @subpackage i18n
+ * @subpackage I18n
  */
 
 plugin_require(array('var', 'event'));
@@ -11,6 +11,7 @@ plugin_require(array('var', 'event'));
  * Sets the current locale
  * @param string|array $locale The locale to set, or an array of locales ordered by priority. By default, it is set to 'en_US'
  * @return boolean TRUE if a locale have been set, FALSE otherwise.
+ * @subpackage I18n
  */
 function set_locale($locales) {
 	if( !is_array($locales) ){
@@ -48,6 +49,7 @@ function set_locale($locales) {
 /**
  * Returns the current locale, that has been set by set_locale()
  * @return string The current locale or an empty string.
+ * @subpackage I18n
  */
 function current_locale() {
 	if( ($locale = session_var_get('i18n/locale')) !== null ) {
@@ -59,6 +61,7 @@ function current_locale() {
 /**
  * Returns the user preferred locale (uses detect_languages() internally)
  * @return string The user preferred locale or an empty string.
+ * @subpackage I18n
  */
 function preferred_locale() {
 	$languages = detect_languages();
@@ -78,6 +81,7 @@ function preferred_locale() {
 /**
  * Returns the current lang
  * @return string The current lang or an empty string
+ * @subpackage I18n
  */
 function current_lang() {
 	$locale = current_locale();
@@ -91,6 +95,7 @@ function current_lang() {
 /**
  * Returns the user preferred lang (uses detect_languages() internally)
  * @return string The user preferred lang or an empty string
+ * @subpackage I18n
  */
 function preferred_lang() {
 	$locale = preferred_locale();
@@ -104,6 +109,7 @@ function preferred_lang() {
  * Detects user preferred languages, based on HTTP_ACCEPT_LANGUAGE request variable
  * @param $forceDetection Force re-parsing the HTTP_ACCEPT_LANGUAGE. Default to TRUE.
  * @return array An array of detected languages, sorted by priority (q).
+ * @subpackage I18n
  */
 function detect_languages($forceDetection = true) {
 	$langs = array();
@@ -142,6 +148,7 @@ function detect_languages($forceDetection = true) {
  * 	<li>codeset string Used by gettext method, 'UTF-8' by default. Change it if you have set a custom locale codeset</li>
  * 	<li>translations array Used by array method, an array of translations (the key contains the context, the value contains the translation).</li>
  * </ul>
+ * @subpackage I18n
  */
 function load_translations($options = array()) {
 	$options = array_merge(array(
@@ -191,6 +198,7 @@ function load_translations($options = array()) {
  * @param array $args The argument to use for that string. This method works in fact like vsprintf() for translated strings.
  * @see http://php.net/manual/en/function.vsprintf.php
  * @return string The translated string or the context string if not found.
+ * @subpackage I18n
  */
 function t($str, $args = array()){
 	$translated = $str;

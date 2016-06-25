@@ -2,6 +2,7 @@
 /**
  * Logger
  * @package php-tool-suite
+ * @subpackage Logging
  */
 
 function LOG_INFO($str) {

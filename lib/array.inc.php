@@ -2,13 +2,14 @@
 /**
  * Arrays
  * @package php-tool-suite
- * @subpackage arrays
+ * @subpackage Array
  */
 
 /**
  * Checks if the specified array is simple or not. (one level)
  * @param array $array The array to test
  * @return boolean TRUE if the array is simple. FALSE otherwise.
+ * @subpackage Array
  */
 function is_simple_array($arr = array()) {
 	return (is_array($arr) && count($arr) == count($arr, COUNT_RECURSIVE));
@@ -19,6 +20,7 @@ function is_simple_array($arr = array()) {
  * Checks if the specified strong value is in array (case insensitive)
  * @param mixed $needle The string to test
  * @return boolean TRUE if the array contains the string. FALSE otherwise.
+ * @subpackage Array
  */
 function in_array_ci($needle, $haystack) {
     return in_array(strtolower($needle), array_map('strtolower', $haystack));
@@ -28,22 +30,38 @@ function in_array_ci($needle, $haystack) {
  * Checks if the specified array is associative or not.
  * @param array $array The array to test
  * @return boolean TRUE if the array is associative. FALSE otherwise.
+ * @subpackage Array
  */
 function is_assoc_array($arr) {
 	return (bool)count(array_filter(array_keys($arr), 'is_string'));
 }
 
 
+/**
+ * Shuffle an associative array
+ * @param array $array The array to shuffle
+ * @return boolean TRUE if the array is has been shuffled. FALSE otherwise.
+ * @subpackage Array
+ */
 function assoc_array_shuffle(&$array) {
 	$keys = array_keys($array);
-	shuffle($keys);
+	$back = shuffle($keys);
 	foreach($keys as $key) {
 		$new[$key] = $array[$key];
 	}
 	$array = $new;
-	return true;
+	return $back;
 }
 
+
+/**
+ * Slice an associative array
+ * @param array $array The array to slice
+ * @param int $start The position to start slicing
+ * @param int $len The length of the slicing operation.
+ * @return array The sliced array.
+ * @subpackage Array
+ */
 function assoc_array_slice($assoc, $start, $len = null) {
 	if( $len === null ){
 		$len = sizeof($assoc);
@@ -65,6 +83,7 @@ function array_segments($segments){
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @return mixed Return the current path value.
+ * @subpackage Array
  */
 function array_get($arr, $path)
 {
@@ -91,6 +110,7 @@ function array_get($arr, $path)
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @param mixed $value The value to set
  * @return boolean TRUE if the variable has been correctly set. FALSE otherwise.
+ * @subpackage Array
  */
 function array_set(&$arr, $path, $value)
 {
@@ -119,6 +139,7 @@ function array_set(&$arr, $path, $value)
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @param mixed $value The value to inject
  * @return boolean TRUE if the variable has been correctly set. FALSE otherwise.
+ * @subpackage Array
  */
 function array_append(&$arr, $path, $value = null)
 {
@@ -151,6 +172,7 @@ function array_append(&$arr, $path, $value = null)
  * @param array $array The reference array.
  * @param string|array $path A path to the key location. Can be a string like 'foo/bar', or an array('foo', 'bar')
  * @return boolean TRUE if the variable has been correctly unset. FALSE otherwise.
+ * @subpackage Array
  */
 function array_unset(&$arr, $path)
 {

@@ -2,7 +2,7 @@
 /**
  * Core
  * @package php-tool-suite
- * @subpackage core
+ * @subpackage Core
  */
 
 
@@ -21,6 +21,7 @@ function deref($obj) {
  * Returns a unique hash of an object or a mixed hash value
  * @param mixed $value an object or a mixed value (string, bool, number)
  * @return string a unique hash to identify the value
+ * @subpackage Core
  */
 function object_hash($obj) {
 	if (is_object($obj)) {
@@ -32,6 +33,7 @@ function object_hash($obj) {
 /**
  * Generates a GUID (Globally Unique Identifier)
  * @return string a unique identifier formatted like this {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+ * @subpackage Core
  */
 function guid() {
 	if( function_exists('com_create_guid') ){
@@ -74,7 +76,8 @@ function plugin_require($subpackages = null) {
 
 /**
  * Returns the security state of the current connection.
- * @return boolean TRUE if a secured connection is active. FALSE otherwhise.
+ * @return boolean TRUE if a secured connection is active. FALSE otherwhise
+ * @subpackage Core
  */
 function server_is_secure() {
 	return (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);

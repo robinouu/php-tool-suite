@@ -2,6 +2,7 @@
 /**
  * Crawler
  * @package php-tool-suite
+ * @subpackage Crawler
  */
 
 plugin_require(array('var', 'request'));

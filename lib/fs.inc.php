@@ -2,7 +2,7 @@
 /**
  * File system
  * @package php-tool-suite
- * @subpackage file system
+ * @subpackage Filesystem
  */
 
 
@@ -10,6 +10,7 @@
  * Get a PHP file content
  * @param string $filepath The filepath to load
  * @return string The content served by the PHP file.
+ * @subpackage Filesystem
  */
 function include_file($filepath = null) {
 	if( !is_null($filepath) ){
@@ -28,6 +29,7 @@ function include_file($filepath = null) {
  * If the path does not exist in the file system, it will be automatically created.
  * @param string $dir The path to create.
  * @return boolean TRUE if the path has been set. FALSE otherwise.
+ * @subpackage Filesystem
  */
 function mkdir_recursive($dir) {
 	return mkdir($dir, 0777, true);
@@ -38,6 +40,7 @@ function mkdir_recursive($dir) {
  * Removes a directory and all of its subdirectories.
  * @param string $dir The directory to remove.
  * @return boolean TRUE if the path has been correctly removed. FALSE otherwise.
+ * @subpackage Filesystem
  */
 function rmdir_recursive($dir) {
 	return browse_recursive($dir, 'unlink', 'rmdir');
@@ -50,6 +53,7 @@ function rmdir_recursive($dir) {
  * @param callable $callbackAfter A callback called after each browsed directory. The current dir is passed to the function.
  * @param array $ignorePaths An array of paths to ignore.
  * @return boolean TRUE if the directory has been browsed. FALSE otherwise.
+ * @subpackage Filesystem
  */
 function browse_recursive($dir, $cbEach = null, $cbAfter = null, $ignorePaths = array()) {
 	$files = scandir($dir);

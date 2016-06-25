@@ -1,4 +1,8 @@
 <?php
+/**
+ * @package php-tool-suite
+ * @subpackage ORM models
+ */
 
 require_once(dirname(__FILE__).'/core.inc.php');
 
@@ -536,7 +540,7 @@ class Model {
 			$usingModelName = $usingModelField->attributes['data'];
 			$usingTableName = Model::getTableName($usingModelName);
 
-			if( $usingModelField['hasMany'] ){
+			if( $usingModelField->attributes['hasMany'] ){
 				$tableToDelete = $parentTableName . '_' . $columnName;
 				$idName = 'id_' . $usingTableName;
 				$options['select'] = sql_quote($tableToDelete, true) . '.' . sql_quote('id_' . $usingModelName, true) . ' AS id';
@@ -548,8 +552,6 @@ class Model {
 			$options['select'] = sql_quote($tableName, true) . '.`id` AS id';
 		}
 
-
-		//var_dump($options);
 		//$options['table'] = $tableToDelete;
 		$tmp_ids = sql_get($tableName, $options);
 		if( $tmp_ids ){
@@ -661,8 +663,8 @@ class Model {
 		$fields = &$model['fields'];
 		
 		$options = $this->prepareGet($tableName);
-		$options['select'] = 'id';
-
+		$options['select'] = sql_quote($tableName, true) . '.`id` AS id';
+		
 		$tmp_ids = sql_get($tableName, $options);
 		if( $tmp_ids ){
 			if( is_assoc_array($tmp_ids) ){
@@ -676,9 +678,9 @@ class Model {
 			foreach ($datas as $key => $value) {
 				if( !isset($model['fields'][$key]) ){
 					unset($datas[$key]);
-				}/*elseif( isset($model['fields'][$key]['hasMany']) && $model['fields'][$key]['hasMany'] ){
+				}elseif( isset($model['fields'][$key]->attributes['hasMany']) && $model['fields'][$key]->attributes['hasMany'] ){
 					unset($datas[$key]);
-				}*/
+				}
 			}
 			sql_update($tableName, $datas, 'id IN (' . implode(', ', $ids) . ')');
 		}

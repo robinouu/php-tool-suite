@@ -2,7 +2,7 @@
 /**
  * Cache
  * @package php-tool-suite
- * @subpackage cache
+ * @subpackage Cache system
  */
 
 plugin_require(array('fs'));
@@ -33,6 +33,7 @@ if( !is_dir($cacheDir) ){
  * @param mixed|callable $data the data to cache.
  * @param string $expire The expiration timestamp. +1 month by default.
  * @return mixed The cached data.
+ * @subpackage Cache system
  */
 function cache_set($resourceID=null, $data, $expire = null) {
 	if( !$expire ) {
@@ -53,6 +54,13 @@ function cache_set($resourceID=null, $data, $expire = null) {
 }
 
 
+/**
+ * Get cached data from memory.
+ * @param string $resourceID the resource identifier
+ * @param mixed $defaultValue the data to get by default.
+ * @return mixed The cached data or the default value if no one has been found.
+ * @subpackage Cache system
+ */
 function cache_get($resourceID=null, $defaultValue=null){
 	$value = null;
 	if( is_null($resourceID) ){

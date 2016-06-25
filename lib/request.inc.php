@@ -2,16 +2,28 @@
 /**
  * Request
  * @package php-tool-suite
+ * @subpackage HTTP request
  */
 
 plugin_require(array('var'));
 
+/**
+ * Gets the HTTP request route
+ * @see $_SERVER['REQUEST_URI']
+ * @return type
+ * @subpackage HTTP request
+ */
 function request_route() {
 	request_url();
 	return var_get('request/url/path');
 }
 
-function request_url($parsed = false) {
+/**
+ * Gets the current request URL
+ * @return string the request URL
+ * @subpackage HTTP request
+ */
+function request_url() {
 	$url = var_get('request/url', '');
 	if( !$url && isset($_SERVER['SERVER_NAME'])){
 		$strUrl = server_is_secure() ? 'https://' : 'http://';
@@ -28,6 +40,11 @@ function request_url($parsed = false) {
 	return '';
 }
 
+/**
+ * Gets the root url (without URI component)
+ * @return string The root url
+ * @subpackage HTTP request
+ */
 function root_url() {
 	request_url();
 	$url = var_get('request/url');
@@ -37,6 +54,13 @@ function root_url() {
 	return '';
 }
 
+/**
+ * Returns a website url (without URI component)
+ * @param string $url The full URL to parse 
+ * @param bool $noScheme If set to TRUE, the url will be returned without scheme information.
+ * @return string the website url
+ * @subpackage HTTP request
+ */
 function url_website($url, $noScheme = false) {
 	$urlInfo = parse_url($url);
 	if( !isset($urlInfo['path']) || !isset($urlInfo['host']) ){
@@ -52,6 +76,11 @@ function url_website($url, $noScheme = false) {
 	}
 }
 
+/**
+ * Gets the HTTP referer
+ * @return string the HTTP referer
+ * @subpackage HTTP request
+ */
 function request_referer() {
 	return $_SERVER['HTTP_REFERER'];
 }

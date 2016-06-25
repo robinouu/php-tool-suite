@@ -1,7 +1,7 @@
 <?php
 /**
- * Sanitize
  * @package php-tool-suite
+ * @subpackage String
  */
 
 plugin_require(array('var'));
@@ -46,6 +46,13 @@ if( !var_get('core/toasciitable_upper') ){
 	));
 }
 
+/**
+ * Creates a slug from a string
+ * @param string $str The string from which the slug is generated
+ * @param string $delimiter An eventual delimiter to use (for spacing issues)
+ * @return string a slug from the string
+ * @subpackage String
+ */
 function slug($str, $delimiter = '-') {
 	$str = str_replace(array_keys(var_get('core/toasciitable_lower')), array_values(var_get('core/toasciitable_lower')), $str);
 	$str = str_replace(array_keys(var_get('core/toasciitable_upper')), array_values(var_get('core/toasciitable_upper')), $str);

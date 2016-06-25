@@ -2,7 +2,7 @@
 /**
  * File
  * @package php-tool-suite
- * @subpackage files
+ * @subpackage File operations
  */
 
 /**
@@ -19,6 +19,7 @@
  * </pre>
  * @param string $columnSeparator The column separator to use. Comma by default.
  * @return boolean TRUE if the file has been wrote. FALSE otherwise.
+ * @subpackage File operations
  */
 function csv_write($filepath, $data, $colSep = ','){
 	$lines = array();
@@ -43,6 +44,7 @@ function csv_write($filepath, $data, $colSep = ','){
  * </ol>
  * @param string $columnSeparator The column separator to use. Comma by default.
  * @return array Returns the CSV data.
+ * @subpackage File operations
  */
 function csv_load($filepath, $callback = null, $columnSeparator = ","){
 	$opened = false;

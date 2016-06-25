@@ -2,20 +2,37 @@
 /**
  * Response
  * @package php-tool-suite
- * @subpackage response
+ * @subpackage HTTP response
  */
 
 plugin_require(array('var'));
 
+/**
+ * Redirects a user immediately to another page
+ * @param string $url The URL to look for.
+ * @subpackage HTTP response
+ */
 function redirect($url) {
 	header('Location: ' . $url);
 	exit;
 }
 
+/**
+ * Follows a specific HTTP route
+ * @param string $route The URI route to follow.
+ * @param callable|null $callback a callback to follow when the route has been found.1
+ * @param array|null $verbs The HTTP method to filter for (GET, POST, PUT, ...), null by default
+ * @return bool TRUE if the route has been found, FALSE otherwise.
+ * @subpackage HTTP response
+ */
 function route($route = '/', $callback = null, $verbs = null){
 	return response_route($route, $callback, $verbs);
 }
 
+/**
+ * @see route
+ * @subpackage HTTP response
+ */
 function response_route($route = '/', $callback = null, $verbs = null){
 	
 	plugin_require('request');
@@ -39,8 +56,11 @@ function response_route($route = '/', $callback = null, $verbs = null){
 	return false;
 }
 
-
-
+/**
+ * Downloads content as a file
+ * @param string $filename The filename of the downloaded file
+ * @param mixed $bytes The content to download
+ */
 function response_download_bytes($filename, $bytes = null) {
 	if( $filename ){
 		header('Content-Description: File Transfer');
@@ -54,6 +74,12 @@ function response_download_bytes($filename, $bytes = null) {
 	return false;
 }
 
+/**
+ * Downloads a specific file
+ * @param string $filePath The filepath on the server to download (unsecure)
+ * @param string $filename The filename of the downloaded file
+ * @return type
+ */
 function response_download_file($filePath = null, $filename = null) {
 	if( $filePath ){
 		if( !$filename ){
@@ -70,12 +96,22 @@ function response_download_file($filePath = null, $filename = null) {
     return false;
 }
 
+/**
+ * Called when no response has been found before.
+ * @param callable $callback The callback to call for.
+ * @subpackage HTTP response
+ */
 function response_no_route($callback) {
 	if( !var_get('routeFound', false) ){
 		$callback();
 	}
 }
 
+/**
+ * Sets a response code for the HTTP response
+ * @param int $code The response code
+ * @subpackage HTTP response
+ */
 function response_code($code = 200) {
 	if( function_exists('http_response_code') ){
 		http_response_code($code);
@@ -84,6 +120,13 @@ function response_code($code = 200) {
 	}
 }
 
+/**
+ * Sets a response header for the HTTP response
+ * @param string $property 
+ * @param string $value 
+ * @param bool $replace Erases the old header if set to TRUE.
+ * @subpackage HTTP response
+ */
 function response_header($property, $value, $replace = true){
 	if( is_array($value) ){
 		$values = array();
@@ -100,6 +143,18 @@ function response_header($property, $value, $replace = true){
 }
 
 
+/**
+ * Throttles the HTTP response (generally used by clients to download big files)
+ * @param array $options
+ * <ul>
+ * 	<li>downloadRate int The byterate of the throttle : 256*1024 by default (256kb).</li>
+ *  <li>burstRate int The burst rate of the throttle : 256*8 by default</li>
+ *  <li>burstTimeout int max time for the burst : 15</li>
+ *  <li>burstSize int max burst size : 5000</li>
+ * </ul>
+ * @subpackage HTTP response
+ * 
+ */
 function response_throttler_start($options = array()) {
 	if(function_exists('apache_setenv')) {
 		// disable gzip HTTP compression so it would not alter the transfer rate
@@ -158,6 +213,11 @@ function response_throttler_start($options = array()) {
 	}, $options['downloadRate']);
 }
 
+/**
+ * Ends the content that will be throttle 
+ * @return string the throttled content
+ * @subpackage HTTP response
+ */
 function response_throttler_end() {
 	var_set('throttler/enabled', FALSE);
 	$c = ob_get_contents();

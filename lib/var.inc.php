@@ -6,7 +6,8 @@
  * You can use paths to access a particular variable, like the equivalent 'foo/bar' and array('foo', 'bar') parameters.
  * Handle cookie variables, session variables and generic arrays.
  * 
- * @subpackage variables
+ * @package php-tool-suite
+ * @subpackage Variables
  */
 
 plugin_require(array('array', 'crypto'));
@@ -24,6 +25,7 @@ function &vars() {
  * @param mixed $value The value to insert.
  * @param array $data The referenced data array (if NULL, vars() will be used)
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
+ * @subpackage Variables
  */
 function var_set($path = array(), $value = null, &$data = null) {
 	if( is_null($data) ){
@@ -40,6 +42,7 @@ function var_set($path = array(), $value = null, &$data = null) {
  * @param mixed $default The value to return if the variable is not set. Can be a callback. NULL by default.
  * @param array $data The context array where to find the variable. By default, and if NULL, vars() will be used.
  * @return mixed The global variable value.
+ * @subpackage Variables
  */
 function var_get($path = array(), $default = null, $data = null) {
 	if( is_null($data) ){
@@ -62,6 +65,7 @@ function var_get($path = array(), $default = null, $data = null) {
  * @param mixed $value The value to append.
  * @param array $data The reference data array where to append the value. By default, and if NULL, vars() will be used.
  * @return boolean TRUE if the variable has been added. FALSE otherwise.
+ * @subpackage Variables
  */
 function var_append($path = array(), $value = null, &$data = null) {
 	if( is_null($data) ){
@@ -76,6 +80,7 @@ function var_append($path = array(), $value = null, &$data = null) {
  * @param string|array $path The variable path.
  * @param array The context array where to unset the variable. By default, and if NULL, vars() will be used.
  * @return boolean TRUE if the variable has been unset. FALSE otherwise.
+ * @subpackage Variables
  */
 function var_unset($path, &$data = null) {
 	if( is_null($data) ){
@@ -91,6 +96,7 @@ function var_unset($path, &$data = null) {
  * @param string|array $path The path where to insert the value.
  * @param mixed $value The value to insert.
  * @return boolean TRUE if the variable has been set. FALSE otherwise.
+ * @subpackage Variables
  */
 function session_var_set($path = array(), $value = null) {
 	if (!$path)
@@ -118,6 +124,7 @@ function session_var_set($path = array(), $value = null) {
  *
  * @param string|array $path The path where to delete the variable.
  * @return boolean TRUE if the variable has been unset. FALSE otherwise.
+ * @subpackage Variables
  */
 function session_var_unset($path = array()) {
 	if (!$path)
@@ -149,6 +156,7 @@ function session_var_unset($path = array()) {
  * @param string|array $path The variable path.
  * @param string|array $default The value to use if the variable is not set.
  * @return mixed The variable value.
+ * @subpackage Variables
  */
 function session_var_get($path = array(), $default = null) {
 	if (!$path)
@@ -174,6 +182,7 @@ function session_var_get($path = array(), $default = null) {
  * @param array $options The cookie options.
  * @return boolean TRUE if the cookie has been correctly set. FALSE otherwise.
  * @see cookie_var_set()
+ * @subpackage Variables
  */
 function set_cookie($options) {
 	return cookie_var_set($options);
@@ -185,6 +194,7 @@ function set_cookie($options) {
  * @param array $options The cookie options.
  * @return mixed The cookie value.
  * @see cookie_var_get()
+ * @subpackage Variables
  */
 function get_cookie($options) {
 	return cookie_var_get($options);
@@ -206,6 +216,7 @@ function get_cookie($options) {
  * 	<li>httpOnly boolean If TRUE, the cookie will be only accessible for HTTP connections. FALSE by default.</li>
  * </ul>
  * @link http://php.net/manual/en/function.setcookie.php
+ * @subpackage Variables
  */
 function cookie_var_set($options) {
 	$options = array_merge(array(
@@ -252,6 +263,7 @@ function cookie_var_set($options) {
  *  <li>encryptionKey null|string The encryption key used to decode content. NULL by default.</li>
  * </ul>
  * @return mixed The cookie value.
+ * @subpackage Variables
  */
 function cookie_var_get($options){
 	$options = array_merge(array(

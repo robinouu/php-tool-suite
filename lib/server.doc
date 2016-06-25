@@ -1,0 +1,33 @@
+créer serveur PHP facilement
+
+- REQUEST
+	headers
+- RESPONSE
+	headers
+	content negociation - > content returned
+- ROUTE by REQUEST_URI
+- NOROUTE
+- WEBSOCKETS
+
+- LOOP 1 : 
+
+- écoute des evenements CLI en console
+- PARSING des éléments entrés selon commandes simples
+	- message system with event listeners on wanted subjects (subscriptions)
+- compréhension du langage écrit par l'association d'objets
+- interface web évolutive dans le temps par scripting de widgets
+
+- écoute de la caméra
+- broadcasting
+- video
+- playlists
+- tracks
+
+- END LOOP
+
+
+- LOOP 2 : 
+
+
+
+- END LOOP
