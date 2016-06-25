@@ -194,7 +194,13 @@ function menu($items = array(), $attrs = array(), $callback = array(), $isNav = 
 	return $html;
 }
 
-
+/**
+ * Returns a <time/> tag
+ * @param string $content The content of the tag.
+ * @param string|array $attrs If contains a string, the datetime attribute will be filled with it. Otherwise, it will merge HTML attributes with $attrs.
+ * @return string an <time /> tag
+ * @subpackage HTML
+ */
 function timetag($content = '', $attrs = array()) {
 	if( is_string($attrs) ){
 		$attrs = array('datetime' => $attrs);
@@ -204,30 +210,13 @@ function timetag($content = '', $attrs = array()) {
 	return tag('time', $content, $attrs);
 }
 
-// $list_type can be ul, ol, dl
-function datalist($name = '', $filters, $list_type = 'ul' ) {
-	plugin_require('scrud');
-	$data = scrud_list($name, $filters, isset($filters['formatter']) ? array($name => $filters['formatter']) : array());
-	$items = '';
-	$slug_name = slug($name);
-	if( $list_type == 'ul' || $list_type === 'ol' ){
-		$html = '<' . $list_type .'>';
-		foreach ($data as $value) {
-			$html .= '<li class="data data-' . $slug_name . '">';
-			$html .= $value['name'];
-			$html .= '</li>';
-		}
-		$html .= '</' . $list_type . '>';
-	}else if( $list_type === 'dl') {
-		$html = '<' . $list_type .'>';
-		foreach ($data as $key => $value) {
-			$html .= '<dt class="data data-' . slug($key) . '">' . ucfirst($key) . '</dt><dd>' . $value . '</dd>';
-		}
-		$html .= '</' . $list_type . '>';
-	}
-	return $html;
-}
-
+/**
+ * Returns an HTML hyperlink
+ * @param string $content The link content
+ * @param array $attrs If it's a string, specifies the target (href). Otherwise, the <a /> tag attributes will be merged with $attrs.
+ * @return an HTML <a /> tag.
+ * @subpackage HTML
+ */
 function hyperlink($content = 'Link', $attrs = array()){
 	if( is_string($attrs) ){
 		$attrs = array('href' => $attrs);

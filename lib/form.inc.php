@@ -5,6 +5,12 @@
  * @subpackage Forms
  */
 
+/**
+ * Creates a token for a specified form
+ * @param string $tokenName The name of the token. Can be the form name for example.
+ * @return string The token
+ * @subpackage Forms
+ */
 function form_token($tokenName) {
 	$token = array(
 		'time' => time(),
@@ -19,6 +25,14 @@ function form_token($tokenName) {
 	return base64_encode($hash);
 }
 
+/**
+ * Checks if the token is valid and has not expired
+ * @param string $tokenName The token name. Can be the form name for example.
+ * @param int $timeout Maximum time for token validation.
+ * @param string|null $csrf The CRSF token that comes with the HTTP request.
+ * @return bool TRUE if the token is valid, FALSE otherwise.
+ * @subpackage Forms
+ */
 function form_token_validate($tokenName, $timeout = 300, $csrf = null) {
 	$token = session_var_get('csrf_token/' . $tokenName);
 	if( $token ){

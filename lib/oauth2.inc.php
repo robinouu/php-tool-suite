@@ -1,7 +1,7 @@
 <?php
 /**
  * @package php-tool-suite
- * @subpackage OAuth2 authentication
+ * @subpackage OAuth2
  */
 
 plugin_require(array('request', 'response'));

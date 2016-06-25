@@ -111,8 +111,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 
 
 	public function test_event() {
-		require_once('lib/event.inc.php');
-		
+		plugin_require('event');
 		print 'event : ';
 
 		$this->assertNull(trigger('my_first_event'));
@@ -145,7 +144,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function test_sanitize() {
-		require_once('lib/sanitize.inc.php');
+		plugin_require('sanitize');
 
 		print 'sanitize : ';
 
@@ -174,6 +173,19 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		csv_load("data.csv", function ($line) use( &$loadedData ) { $loadedData[] = $line; });
 
 		$this->assertEquals($data, $loadedData);
+
+		$filename = dirname(__FILE__).'/example.json';
+
+		$this->assertTrue(json_save($filename, array('test' => 1)));
+		
+		$data = json_load($filename);
+		$this->assertTrue(is_array($data));
+
+		$data2 = json_load($filename);
+		$this->assertEquals($data, $data2);
+		
+		unlink($filename);
+
 
 		print 'done' . "\r\n";
 	}
@@ -309,12 +321,11 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function test_crypto() {
-
 		print 'crypto : ';
 
 		if( extension_loaded('mcrypt') ){
 			
-			require_once('lib/crypto.inc.php');
+			plugin_require('crypto');
 
 			$content = 'Secured content';
 			$decryptKey = 'MY_PRIVATE_KEY_OF_32_CHARACTERS!';
@@ -333,7 +344,7 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function test_fs() {
-		require_once('lib/fs.inc.php');
+		plugin_require('fs');
 		print 'fs : ';
 
 		if( is_dir('tmpdir') ){

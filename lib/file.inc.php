@@ -6,6 +6,31 @@
  */
 
 /**
+ * Loads a JSON object from file
+ * @param string $filename The JSON file path to load
+ * @return array The JSON object
+ * @subpackage File operations
+ */
+function json_load($filename){
+	$json = json_decode(file_get_contents($filename), true);
+	if( !$json || !is_array($json) ){
+		return array();
+	}
+	return $json;
+}
+
+/**
+ * Saves a JSON object in a file
+ * @param string $filename The JSON file to save into.
+ * @param array $data The data to save. Must be an array.
+ * @return TRUE if saved correctly, FALSE otherwise.
+ * @subpackage File operations
+ */
+function json_save($filename, $data){
+	return file_put_contents($filename, $data) !== FALSE;
+}
+
+/**
  * Writes a CSV file using array data
  * @param string $filepath The csv filepath where to write data
  * @param array $data The datas to write, formatted like this :
