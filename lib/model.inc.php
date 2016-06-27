@@ -119,6 +119,7 @@ class Model {
 	static public $schema = array();
 
 	public $inserted_ids = array();
+	public $deleted_ids = array();
 	protected $selects = array();
 	protected $aliases = array();
 	protected $using = array();
@@ -161,15 +162,17 @@ class Model {
 		return Model::$schema[$this->modelName]['fields'][$name];
 	}
 
-	public function generateField($field){
-		print tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
+	static public function generateField($field){
+		$html = tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
 		if( !isset($field->attributes['value']) ){
 			$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
 		}
-		print $field->getHTMLTag();
+		if( isset($field->attributes['label_position']) && $field->attributes['label_position'] == 'before' )
+			return $field->getHTMLTag() . $html;
+		return $html . $field->getHTMLTag();
 	}
 
-	public function generateFields($fields){
+	static public function generateFields($fields){
 		$model = &Model::$schema[$this->modelName];
 		foreach( $model['fields'] as $fieldName => $field ){
 			if( !in_array($fieldName, $fields) ){
@@ -179,8 +182,8 @@ class Model {
 			if( !isset($field->attributes['value']) ){
 				$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
 			}
-			print tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
-			print $field->getHTMLTag();
+			$html = tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
+			return $html . $field->getHTMLTag();
 		}
 	}
 
@@ -202,6 +205,7 @@ class Model {
 	}
 
 	public function crud($options=array()){
+		plugin_require('response');
 		$self = $this;
 		$options = array_merge(array(
 			'route' => 'crud',
@@ -215,7 +219,8 @@ class Model {
 		else 
 			$formVars = $_REQUEST;
 		
-		route('/'.$options['route'].'/'.$this->modelName.'/create', function () use(&$formVars, &$self) {
+		$route = $options['route'] ? '/' . $options['route'] : '';
+		route($route.'/'.$this->modelName.'/create', function () use(&$formVars, &$self) {
 			$model = &Model::$schema[$self->modelName];
 			$validated = true;
 			$errors = array();
@@ -237,12 +242,12 @@ class Model {
 			die;
 		});
 
-		route('/'.$options['route'].'/'.$this->modelName.'/read', function () use (&$self) {
+		route($route.'/'.$this->modelName.'/read', function () use (&$self) {
 			print json_encode(array('datas' => $self->select('*')->get()));
 			die;
 		});
 
-		route('/'.$options['route'].'/'.$this->modelName.'/edit/(.*)', function ($req) use (&$formVars, &$self) {
+		route($route.'/'.$this->modelName.'/edit/(.*)', function ($req) use (&$formVars, &$self) {
 			if (trim($req[1])){
 				$id = $req[1];
 				$model = &Model::$schema[$self->modelName];
@@ -260,7 +265,7 @@ class Model {
 			die;
 		});
 
-		route('/'.$options['route'].'/'.$this->modelName.'/delete', function () use (&$self, &$formVars) {
+		route($route.'/'.$this->modelName.'/delete', function () use (&$self, &$formVars) {
 			if( isset($formVars['ids']) ){
 				$ids = $formVars['ids'];
 				$self->reset()->where('id IN ('.implode($ids, ',') . ')')->delete()->commit();
@@ -563,6 +568,7 @@ class Model {
 				$ids[] = (int)$row['id'];
 			}
 			$ids = array_unique($ids);
+			$this->deleted_ids = $ids;
 			sql_delete($tableToDelete, array(
 				'where' => $idName . ' IN (' . implode(', ', $ids) . ')',
 				'limit' => $options['limit']
@@ -654,16 +660,20 @@ class Model {
 	}
 
 	private function doReplacement($modelName = null, $datas) {
+
 		if( !$modelName ){
-			$modelName = $this->modelName;
+			$endModelName = $modelName = $this->modelName;
+		}else{
+			$modelName = $modelName[0];
+			$endModelName = Model::$schema[$this->modelName]['fields'][$modelName]->attributes['data'];
 		}
 
-		$model = &Model::$schema[$modelName];
-		$tableName = Model::getTableName($modelName);
+		$model = &Model::$schema[$this->modelName];
+		$tableName = Model::getTableName($this->modelName);
 		$fields = &$model['fields'];
 		
 		$options = $this->prepareGet($tableName);
-		$options['select'] = sql_quote($tableName, true) . '.`id` AS id';
+		$options['select'] = sql_quote($modelName, true) . '.`id` AS id'; 
 		
 		$tmp_ids = sql_get($tableName, $options);
 		if( $tmp_ids ){
@@ -675,14 +685,7 @@ class Model {
 				$ids[] = (int)$row['id'];
 			}
 			$ids = array_unique($ids);
-			foreach ($datas as $key => $value) {
-				if( !isset($model['fields'][$key]) ){
-					unset($datas[$key]);
-				}elseif( isset($model['fields'][$key]->attributes['hasMany']) && $model['fields'][$key]->attributes['hasMany'] ){
-					unset($datas[$key]);
-				}
-			}
-			sql_update($tableName, $datas, 'id IN (' . implode(', ', $ids) . ')');
+			sql_update(Model::getTableName($endModelName), $datas, 'id IN (' . implode(', ', $ids) . ')');
 		}
 	}	
 };
