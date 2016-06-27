@@ -61,7 +61,10 @@ function root_url() {
  * @return string the website url
  * @subpackage HTTP request
  */
-function url_website($url, $noScheme = false) {
+function url_website($url = null, $noScheme = false) {
+	if( is_null($url) ){
+		$url = root_url();
+	}
 	$urlInfo = parse_url($url);
 	if( !isset($urlInfo['path']) || !isset($urlInfo['host']) ){
 		return $url;
