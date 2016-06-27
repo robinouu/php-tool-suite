@@ -497,10 +497,17 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		
 		$recipe->replace('', array(
 			'name' => 'Trout with almonds',
-			'ingredients' => array(3, array('name' => 'Almond', 'type' => 'fruit')),
-			'authors' => array('accounts' => array(1, 1))
 		))->where('recipe.id = 2')->commit();
-		
+
+		$recipe->replace('ingredients', array(
+			'name' => 'Almond',
+			'type' => 'fruit'
+		))->where('recipe.id = 2')->commit();
+		/*
+		$recipe->replace('authors', array(
+			'accounts' => array(1, 1)
+		))->where('recipe.id = 2')->commit();
+*/
 		$recipe->reset();
 		$recipe->delete('authors.accounts')->delete('authors')->delete('ingredients')->delete()->commit();
 		$this->assertFalse($recipe->get());
