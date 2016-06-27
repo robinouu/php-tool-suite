@@ -7,6 +7,15 @@
 
 plugin_require(array('log', 'var'));
 
+function sql_dump($str){
+	if( !var_get('sql/dump') ){
+		return;
+	}
+	log_use_handler('sql');
+	log_var($str);
+	log_remove_handler('sql');
+}
+
 /**
  * Connects to an SQL database using PDO, or return the current PDO object if already connected
  * @param array $options The connection options
@@ -35,17 +44,23 @@ function sql_connect($options = array()) {
 	), $options);
 
 	try {
-		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass']);	
+		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass']);
 	}catch (Exception $e){
 		return false;
 	}
 
 	var_set('sql/dbConnection', $sql);
 	if( $options['charset'] == 'utf8'){
-		$sql->exec('SET NAMES ' . $options['charset'] . ';');
+		sql_dump($query = 'SET NAMES ' . $options['charset'] . ';');
+		$sql->exec($query);
 	}
-	$sql->exec('SET CHARACTER SET ' . $options['charset'] . ';');
-	$sql->exec('USE ' . $options['db'] . ';');
+
+	sql_dump($query = 'SET CHARACTER SET ' . $options['charset'] . ';');
+	$sql->exec($query);
+
+	sql_dump($query = 'USE ' . $options['db'] . ';');
+	$sql->exec($query);
+
 	$sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$sql->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);	
 	$sql->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
@@ -75,6 +90,35 @@ function sql_prefix() {
 }
 
 /**
+ * Creates a database and use it
+ * @param array $dbOptions 
+ * <ul>
+ *   <li>name string The database name</li>
+ * 	 <li>collation string The default collation for the database (utf8_bin by default)</li>
+ * </ul>
+ * @return bool TRUE if the database has been created. FALSE otherwise.
+ */
+function sql_create_db($dbOptions=array()){
+	$dbOptions = array_merge(array(
+		'collation' => 'utf8_bin',
+		'name' => null
+	), $dbOptions);
+
+	if( $dbOptions['name'] ){
+		sql_dump($query = 'CREATE DATABASE IF NOT EXISTS ' . sql_quote($dbOptions['name'], true) . ' COLLATE ' . $dbOptions['collation']);
+		$back = sql_query($query, array(), null);
+		return $back;
+		
+	}
+	return false;
+}
+
+function sql_use_db($name){
+	sql_dump($query = 'USE ' . sql_quote($name, true));
+	return sql_query($query, array(), null);
+}
+
+/**
  * Queries the database.
  * @param string $query The query string to execute on the current database.
  * @param array $values The values to prepare. See 
@@ -87,6 +131,9 @@ function sql_query($query, $values = array(), $fetchMode = PDO::FETCH_ASSOC) {
 	if( !$sql ){
 		return false;
 	}
+
+	$preparedQuery = $query;
+	sql_dump($preparedQuery . (sizeof($values) ? ' with ' . print_r($values, true) : ''));
 
 	$q = $sql->prepare($query);
 	$result = $q->execute($values);
@@ -135,6 +182,8 @@ function sql_insert($table, $fields) {
 	$query = 'INSERT INTO ' . sql_quote($prefix . $table, true);
 	$query .= ' (' . implode(',', array_keys($fields)) . ') VALUES (' . implode(',', array_fill(0, sizeof($fields), '?')) . ');';
 
+	sql_dump($query);
+
 	//var_dump($query, array_values($fields));
 	$q = $sql->prepare($query);
 	return $q->execute(array_values($fields));
@@ -178,6 +227,9 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
 	}
 
 	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
+	
+	sql_dump($query);
+
 	$q = $sql->prepare($query . ';');
 	return $q->execute();
 }
@@ -206,7 +258,8 @@ function sql_delete($table, $options = array()) {
 		$query .= ' LIMIT ' . (int)$options['limit'];
 	}
 
-//	var_dump($query);
+	sql_dump($query);
+
 	$q = $sql->prepare($query . ';');
 	return $q->execute();
 }
@@ -246,12 +299,18 @@ function sql_truncate($table = array()) {
 	}
 
 	$prefix = var_get('sql/prefix', '');
-	$sql->query('SET FOREIGN_KEY_CHECKS = 0;');
+
+	sql_dump($query = 'SET FOREIGN_KEY_CHECKS = 0;');
+	$sql->query($query);
+
 	$res = true;
 	foreach( $table as $t ){
 		$res = $res && sql_query('TRUNCATE TABLE ' . sql_quote($prefix . $t, true) . ';', null, null);
 	}
-	$sql->query('SET FOREIGN_KEY_CHECKS = 1;');
+
+	sql_dump($query = 'SET FOREIGN_KEY_CHECKS = 1;');
+	$sql->query($query);
+
 	return $res;
 }
 
@@ -267,9 +326,15 @@ function sql_delete_table($table) {
 		return false;
 	}
 	$prefix = var_get('sql/prefix', '');
-	$sql->query('SET FOREIGN_KEY_CHECKS = 0');
+
+	sql_dump($query = 'SET FOREIGN_KEY_CHECKS = 0;');
+	$sql->query($query);
+	
 	$res = sql_query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true), null, null);
-	$sql->query('SET FOREIGN_KEY_CHECKS = 1');
+
+	sql_dump($query = 'SET FOREIGN_KEY_CHECKS = 1;');
+	$sql->query($query);
+	
 	return $res;
 }
 
@@ -293,13 +358,15 @@ function sql_delete_tables($tables = null, $foreignKeyCheck = false) {
 	$res = true;
 	$prefix = var_get('sql/prefix', '');
 	if( !$foreignKeyCheck ){
-		$sql->query('SET FOREIGN_KEY_CHECKS = 0');
+		sql_dump($query = 'SET FOREIGN_KEY_CHECKS = 0;');
+		$sql->query($query);
 	}
 	foreach ($tables as $table) {
 		$res = sql_query('DROP TABLE IF EXISTS ' . sql_quote($prefix . $table, true), null, null) && $res;
 	}
 	if( !$foreignKeyCheck ){
-		$sql->query('SET FOREIGN_KEY_CHECKS = 1');
+		sql_dump($query = 'SET FOREIGN_KEY_CHECKS = 1;');
+		$sql->query($query);
 	}
 	return $res;
 }
@@ -370,6 +437,7 @@ function sql_list_tables() {
 		return false;
 	}
 	$query = 'SHOW TABLES';
+	sql_dump($query);
 	$query = $sql->query($query);
 	return $query->fetchAll(PDO::FETCH_COLUMN);
 }
@@ -413,6 +481,7 @@ function sql_describe($table) {
 		return false;
 	}
 	$query = 'DESCRIBE ' . sql_quote($table, true);
+	sql_dump($query);
 	return sql_query($query);
 }
 
@@ -642,7 +711,7 @@ function sql_get($table, $options = array()){
 			}
 		}
 	}
-	// print '<pre><code>'.$query.'</code></pre>';
+	//print '<pre><code>'.$query.'</code></pre>';
 	// print $query . PHP_EOL. PHP_EOL;
 	$res = sql_query($query, null, !$onlyOne ? PDO::FETCH_ASSOC : PDO::FETCH_COLUMN );
 	if( $options['limit'] === 1 ){
