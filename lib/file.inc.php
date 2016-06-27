@@ -12,6 +12,9 @@
  * @subpackage File operations
  */
 function json_load($filename){
+	if( !is_file($filename) ){
+		return array();
+	}
 	$json = json_decode(file_get_contents($filename), true);
 	if( !$json || !is_array($json) ){
 		return array();
@@ -26,8 +29,10 @@ function json_load($filename){
  * @return TRUE if saved correctly, FALSE otherwise.
  * @subpackage File operations
  */
-function json_save($filename, $data){
-	return file_put_contents($filename, $data) !== FALSE;
+function json_save($filename, $data, $beautify=false){
+	if( $beautify )
+		return file_put_contents($filename, json_encode($data, JSON_PRETTY_PRINT)) !== FALSE;
+	return file_put_contents($filename, json_encode($data)) !== FALSE;
 }
 
 /**
