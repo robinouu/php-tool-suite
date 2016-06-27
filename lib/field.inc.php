@@ -237,7 +237,7 @@ class BooleanField extends Field {
 
 	public function __construct($attributes=array()) {
 		$this->labels = array('singular' => __('Booléen'), 'plural' => __('Booléens'));
-		$this->attributes = array('id' => 'booleanField-'.(++Field::$instanceID));
+		$this->attributes = array('id' => 'booleanField-'.(++Field::$instanceID), 'label_position' => 'before');
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
@@ -254,6 +254,9 @@ class BooleanField extends Field {
 		}
 		if( isset($this->attributes['value']) ){
 			$attrs['value'] = $this->attributes['value'];
+		}
+		if( isset($this->attributes['checked']) && $this->attributes['checked'] ){
+			$attrs['checked'] = 'checked';
 		}
 		if( isset($this->attributes['readonly']) && $this->attributes['readonly'] === true ){
 			$attrs['readonly'] = 'readonly';
