@@ -10,11 +10,31 @@ plugin_require('var');
 /**
  * Handles the datas that are injected through log methods.
  * You can create advanced log files, or inline ones.
+ * @param string $name The name of the log handler
  * @param callable $callback The callback to use when having data from logger.
+ * @return TRUE if succeed, FALSE otherwhise.
  * @subpackage Logging
  */
-function log_handler($callback){
-	var_set('log/callback', $callback);
+function log_add_handler($name, $callback){
+	return var_set('log/callbacks/'.$name, $callback);
+}
+
+/**
+ * Removes an handler from the log callbacks by name
+ * @param string $name The name of the log handler
+ * @return TRUE if succeed, FALSE otherwhise.
+ * @subpackage Logging
+ */
+function log_remove_handler($name){
+	return var_unset('log/callbacks/'.$name);
+}
+
+function log_use_handler($name=null){
+	var_set('log/currentHandler', $name);
+}
+
+function logmsg(){
+	return log_var(func_get_args());
 }
 
 /**
@@ -25,13 +45,25 @@ function log_handler($callback){
 function log_var() {
 	$args = func_get_args();
 	$res = '';
-	
-	$callback = var_get('log/callback');
-	if( !$callback ){
-		var_set('log/callback', $callback = function ($data){
-			print $data . PHP_EOL;
-		});
+
+	$callback = array();
+	// Current callback if defined
+	if( ($currentHandler = var_get('log/currentHandler')) ){
+		$callback = var_get('log/callbacks/'.$currentHandler, array());
+		if( !is_array($callback) ){
+			$callback = array($callback);
+		}
 	}
+
+	// Default callback	
+	$callback = var_get('log/callbacks', $callback);
+	if( !sizeof($callback) ){
+		var_set('log/callbacks', array('default' => $callback = function ($data){
+			print $data . (is_cli() ? PHP_EOL : br());
+		}));
+	}
+
+
 	foreach ($args as $arg) {
 		$txt = '';
 		if( is_array($arg) ){
@@ -41,8 +73,9 @@ function log_var() {
 		}else{
 			$txt = (string)$arg;
 		}
-
-		$callback($txt);
+		foreach ($callback as $cb) {
+			$cb($txt);
+		}
 
 		if( is_cli() ){
 			$txt .= PHP_EOL;
