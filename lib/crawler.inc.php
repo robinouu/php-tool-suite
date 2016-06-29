@@ -43,6 +43,53 @@ function crawler_get_url($url, $headers = array(), $isSSL = null){
 	return $result;
 }
 
+function crawler_post_url($url, $method, $datas){
+	$metas = array();
+
+	if( strlen($url) > 2048 ){
+		return null;
+	}
+
+	$datasStr = '';
+	foreach ($datas as $k => $d) {
+		$datasStr .= $k.'='.urlencode($d).'&';
+	}
+	$datasStr = rtrim($datasStr, '&');
+
+	if( $method == 'GET' ){
+		$url .= (stripos($url, '?') == FALSE ? '?' : '&') . $datasStr;
+	}
+
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_USERAGENT, guid());
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,0);
+	//curl_setopt($ch, CURLOPT_NOSIGNAL, 1); 
+	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 4500);
+	if( $method == 'POST' ){
+		curl_setopt($ch, CURLOPT_POST, sizeof($datas));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $datasStr);
+	}
+	
+	$result = curl_exec($ch);
+
+	$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	if( !in_array($code, var_get('crawler/HTTPCodeWhiteList')) ){
+		return false;
+	}
+	curl_close($ch);
+
+	$__BOM = pack('CCC', 239, 187, 191);
+	// Careful about the three ='s -- they're all needed.
+	while(0 === strpos($result, $__BOM))
+		$content = substr($result, 3);
+	$result = utf8_encode($result);
+
+	return $result;
+}
+
 $already_visited = array();
 
 function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) {
