@@ -14,11 +14,62 @@ class Schema {
 	public $schemeDatas;
 	public function __construct($schema){
 		$this->schemeDatas = $schema;
-		Model::$schema = $schema;
+		Model::$schema = array_merge(Model::$schema, $schema);
 	}
 
 	public function getModel($model) {
 		return new Model($model);
+	}
+
+	public function truncateTables() {
+		$back = true;
+		foreach ($this->schemeDatas as $tableID => $tableData) {
+			$tableName = isset($tableData['table']) ? $tableData['table'] : $tableID;
+			foreach( $tableData['fields'] as $fieldName => $field ){
+				$attrs = $field->attributes;
+				$sqlField = $field->getSQLField();
+				$isRelationField = isset($sqlField['relation']) && $sqlField['relation'];
+				if( $isRelationField ){
+					if( isset($attrs['hasMany']) && $attrs['hasMany'] ){
+						$manyTableName = $tableName . '_' . $fieldName;
+						$back = $back && sql_truncate($manyTableName);
+					}else{
+					}
+				}
+				$back = $back && sql_truncate($tableName);
+			}
+		}
+		return $back; 
+	}
+
+	public function destroyTables() {
+		$back = true;
+		foreach ($this->schemeDatas as $tableID => $tableData) {
+			$tableName = isset($tableData['table']) ? $tableData['table'] : $tableID;
+			foreach( $tableData['fields'] as $fieldName => $field ){
+				$attrs = $field->attributes;
+				$sqlField = $field->getSQLField();
+				$isRelationField = isset($sqlField['relation']) && $sqlField['relation'];
+				if( $isRelationField ){
+					if( isset($attrs['hasMany']) && $attrs['hasMany'] ){
+						$manyTableName = $tableName . '_' . $fieldName;
+						$back = $back && sql_delete_table($manyTableName);
+					}else{
+					}
+				}
+				$back = $back && sql_delete_table($tableName);
+			}
+		}
+		return $back; 	
+	}
+
+	public function updateTables($newDB) {
+		$back = true;
+		$columns = array();
+		// Premier cas, on ajoute toutes les nouvelles colonnes qui ne sont pas dans la bdd
+		$diff = array_diff_key($newDB, $this->schemeDatas);
+		var_dump("DIFF", $diff);
+		return $back; 	
 	}
 
 	public function generateTables() {
@@ -35,39 +86,38 @@ class Schema {
 				$sqlField = $field->getSQLField();
 
 				$isRelationField = isset($sqlField['relation']) && $sqlField['relation'];
-				if( $isRelationField ){
-					if( isset($attrs['hasMany']) && $attrs['hasMany'] ){
-						$manyTableName = $tableName . '_' . $fieldName;
-						if( isset($attrs['hasID']) ){
-							$manyTable[] = array(
-								'name' => $manyTableName,
-								'hasID' => true,
-								'columns' => array(
-									'id_' . $tableName . ' int(11) NOT NULL',
-									'id_' . $attrs['data'] . ' int(11) NOT NULL'
-								),
-								'foreignKeys' => array(
-									'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-									'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
-								)
-							);
-						}else{
-							$manyTable[] = array(
-								'name' => $manyTableName,
-								'hasID' => false,
-								'columns' => array(
-									'id_' . $tableName . ' int(11) NOT NULL',
-									'id_' . $attrs['data'] . ' int(11) NOT NULL'
-								),
-								'primaryKeys' => array('id_' . $tableName . ',id_' . $attrs['data']),
-								'foreignKeys' => array(
-									'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $tableName.'(id)'),
-									'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
-								)
-							);
-						}
-
+				
+				if( $isRelationField && isset($attrs['hasMany']) && $attrs['hasMany'] ){
+					$manyTableName = $tableName . '_' . $fieldName;
+					if( isset($attrs['hasID']) ){
+						$manyTable[] = array(
+							'name' => $manyTableName,
+							'hasID' => true,
+							'columns' => array(
+								'id_' . $tableName . ' int(11) NOT NULL',
+								'id_' . $attrs['data'] . ' int(11) NOT NULL'
+							),
+							'foreignKeys' => array(
+								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
+								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
+							)
+						);
+					}else{
+						$manyTable[] = array(
+							'name' => $manyTableName,
+							'hasID' => false,
+							'columns' => array(
+								'id_' . $tableName . ' int(11) NOT NULL',
+								'id_' . $attrs['data'] . ' int(11) NOT NULL'
+							),
+							'primaryKeys' => array('id_' . $tableName . ',id_' . $attrs['data']),
+							'foreignKeys' => array(
+								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $tableName.'(id)'),
+								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
+							)
+						);
 					}
+
 				}else{
 
 					$column = sql_quote($fieldName, true);
@@ -162,19 +212,29 @@ class Model {
 		return Model::$schema[$this->modelName]['fields'][$name];
 	}
 
+	public function getFields(){
+		return Model::$schema[$this->modelName]['fields'];
+	}
+
 	static public function generateField($field){
-		$html = tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
+		$html = tag('label', $labelName = isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
 		if( !isset($field->attributes['value']) ){
 			$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
 		}
-		if( isset($field->attributes['label_position']) && $field->attributes['label_position'] == 'before' )
-			return $field->getHTMLTag() . $html;
+		if( isset($field->attributes['label_position']) ){
+			if ( $field->attributes['label_position'] == 'before' )
+				return $field->getHTMLTag() . $html;
+			elseif ( $field->attributes['label_position'] == 'wrap' )
+				return tag('label', $field->getHTMLTag() . $labelName, array('for' => $field->attributes['id']));
+		}
+
 		return $html . $field->getHTMLTag();
 	}
 
-	static public function generateFields($fields){
+	public function generateFields($fields){
 		$model = &Model::$schema[$this->modelName];
-		foreach( $model['fields'] as $fieldName => $field ){
+		$html = '';
+		foreach( $this->getFields() as $fieldName => $field ){
 			if( !in_array($fieldName, $fields) ){
 				continue;
 			}
@@ -182,26 +242,11 @@ class Model {
 			if( !isset($field->attributes['value']) ){
 				$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
 			}
-			$html = tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
-			return $html . $field->getHTMLTag();
+			$tag = tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
+			$tag = $tag . $field->getHTMLTag();
+			$html .= $tag;
 		}
-	}
-
-	public function generateForm($method){
-		$model = &Model::$schema[$this->modelName];
-		if( $method == 'create' ){
-			?>
-<form action="" method="POST" class="kform">
-			<?php
-			foreach( $model['fields'] as $fieldName => $field ){
-				$field->attributes['name'] = $fieldName;
-				print tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
-				print $field->getHTMLTag();
-			}
-			?>
-</form>
-			<?php
-		}
+		return $html;
 	}
 
 	public function crud($options=array()){
@@ -210,6 +255,7 @@ class Model {
 		$options = array_merge(array(
 			'route' => 'crud',
 			'method' => 'POST',
+			'sqlPrefix' => ''
 		), $options);
 
 		if( $options['method'] == 'POST')
@@ -219,22 +265,34 @@ class Model {
 		else 
 			$formVars = $_REQUEST;
 		
-		$route = $options['route'] ? '/' . $options['route'] : '';
-		route($route.'/'.$this->modelName.'/create', function () use(&$formVars, &$self) {
+		$route = $options['route'] ? $options['route'] : '';
+		route($route.'/'.$this->modelName.'/create', function () use(&$formVars, &$self, $options) {
 			$model = &Model::$schema[$self->modelName];
 			$validated = true;
 			$errors = array();
 
-			foreach( $model['fields'] as $fieldName => $field ){
+			foreach( $formVars as $fieldName => $value ){
+				if( !isset($model['fields'][$fieldName]) ) {
+					unset($formVars[$fieldName]);
+					continue;
+				}
+				$field = $model['fields'][$fieldName];
+
 				on('error', function ($e) use(&$errors, $fieldName){
 					$errors[$fieldName] = $e;
 				});
 				$validated = $validated && $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null);
 				off('error');
 			}
-			if( $validated ){
+
+			if( $validated && sizeof($formVars) ){
+
+				$prefix = var_get('sql/prefix');
+				var_set('sql/prefix', $prefix . $options['sqlPrefix']);
 				$self->reset()->insert($formVars)->commit();
-				$last_id = $self->inserted_ids[0];
+				$last_id = $self->inserted_ids[0];	
+				var_set('sql/prefix', $prefix);
+
 				print json_encode(array('success' => $validated, 'id' => $last_id));
 			}else{
 				print json_encode(array('success' => false, 'errors' => $errors));
@@ -247,16 +305,29 @@ class Model {
 			die;
 		});
 
-		route($route.'/'.$this->modelName.'/edit/(.*)', function ($req) use (&$formVars, &$self) {
+		route($route.'/'.$this->modelName.'/edit/(.*)', function ($req) use ($formVars, &$self) {
 			if (trim($req[1])){
 				$id = $req[1];
 				$model = &Model::$schema[$self->modelName];
 				$validated = true;
+				$fields = array_keys($model['fields']);
+				foreach( $formVars as $k => $f ){
+					if( !in_array($k, $fields) )
+						unset($formVars[$k]);
+				}
 				foreach( $model['fields'] as $fieldName => $field ){
-					$validated = $validated && $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null);
+					$sqlField = $field->getSQLField();
+					if( isset($sqlField['relation']) && $sqlField['relation'] ) {
+						continue;
+					}
+					if( !isset($field->attributes['name']) ){
+						$field->attributes['name'] = $fieldName;
+					}
+
+					$validated = $validated && ($t = $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null));
 				}
 				if( $validated ){
-					$self->reset()->replace($formVars)->where('id='.(int)$id)->commit();
+					$self->reset()->replace('', $formVars)->where('id='.(int)$id)->commit();
 				}
 				print json_encode(array('success' => $validated));
 			}else{
@@ -265,10 +336,15 @@ class Model {
 			die;
 		});
 
-		route($route.'/'.$this->modelName.'/delete', function () use (&$self, &$formVars) {
+		route($route.'/'.$this->modelName.'/delete', function () use (&$self, $formVars, $options) {
 			if( isset($formVars['ids']) ){
 				$ids = $formVars['ids'];
+
+				$prefix = var_get('sql/prefix');
+				var_set('sql/prefix', $prefix . $options['sqlPrefix']);
 				$self->reset()->where('id IN ('.implode($ids, ',') . ')')->delete()->commit();
+				var_set('sql/prefix', $prefix);
+
 				print json_encode(array('success' => true));
 			}else{
 				print json_encode(array('success' => false));
@@ -448,7 +524,7 @@ class Model {
 
 	protected function prepareGet() {
 		$options = array();
-		$options['select'] = sizeof($this->selects) ? implode(', ', $this->selects) : sql_quote(Model::getTableName($this->modelName), true) . '.*';
+		$options['select'] = sizeof($this->selects) ? implode(', ', $this->selects) : sql_quote(var_get('sql/prefix').Model::getTableName($this->modelName), true) . '.*';
 		$options['join'] = $this->joins;
 		$options['where'] = implode(' AND ', $this->filters);
 		$options['having'] = implode(' AND ', $this->having_filters);
@@ -512,6 +588,7 @@ class Model {
 
 	public function reset() {
 		$this->insertions = array();
+		$this->having_filters = array();
 		$this->replaces = array();
 		$this->deletions = array();
 		$this->using = array();
@@ -554,7 +631,7 @@ class Model {
 				$options['select'] = sql_quote($usingTableName, true) . '.`id` AS id';
 			}
 		}else{
-			$options['select'] = sql_quote($tableName, true) . '.`id` AS id';
+			$options['select'] = sql_quote(var_get('sql/prefix').$tableName, true) . '.`id` AS id';
 		}
 
 		//$options['table'] = $tableToDelete;
