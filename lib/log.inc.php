@@ -50,19 +50,15 @@ function log_var() {
 	// Current callback if defined
 	if( ($currentHandler = var_get('log/currentHandler')) ){
 		$callback = var_get('log/callbacks/'.$currentHandler, array());
-		if( !is_array($callback) ){
-			$callback = array($callback);
-		}
 	}
 
 	// Default callback	
 	$callback = var_get('log/callbacks', $callback);
 	if( !sizeof($callback) ){
-		var_set('log/callbacks', array('default' => $callback = function ($data){
+		var_set('log/callbacks', $callback = array('default' => function ($data){
 			print $data . (is_cli() ? PHP_EOL : br());
 		}));
 	}
-
 
 	foreach ($args as $arg) {
 		$txt = '';
