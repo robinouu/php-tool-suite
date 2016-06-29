@@ -1,6 +1,19 @@
 <?php
 /**
- * Fields
+ * Fields are the way to communicate your validated data to data models.
+ * 
+ * They are very useful for immediate data validation like this email checker : 
+ * ```php
+ * $emailField = new EmailField(array('name' => 'emailField'));
+ * if ($emailField->validate('user@tld.com')){
+ * 	print  'valid email';
+ * }else{
+ *   print 'invalid email'
+ * }
+ * ```
+ * 
+ * As you can see, fields must be at least named individually (except when using models)
+ * 
  * @package php-tool-suite
  * @subpackage Fields
  */
@@ -19,6 +32,11 @@ abstract class Field {
 		'name' => 'fields[]',
 	);
 
+	/**
+	 * Gets the field caption
+	 * @return string the field name (or label if not empty)
+ 	 * @subpackage Fields
+	 */
 	public function getFieldName(){
 		return isset($this->attributes['label']) ? $this->attributes['label'] : ucfirst($this->attributes['name']);
 	}
@@ -27,12 +45,14 @@ abstract class Field {
 	 * Validates a value using field specifications
 	 * @param $value The value to test for
 	 * @return boolean TRUE if the field have been validated, FALSE otherwise.
+ 	 * @subpackage Fields
 	 */
 	abstract public function validate($value);
 
 	/**
 	 * Returns an array of HTML attributes used by the field
 	 * @return array An array of HTML attributes
+ 	 * @subpackage Fields
 	 */
 	abstract public function getHTMLAttributes();
 
@@ -40,16 +60,31 @@ abstract class Field {
 	 * Returns an HTML representation of the field
 	 * @return string The HTML tag
 	 * @todo sublime text 3 form snippets
+ 	 * @subpackage Fields
 	 */
 	abstract public function getHTMLTag();
 
 	/**
 	 * Returns an SQL representation of the field
 	 * @return array The SQL field properties
+ 	 * @subpackage Fields
 	 */
 	abstract public function getSQLField();
 }
 
+/**
+ * Class TextField extends Field
+ * 
+ * A <textarea> field :
+ * ```php
+ * $message = new TextField(array('name' => 'message', 'maxlength' => -1));
+ * ```
+ * 
+ * Attributes : 
+ * value, id, name, readonly, required, placeholder, disabled, hidden
+ * 
+ * @subpackage Fields
+ */
 class TextField extends Field {
 	
 	public function __construct($attributes=array()) {
@@ -167,6 +202,21 @@ class TextAreaField extends TextField {
 	}
 }
 
+
+/**
+ * class NumberField extends TextField
+ * 
+ * The number field is specific for integer and floating values.
+ * 
+ * ```php
+ * $quantity = new NumberField(array('name' => 'quantity', 'min' => '5', 'max' => 99));
+ * ```
+ * 
+ * Attributes : 
+ * min, max, step
+ * 
+ * @subpackage Fields
+ */
 class NumberField extends TextField {
 	
 	public function __construct($attributes=array()) {
@@ -240,6 +290,21 @@ class NumberField extends TextField {
 	}
 }
 
+
+/**
+ * class BooleanField extends Field
+ * 
+ * A checkbox equivalent. Checks if its TRUE or FALSE.
+ * 
+ * ```php
+ * $has_newsletter = new BooleanField(array('name' => 'newsletter'));
+ * ```
+ * 
+ * Attributes : 
+ * checked, value, id, name, readonly, required, placeholder, disabled, hidden, checcked
+ * 
+ * @subpackage Fields
+ */
 class BooleanField extends Field {
 
 	public function __construct($attributes=array()) {
@@ -331,6 +396,20 @@ class BooleanField extends Field {
 	}
 }
 
+
+/**
+ * class PasswordField extends TextField
+ * 
+ * A password field.
+ * 
+ * ```php
+ * $password = new PasswordField(array('name' => 'password', 'required' => true, 'minlength' => 6));
+ * ```
+ * 
+ * Validatation is inherited from textfield validator.
+ * 
+ * @subpackage Fields
+ */
 class PasswordField extends TextField {
 	
 	public function __construct($attributes=array()) {
@@ -346,6 +425,19 @@ class PasswordField extends TextField {
 	}
 }
 
+/**
+ * class EmailField extends TextField
+ * 
+ * A textfield specific to email validation.
+ * 
+ * ```php
+ * $email = new EmailField(array('name' => 'email'));
+ * ```
+ * 
+ * Emails are validated according to RFCs 5321, 5322 and others.
+ * 
+ * @subpackage Fields
+ */
 class EmailField extends TextField {
 	
 	public function __construct($attributes=array()) {
@@ -377,6 +469,20 @@ class EmailField extends TextField {
 	}
 }
 
+
+/**
+ * class PhoneField extends TextField
+ * 
+ * A phone field.
+ * 
+ * ```php
+ * $mobile = new PhoneField(array('name' => 'mobile'));
+ * ```
+ * 
+ * It handles international validation
+ * 
+ * @subpackage Fields
+ */
 class PhoneField extends TextField {
 	
 	public function __construct($attributes) {
@@ -406,6 +512,20 @@ class PhoneField extends TextField {
 	}
 }
 
+/**
+ * class DateField extends TextField
+ * 
+ * A date field (handles international validation).
+ * 
+ * ```php
+ * $mobile = new PhoneField(array('name' => 'mobile'));
+ * ```
+ * 
+ * Attributes :
+ * format, min, max
+ * 
+ * @subpackage Fields
+ */
 class DateField extends TextField {
 	
 	public function __construct($attributes) {
@@ -435,9 +555,9 @@ class DateField extends TextField {
 			trigger('error', array('context' => $name, 'rule' => 'required'));
 			return false;
 		}else{
-			$format = isset($this->attributes['format']) ? $this->attributes['format'] : 'Y-m-d';
+			$format = isset($this->attributes['format']) ? $this->attributes['format'] : __('Y-m-d');
 			$d = DateTime::createFromFormat($format, $value);
-			
+
 			$valid = $d && $d->format($format) == $value;
 			if( !$valid ){
 				trigger('error', array('context' => $name, 'rule' => 'is_date'));
@@ -470,6 +590,19 @@ class DateField extends TextField {
 	}
 }
 
+/**
+ * class RelationField extends NumberField
+ * 
+ * A field specific to model relations
+ * 
+ * ```php
+ * $fighter = new RelationField(array('name' => 'fighter', 'data' => 'player'));
+ * ```
+ * 
+ * Relations are represented by INT(11) in sql databases.
+ * 
+ * @subpackage Fields
+ */
 class RelationField extends NumberField {
 	public function getSQLField(){
 		$properties['type'] = 'INT';
@@ -478,6 +611,20 @@ class RelationField extends NumberField {
 	}
 }
 
+/**
+ * class DateTimeField extends DateField
+ * 
+ * A date/time field (Y-m-d H:i:s by default)
+ * 
+ * ```php
+ * $created_at = new DateTimeField(array('name' => 'created_at'));
+ * ```
+ * 
+ * Attributes : 
+ * format
+ * 
+ * @subpackage Fields
+ */
 class DateTimeField extends DateField {
 	
 	public function __construct($attributes=array()) {
@@ -494,7 +641,7 @@ class DateTimeField extends DateField {
 
 	public function validate($value){
 		if( !isset($this->attributes['format']) ){
-			$this->attributes['format'] = 'Y-m-d H:i:s';
+			$this->attributes['format'] = __('Y-m-d H:i:s');
 		}
 		return parent::validate($value);
 	}
@@ -509,6 +656,20 @@ class DateTimeField extends DateField {
 }
 
 
+/**
+ * class TimeField extends DateField
+ * 
+ * A time field (H:i:s by defult)
+ * 
+ * ```php
+ * $hour = new TimeField(array('name' => 'hour'));
+ * ```
+ * 
+ * Attributes : 
+ * format
+ * 
+ * @subpackage Fields
+ */
 class TimeField extends DateField {
 	
 	public function __construct($attributes) {
@@ -539,6 +700,21 @@ class TimeField extends DateField {
 	}
 }
 
+
+/**
+ * class SelectField extends DateField
+ * 
+ * A field that contains a <select /> list of selection.
+ * 
+ * ```php
+ * $lang = new SelectField(array('name' => 'lang', 'datas' => array('en', 'fr')));
+ * ```
+ * 
+ * Attributes : 
+ * datas : An associative array of key/value pairs or a simple array.
+ * 
+ * @subpackage Fields
+ */
 class SelectField extends Field {
 	
 	public function __construct($attributes) {

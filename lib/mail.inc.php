@@ -32,7 +32,7 @@
  * 	<li>subjet : string The email subject</li>
  * 	<li>charset : string The email charset (utf-8 by default)</li>
  * 	<li>content : string The message to send</li>
- * 	<li>files : array The file attachments</li>
+ * 	<li>attachments : array The file attachments</li>
  * 	<li>html : bool Is the content an HTML template ? TRUE by default.</li>
  * </ul>
  * @subpackage Emailing
