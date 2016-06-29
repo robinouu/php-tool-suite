@@ -1,6 +1,24 @@
 <?php
 /**
- * Emailing
+ * In this package, you will find methods to handle emails.
+ * 
+ * To send an HTML email : 
+ * 
+ * ```php
+ * $content = '<p><strong>Hello World !</strong></p>';
+ * email(array('to' => array('email1@tld.com', 'email2@tld.com'), 'from' => 'sender@tld.com', 'content' => $content));
+ * ```
+ * 
+ * Attached files :
+ * 
+ * ```php
+ * $content = '<p><strong>Hello World !</strong></p>';
+ * $files = array(array('filename' => 'DownloadedData.csv', data' => file_get_contents(dirname(__FILE__).'/data.csv')));
+ * email(array('to' => 'email1@tld.com', 'from' => 'sender@tld.com', 'content' => $content, 'attachments' => $files));
+ * ```
+ *
+ * You can also send raw mails (pure text) with setting the html variable to false in the options array.
+ * 
  * @package php-tool-suite
  * @subpackage Emailing
  */
@@ -26,6 +44,7 @@ function email($options) {
 		'subject' => '',
 		'charset' => 'utf-8',
 		'content' => '',
+		'attachments' => array(),
 		'html' => true
 	), $options);
 
@@ -53,8 +72,9 @@ function email($options) {
 			$msg .= 'Content-Type: text/html; charset=' . $options['charset'] . "\n";
 			$msg .= 'Content-Transfer-Encoding: 7bit'. "\n\n";
 			$msg .= $options['content'] . "\n\n";
-		}elseif ( is_array($options['content']) ) {
-			foreach ($options['content'] as $key => $value) {
+		}
+		if ( is_array($options['attachments']) ) {
+			foreach ($options['attachments'] as $key => $value) {
 				$msg .= '--'.$mime_boundary. "\n";
 				$msg .= 'Content-Type: ' . $value['type'] . ';';
 				if( $value['filename'] ){

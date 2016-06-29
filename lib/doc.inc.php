@@ -1,6 +1,22 @@
 <?php
 /**
- * Doc helpers
+ * This package can manage the process of generating a PHP documentation from phpDoc syntax convention.
+ * 
+ * So, you can create a minimal documentation from this code :
+ * ```php
+ * $doc = doc_from_dir("src");
+ *	foreach( $doc as $element ){
+ *  	if( isset($element['summary']) ){
+ *		print $element['summary'] . br();
+ *	}
+ * }
+ * ```
+ * 
+ * It parses the code into array('param' => 'value') arrays of tokens ($doc).
+ * After that, you browse the documentation tokens and display their summary.
+ * 
+ * There are plenty of tags (@package, @subpackage, @param, @return, @see that can be parsed, basically everything with a @ in front of it)
+ * 
  * @package php-tool-suite
  * @subpackage Documentation
  */
