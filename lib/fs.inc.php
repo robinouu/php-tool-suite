@@ -32,7 +32,9 @@ function include_file($filepath = null) {
  * @subpackage Filesystem
  */
 function mkdir_recursive($dir) {
-	return mkdir($dir, 0777, true);
+	if( !is_dir($dir) )
+		return mkdir($dir, 0777, true);
+	return false;
 }
 
 
