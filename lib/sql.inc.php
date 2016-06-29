@@ -35,6 +35,7 @@ function sql_connect($options = array()) {
 		return $sql;
 	}
 
+
 	$options = array_merge(array(
 		'host' => '127.0.0.1',
 		'db' => '',
@@ -43,13 +44,16 @@ function sql_connect($options = array()) {
 		'charset' => 'utf8'
 	), $options);
 
+	
 	try {
 		$sql = new PDO('mysql:host='.$options['host'].';dbname='.$options['db'], $options['user'], $options['pass']);
 	}catch (Exception $e){
 		return false;
 	}
 
+	var_set('sql/options', $options);
 	var_set('sql/dbConnection', $sql);
+	
 	if( $options['charset'] == 'utf8'){
 		sql_dump($query = 'SET NAMES ' . $options['charset'] . ';');
 		$sql->exec($query);
@@ -595,10 +599,89 @@ function sql_create_table($options) {
 	return sql_query($query, null, null);
 }
 
+function sql_update_table($tableName, $options){
+	$options = array_merge(array(
+		'columns' => array(),
+		'fields' => array()
+	), $options);
+
+	$oldColumns = sql_columns($tableName);
+	foreach ($oldColumns as $oldColumn) {
+		$columnName = $oldColumn['COLUMN_NAME'];
+		if( isset($options['fields'][$columnName]) ){
+			$field = $options['fields'][$columnName];
+			sql_update_column($tableName, $columnName, $field);
+		}
+	}
+	/*
+	foreach ($options['columns'] as $column ) {
+		sql_update_column($tableName,)
+	}*/
+}
+
+function sql_update_column($tableName, $column, $field){
+	$attrs = $field->attributes;
+	$sqlField = $field->getSQLField();
+
+	$columnStr = sql_quote($column, true);
+	$columnStr .= ' ' . $sqlField['type'];
+
+	if( isset($attrs['required']) && $attrs['required'] === true ){
+		$columnStr .= ' NOT NULL';
+	}
+	if( isset($sqlField['default']) ){
+		$columnStr .= ' DEFAULT ' . sql_quote($sqlField['default']);
+	}
+	if( isset($attrs['unique']) && $attrs['unique'] === true ){
+		$uniqueness[] = array('name' => 'unique_'.$i, 'columns' => array(sql_quote($fieldName, true)));
+	}
+	if( isset($attrs['comment']) ){
+		$columnStr .= ' COMMENT ' . sql_quote($attrs['comment']);
+	}
+	
+	if( isset($attrs['characterSet']) ){
+		$columnStr .= ' CHARACTER SET ' . sql_quote($attrs['characterSet']);
+	}elseif( isset($attrs['collation']) ){
+		$columnStr .= ' COLLATE ' . sql_quote($attrs['collation']);
+	}
+
+	if( !sql_column_exists($tableName, $column) ){
+		$query = 'ALTER TABLE ' . sql_quote(var_get('sql/prefix').$tableName, true). ' ADD COLUMN ' . $columnStr;
+	}else{
+		$query = 'ALTER TABLE ' . sql_quote(var_get('sql/prefix').$tableName, true). ' MODIFY COLUMN ' . $columnStr;
+	}
+
+	/*if( !is_null($options['after']) ){
+		$query .= ' AFTER ' . sql_quote($options['after'], true);
+	}*/
+	return sql_query($query, array(), null);
+}
+
+function sql_columns($tableName) {
+	$query = 'SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '.sql_quote(var_get('sql/options/db')).' AND TABLE_NAME = ' . sql_quote(var_get('sql/prefix').$tableName);
+	$res = sql_query($query);
+	return $res;
+}
+
+function sql_column_exists($tableName, $column){
+	$query = 'SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '.sql_quote(var_get('sql/options/db')).' AND TABLE_NAME = ' . sql_quote(var_get('sql/prefix').$tableName). ' AND COLUMN_NAME = '.sql_quote($column);
+	$res = sql_query($query);
+	return $res && sizeof($res) > 0;
+}
+
+function sql_rename_column($tableName, $column, $newName, $type){
+	$query = 'ALTER TABLE ' . sql_quote(var_get('sql/prefix').$tableName, true) . ' CHANGE ' . sql_quote($column, true) . ' ' . sql_quote($newName, true) . ' ' . $type;
+	return sql_query($query, array(), null);	
+}
+
+function sql_remove_column($tableName, $column){
+	$query = 'ALTER TABLE ' . sql_quote(var_get('sql/prefix').$tableName, true) . ' DROP COLUMN ' . sql_quote($column, true);
+	return sql_query($query, array(), null);
+}
+
 function sql_alter_table($table, $options = array()) {
 
 	$inject = array();
-
 
 	// Alter table collation (mysql only)
 	if( sql_driver() === 'mysql' ){
@@ -611,7 +694,6 @@ function sql_alter_table($table, $options = array()) {
 			$inject[] = 'ALTER TABLE ' . sql_quote($table, true) . ' CONVERT TO CHARACTER SET ' . $options['charset'] . ';';
 		}
 	}
-
 	
 	$tableDescription = sql_describe($table);
 	
