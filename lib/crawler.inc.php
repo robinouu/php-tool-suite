@@ -11,11 +11,22 @@ var_set('crawler/HTTPCodeWhiteList', array(200, 201, 202, 203, 205, 210));
 var_set('crawler/fileExtBlackList', array('jpg', 'jpeg', 'bmp', 'png', 'gif', 'tar', 'gz', 'zip', 'xml', 'pdf', 'rar'));
 var_set('crawler/keywordsBlackList', array());
 
-function crawler_get_url($url, $headers = array(), $isSSL = null){
+/**
+ * Gets the content of an URL
+ * @param string $url The URL to browse
+ * @param array $headers An array of HTTP headers
+ * @return string The content of the page
+ * @subpackage Crawler
+ */
+function crawler_get_url($url, $headers = array()){
 	$metas = array();
 
 	if( strlen($url) > 2048 ){
 		return null;
+	}
+
+	if( substr($url, 0, 5) == 'https' ){
+		$isSSL = true;
 	}
 
 	$ch = curl_init();
@@ -43,7 +54,15 @@ function crawler_get_url($url, $headers = array(), $isSSL = null){
 	return $result;
 }
 
-function crawler_post_url($url, $method, $datas){
+/**
+ * Gets the content of an URL using POST method
+ * 
+ * @param string $url The URL to browse
+ * @param type $datas The data to pass on the HTTP request
+ * @return string The content of the page
+ * @subpackage Crawler
+ */
+function crawler_post_url($url, $datas){
 	$metas = array();
 
 	if( strlen($url) > 2048 ){
@@ -56,10 +75,6 @@ function crawler_post_url($url, $method, $datas){
 	}
 	$datasStr = rtrim($datasStr, '&');
 
-	if( $method == 'GET' ){
-		$url .= (stripos($url, '?') == FALSE ? '?' : '&') . $datasStr;
-	}
-
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -68,10 +83,8 @@ function crawler_post_url($url, $method, $datas){
 	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,0);
 	//curl_setopt($ch, CURLOPT_NOSIGNAL, 1); 
 	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 4500);
-	if( $method == 'POST' ){
-		curl_setopt($ch, CURLOPT_POST, sizeof($datas));
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $datasStr);
-	}
+	curl_setopt($ch, CURLOPT_POST, sizeof($datas));
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $datasStr);
 	
 	$result = curl_exec($ch);
 
@@ -92,7 +105,17 @@ function crawler_post_url($url, $method, $datas){
 
 $already_visited = array();
 
-function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) {
+/**
+ * Gets all URLs from a website sitemap.
+ * 
+ * The method handles also links of multiple sitemap files.
+ * 
+ * @param string $sitemapURL The sitemap URL
+ * @param int $maxPages The max number of pages to load
+ * @return array An array of indexed URLs.
+ * @subpackage Crawler
+ */
+function crawler_load_sitemap($sitemapURL, $maxPages = 20) {
 	$content = crawler_get_url($sitemapURL);
 	$urls = array();
 
@@ -118,7 +141,7 @@ function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) 
 
 			$nodeName = strtolower($node->getName());
 			if( $nodeName === 'url' ){
-				if( !trim($route) || $site_url !== $base_url ){
+				if( !trim($route) ){
 					continue;
 				}
 				$attrs = array();
@@ -142,6 +165,16 @@ function crawler_load_sitemap($sitemapURL, $checkDomain = null, $maxPages = 20) 
 	return $urls;
 }
 
+/**
+ * Gets meta information about a website page.
+ * @param string $url The website URL
+ * @return array An array of meta informations about the page : 
+ * 'external_links' : an array of links that are not on the same domain
+ * 'internal_links' : an array of links that are on the same domain
+ * 'content' : the HTML content of the page
+ * 'title' : the <title /> tag of the page
+ * @subpackage Crawler
+ */
 function crawler_get_page_info($url){
 	$url = utf8_encode($url);
 	$content = crawler_get_url($url);
@@ -249,6 +282,13 @@ function crawler_get_page_info($url){
 	return $page;
 }
 
+
+/**
+ * Loads all site webpages using sitemap interrogation.
+ * @param string $siteFirstLevelDomain The root URL of the site to load.
+ * @param callable $callbackFoundURL The callback to use when page loaded.
+ * @subpackage Crawler
+ */
 function crawler_crawl_site($siteFirstLevelDomain, $callbackFoundURL) {
 
 	$site = array('pages' => array());
