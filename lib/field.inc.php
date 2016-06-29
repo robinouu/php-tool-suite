@@ -19,6 +19,10 @@ abstract class Field {
 		'name' => 'fields[]',
 	);
 
+	public function getFieldName(){
+		return isset($this->attributes['label']) ? $this->attributes['label'] : ucfirst($this->attributes['name']);
+	}
+
 	/**
 	 * Validates a value using field specifications
 	 * @param $value The value to test for
@@ -90,9 +94,12 @@ class TextField extends Field {
 
 	public function getHTMLTag(){
 		$attrs = $this->getHTMLAttributes();
-		if( isset($this->attributes['maxlength']) && $this->attributes['maxlength'] > 255 ){
-			$value = $attrs['value'];
-			unset($attrs['value']);
+		if( isset($this->attributes['maxlength']) && ($this->attributes['maxlength'] > 255 || $this->attributes['maxlength'] < 0) ){
+			$value = '';
+			if( isset($attrs['value']) ){
+				$value = $attrs['value'];
+				unset($attrs['value']);
+			}
 			$html = tag('textarea', $value, $attrs);
 		}else{
 			$html = tag('input', '', $attrs, true);
@@ -107,7 +114,7 @@ class TextField extends Field {
 			return false;
 			//$instance['errors']['invalid'] = t('le champ %s n\'est pas une chaîne de charactères', array($instance['label']));
 		}else{
-			if( isset($this->attributes['maxlength']) && strlen($value) > (int)$this->attributes['maxlength'] ){
+			if( isset($this->attributes['maxlength']) && strlen($value) > (int)$this->attributes['maxlength'] && (int)$this->attributes['maxlength'] >= 0 ){
 				trigger('error', array('context' => $name, 'rule' => 'maxlength'));
 				//$this->attributes['errors']['maxlength'] = t('le champ %s ne peut comporter plus de %d charactères', array($this->attributes['label'], $this->attributes['maxlength']));
 			}elseif( isset($this->attributes['minlength']) && strlen($value) < (int)$this->attributes['minlength'] ){
@@ -237,7 +244,7 @@ class BooleanField extends Field {
 
 	public function __construct($attributes=array()) {
 		$this->labels = array('singular' => __('Booléen'), 'plural' => __('Booléens'));
-		$this->attributes = array('id' => 'booleanField-'.(++Field::$instanceID), 'label_position' => 'before');
+		$this->attributes = array('id' => 'booleanField-'.(++Field::$instanceID), 'label_position' => 'wrap');
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
@@ -306,7 +313,7 @@ class BooleanField extends Field {
 
 	public function validate($value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
-		if( !is_bool($boolean) ){
+		if( !is_bool($value) ){
 			//$instance['errors']['invalid'] = t('le champ %s n\'est pas un booléen');
 			trigger('error', array('context' => $name, 'rule' => 'is_bool'));
 		}else{
@@ -423,14 +430,15 @@ class DateField extends TextField {
 	public function validate($value){
 
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
-		if( isset($this->attributes['required']) && trim($date) === '' ){
+		if( isset($this->attributes['required']) && trim($value) === '' ){
 			//$this->attributes['errors']['required'] = t('le champ %s est requis', array($this->attributes['label']));
 			trigger('error', array('context' => $name, 'rule' => 'required'));
 			return false;
 		}else{
 			$format = isset($this->attributes['format']) ? $this->attributes['format'] : 'Y-m-d';
-			$d = DateTime::createFromFormat($format, $date);
-			$valid = $d && $d->format($format) == $date;
+			$d = DateTime::createFromFormat($format, $value);
+			
+			$valid = $d && $d->format($format) == $value;
 			if( !$valid ){
 				trigger('error', array('context' => $name, 'rule' => 'is_date'));
 				return false;
@@ -544,7 +552,7 @@ class SelectField extends Field {
 			//$instance['errors']['required'] = t('le champ %s est requis', array($this->attributes['label']));
 			trigger('error', array('context' => $name, 'rule' => 'required'));
 			return false;
-		}elseif( !in_array($value, $this->attributes['datas']) ){
+		}elseif( !in_array($value, array_keys($this->attributes['datas'])) ){
 			trigger('error', array('context' => $name, 'rule' => 'invalid'));
 			return false;
 			//$instance['errors']['invalid'] = t('la valeur %s ne fait pas parti de la liste de sélection.', array($select));
@@ -553,7 +561,7 @@ class SelectField extends Field {
 		}
 	}
 	public function getHTMLAttributes(){
-		$attrs = parent::getHTMLAttributes();
+		$attrs = array();//parent::getHTMLAttributes();
 		if( isset($this->attributes['id']) ){
 			$attrs['id'] = $this->attributes['id'];
 		}
