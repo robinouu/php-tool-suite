@@ -12,9 +12,6 @@
  * @subpackage File operations
  */
 function json_load($filename){
-	if( !is_file($filename) ){
-		return array();
-	}
 	$json = json_decode(file_get_contents($filename), true);
 	if( !$json || !is_array($json) ){
 		return array();
