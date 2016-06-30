@@ -373,30 +373,44 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$requiredField = new TextField(array('name' => 'requiredField', 'required' => true));
 		$value = '';
 		$this->assertFalse($requiredField->validate($value));
-		$this->assertFalse($requiredField->validate($value=array()));
-		$this->assertTrue($requiredField->validate($value='not_empty'));
+		$value=array();
+		$this->assertFalse($requiredField->validate($value));
+		$value ='not_empty';
+		$this->assertTrue($requiredField->validate($value));
 		
 		// Maxlength validator
 		$maxlengthField = new TextField(array('name' => 'maxlengthField', 'maxlength' => 25));
-		$this->assertFalse($maxlengthField->validate($value='abcdefghijklmnopqrstuvwxyz'));
-		$this->assertTrue($maxlengthField->validate($value=''));
-		$this->assertTrue($maxlengthField->validate($value='Something'));
+		$value='abcdefghijklmnopqrstuvwxyz';
+		$this->assertFalse($maxlengthField->validate($value));
+		$value='';
+		$this->assertTrue($maxlengthField->validate($value));
+		$value='Something';
+		$this->assertTrue($maxlengthField->validate($value));
 
 		// Minlength validator
 		$minlengthField = new TextField(array('name' => 'minlengthField', 'minlength' => 25));
-		$this->assertTrue($minlengthField->validate($value='abcdefghijklmnopqrstuvwxyz'));
-		$this->assertFalse($minlengthField->validate($value=''));
-		$this->assertFalse($minlengthField->validate($value='Something'));
+		$value='abcdefghijklmnopqrstuvwxyz';
+		$this->assertTrue($minlengthField->validate($value));
+		$value='';
+		$this->assertFalse($minlengthField->validate($value));
+		$value='Something';
+		$this->assertFalse($minlengthField->validate($value));
 
 		// Basic email check, 
 		// TODO : add some more test to check RFC specifications
 		$emailField = new EmailField(array('name' => 'emailField'));
-		$this->assertTrue($emailField->validate($value='user@example.com'));
-		$this->assertTrue($emailField->validate($value=''));
-		$this->assertTrue($emailField->validate($value='x@x.x'));
-		$this->assertFalse($emailField->validate($value='x@'));
-		$this->assertFalse($emailField->validate($value='x'));
-		$this->assertFalse($emailField->validate($value='éx@x.x'));
+		$value='user@example.com';
+		$this->assertTrue($emailField->validate($value));
+		$value='';
+		$this->assertTrue($emailField->validate($value));
+		$value='x@x.x';
+		$this->assertTrue($emailField->validate($value));
+		$value='x@';
+		$this->assertFalse($emailField->validate($value));
+		$value='x';
+		$this->assertFalse($emailField->validate($value));
+		$value='éx@x.x';
+		$this->assertFalse($emailField->validate($value));
 
 		print 'done' . "\r\n";
 	}

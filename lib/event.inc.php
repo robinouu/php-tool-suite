@@ -144,7 +144,6 @@ function trigger($name, $args = null) {
  * off('error', null, 1);
  * off('error', $errorFunc);
  * off('error');
- * 
  * ```
  * 
  * You can unregister callbacks by priority, or by a specific callback, or by name.
