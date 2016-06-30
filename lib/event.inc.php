@@ -1,6 +1,26 @@
 <?php
 /**
  * Events
+ * 
+ * Triggering an event and merge event results :
+ * 
+ * ```php
+ * on('event', function (){
+ * 	return 'a';
+ * }, 1);
+ * on('event', function (){
+ * 	return 'b';
+ * ));
+ * 
+ * trigger('event'); // returns 'ba';
+ * ```
+ * 
+ * The result of the trigger depends on the return types of the callbacks.
+ * If the results are arrays, we merge each other.
+ * If they are strings, we concatenate them
+ * It they are booleans, we do AND operation on them
+ * If they are numerics, we do ADD operation on them
+ * 
  * @package php-tool-suite
  * @subpackage Events
  */
@@ -9,6 +29,13 @@ plugin_require(array('var'));
 
 /**
  * Registers a callback for a specified event.
+ * ```php
+ * on('event', function (){
+ * 	return 'a';
+ * }, 1);
+ * ```
+ * You can also pass multiple variables to your callback.
+ * 
  * @param string $name The event name.
  * @param callable $callback A callback that will be executed on event_do call. 
  * @param int $priority An optional priority value of execution.
@@ -55,7 +82,14 @@ function event_get($name = null, $priority = null){
 
 /**
  * Executes a event.
+ * 
+ * ```php
+ * on('error', function ($err) { print '[Error] ' . $err; die; })
+ * trigger('error', 'Division by zero.');
+ * ```
+ * 
  * Callbacks are sorted by ascendant priority (from -PHP_INT_MAX to PHP_INT_MAX), and stacked by calling order.
+ * 
  * @param string $name The event name.
  * @param mixed $args Arbitrary arguments that will be passed to each callback
  * @return mixed Hook result values are merged like this :
@@ -103,6 +137,18 @@ function trigger($name, $args = null) {
 
 /**
  * Unregisters an event or a specific callback.
+ * 
+ * ```php
+ * on('error', $errFunc = function () { }, 1);
+ * 
+ * off('error', null, 1);
+ * off('error', $errorFunc);
+ * off('error');
+ * 
+ * ```
+ * 
+ * You can unregister callbacks by priority, or by a specific callback, or by name.
+ * 
  * @param string $name The event name.
  * @param callable $callback A callback that will be unregistered. 
  * @param int $priority An optional priority value of execution to search for.
