@@ -5,10 +5,11 @@
  * They are very useful for immediate data validation like this email checker : 
  * ```php
  * $emailField = new EmailField(array('name' => 'emailField'));
- * if ($emailField->validate('user@tld.com')){
- * 	print  'valid email';
+ * $value = 'user@tld.com';
+ * if ($emailField->validate($value)){
+ * 	print 'valid email';
  * }else{
- *   print 'invalid email'
+ *   print 'invalid email';
  * }
  * ```
  * 
