@@ -81,6 +81,7 @@ class Schema {
 			$i = 0;
 			$tableName = isset($tableData['table']) ? $tableData['table'] : $tableID;
 			foreach( $tableData['fields'] as $fieldName => $field ){
+				if( is_null($field) ) continue;
 				++$i;
 				$attrs = $field->attributes;
 				$sqlField = $field->getSQLField();
@@ -220,6 +221,9 @@ class Model {
 		$html = tag('label', $labelName = isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
 		if( !isset($field->attributes['value']) ){
 			$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
+			$value = $field->attributes['value'];
+			$field->filter($value);
+			$field->attributes['value'] = $value;
 		}
 		if( isset($field->attributes['label_position']) ){
 			if ( $field->attributes['label_position'] == 'before' )
@@ -231,17 +235,26 @@ class Model {
 		return $html . $field->getHTMLTag();
 	}
 
-	public function generateFields($fields){
+	public function generateFields($fields, $callback=null){
 		$model = &Model::$schema[$this->modelName];
 		$html = '';
-		foreach( $this->getFields() as $fieldName => $field ){
-			if( !in_array($fieldName, $fields) ){
+		$fields = $this->getFields();
+		foreach( $fields as $fieldName => $field ){
+			if( !$field || !in_array($fieldName, array_keys($fields)) ){
 				continue;
 			}
 			$field->attributes['name'] = $fieldName;
 			if( !isset($field->attributes['value']) ){
 				$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
+				
+				if( is_callable($callback) ){
+					$callback($field);
+				}
+				$value = $field->attributes['value'];
+				$field->filter($value);
+				$field->attributes['value'] = $value;
 			}
+
 			$tag = tag('label', isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($fieldName), array('for' => $field->attributes['id']));
 			$tag = $tag . $field->getHTMLTag();
 			$html .= $tag;
@@ -281,7 +294,9 @@ class Model {
 				on('error', function ($e) use(&$errors, $fieldName){
 					$errors[$fieldName] = $e;
 				});
-				$validated = $validated && $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null);
+				$v = isset($formVars[$fieldName]) ? $formVars[$fieldName] : null;
+				$validated = $validated && ($t = $field->validate($v));
+				$formVars[$fieldName] = $v;
 				off('error');
 			}
 
@@ -305,7 +320,7 @@ class Model {
 			die;
 		});
 
-		route($route.'/'.$this->modelName.'/edit/(.*)', function ($req) use ($formVars, &$self) {
+		route($route.'/'.$this->modelName.'/edit/(.*)', function ($req) use ($formVars, &$self, $options) {
 			if (trim($req[1])){
 				$id = $req[1];
 				$model = &Model::$schema[$self->modelName];
@@ -324,10 +339,15 @@ class Model {
 						$field->attributes['name'] = $fieldName;
 					}
 
-					$validated = $validated && ($t = $field->validate(isset($formVars[$fieldName]) ? $formVars[$fieldName] : null));
+					$v = isset($formVars[$fieldName]) ? $formVars[$fieldName] : null;
+					$validated = $validated && ($t = $field->validate($v));
+					$formVars[$fieldName] = $v;
 				}
 				if( $validated ){
+					$prefix = var_get('sql/prefix');
+					var_set('sql/prefix', $prefix . $options['sqlPrefix']);
 					$self->reset()->replace('', $formVars)->where('id='.(int)$id)->commit();
+					var_set('sql/prefix', $prefix);
 				}
 				print json_encode(array('success' => $validated));
 			}else{
@@ -671,7 +691,7 @@ class Model {
 				unset($datas[$key]);
 			}
 		}
-
+var_dump($datas);
 		foreach( $fields as $fieldName => $fieldObj) {
 			$field = $fieldObj->attributes;
 			$sqlField = $fieldObj->getSQLField();
@@ -712,11 +732,14 @@ class Model {
 			}
 		}
 
+		
+
 		if( sizeof($datas) ){
 			sql_insert($tableName, $datas);
 			$id = sql_last_id();
 		}else{
 			$options = $this->prepareGet($tableName);
+			$options['select'] = 'id';
 			$options['join'] = '';	
 			$id = sql_get($tableName, $options);
 			$id = $id[0]['id'];
@@ -750,7 +773,7 @@ class Model {
 		$fields = &$model['fields'];
 		
 		$options = $this->prepareGet($tableName);
-		$options['select'] = sql_quote($modelName, true) . '.`id` AS id'; 
+		$options['select'] = sql_quote(var_get('sql/prefix').$modelName, true) . '.`id` AS id'; 
 		
 		$tmp_ids = sql_get($tableName, $options);
 		if( $tmp_ids ){
