@@ -47,7 +47,7 @@ abstract class Field {
 	 * @return boolean TRUE if the field have been validated, FALSE otherwise.
  	 * @subpackage Fields
 	 */
-	abstract public function validate($value);
+	abstract public function validate(&$value);
 
 	/**
 	 * Returns an array of HTML attributes used by the field
@@ -70,6 +70,8 @@ abstract class Field {
  	 * @subpackage Fields
 	 */
 	abstract public function getSQLField();
+
+	abstract public function filter(&$value);
 }
 
 /**
@@ -81,7 +83,7 @@ abstract class Field {
  * ```
  * 
  * Attributes : 
- * value, id, name, readonly, required, placeholder, disabled, hidden
+ * value, id, name, readonly, required, placeholder, disabled, hidden, class
  * 
  * @subpackage Fields
  */
@@ -91,6 +93,10 @@ class TextField extends Field {
 		$this->label = array('singular' => __('Texte'), 'plural' => __('Textes'));
 		$this->attributes = array('id' => 'textField-'.(++Field::$instanceID));
 		$this->attributes = array_merge($this->attributes, $attributes);
+	}
+
+	public function filter(&$value) {
+
 	}
 	
 	public function getHTMLAttributes(){
@@ -103,6 +109,9 @@ class TextField extends Field {
 		}
 		if( isset($this->attributes['name']) ){
 			$attrs['name'] = $this->attributes['name'];
+		}
+		if( isset($this->attributes['class']) ){
+			$attrs['class'] = $this->attributes['class'];
 		}
 		if( isset($this->attributes['value']) ){
 			$attrs['value'] = $this->attributes['value'];
@@ -142,7 +151,7 @@ class TextField extends Field {
 		return $html;
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
 		if( !is_string($value) ){
 			trigger('error', array('field' => $name, 'rule' => 'is_string'));
@@ -187,9 +196,9 @@ class TextField extends Field {
 
 class TextAreaField extends TextField {
 	
-	public function __construct($attributes) {
+	public function __construct($attributes=array()) {
 		$this->labels = array('singular' => __('Texte sur plusieurs lignes'), 'plural' => __('Textes sur plusieur lignes'));
-		$this->attributes = array('id' => 'numberField-'.(++Field::$instanceID));
+		$this->attributes = array('id' => 'numberField-'.(++Field::$instanceID), 'maxlength' => -1);
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 	
@@ -198,7 +207,7 @@ class TextAreaField extends TextField {
 		$attrs['type'] = 'textarea';
 		$attrs['role'] = 'textbox';
 		$attrs['aria-multiline'] = 'true';
-		return true;
+		return $attrs;
 	}
 }
 
@@ -225,7 +234,7 @@ class NumberField extends TextField {
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		parent::getHTMLAttributes();
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
 		if( !is_int($value) ){
@@ -313,6 +322,10 @@ class BooleanField extends Field {
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
+	public function filter(&$value) {
+
+	}
+
 	public function getHTMLAttributes(){
 		$attrs = array('type' => 'text');
 		if( isset($this->attributes['value']) ){
@@ -376,7 +389,7 @@ class BooleanField extends Field {
 		return tag('input', '', $attrs, true);
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
 		if( !is_bool($value) ){
 			//$instance['errors']['invalid'] = t('le champ %s n\'est pas un booléen');
@@ -452,7 +465,7 @@ class EmailField extends TextField {
 		return $attrs;
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		plugin_require('vendor/is_email');
 		$empty = trim($value) === '';
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
@@ -497,7 +510,7 @@ class PhoneField extends TextField {
 		return $attrs;
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
 		if( isset($this->attributes['required']) && trim($value) === '' ){
 			trigger('error', array('context' => $name, 'rule' => 'required'));
@@ -530,7 +543,7 @@ class DateField extends TextField {
 	
 	public function __construct($attributes) {
 		$this->labels = array('singular' => __('Date'), 'plural' => __('Dates'));
-		$this->attributes = array('id' => 'dateField-'.(++Field::$instanceID));
+		$this->attributes = array('id' => 'dateField-'.(++Field::$instanceID), 'formatWrite' => 'Y-m-d H:i:s');
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
@@ -546,19 +559,21 @@ class DateField extends TextField {
 		return $attrs;
 	}
 
+	public function filter(&$value){
+		$value = $this->dateFr($value);
+	}
 
-	public function validate($value){
-
+	public function validate(&$value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
 		if( isset($this->attributes['required']) && trim($value) === '' ){
 			//$this->attributes['errors']['required'] = t('le champ %s est requis', array($this->attributes['label']));
 			trigger('error', array('context' => $name, 'rule' => 'required'));
 			return false;
 		}else{
-			$format = isset($this->attributes['format']) ? $this->attributes['format'] : __('Y-m-d');
+			$format = isset($this->attributes['format']) ? $this->attributes['format'] : __('Y-m-d H:i:s');
 			$d = DateTime::createFromFormat($format, $value);
-
 			$valid = $d && $d->format($format) == $value;
+
 			if( !$valid ){
 				trigger('error', array('context' => $name, 'rule' => 'is_date'));
 				return false;
@@ -578,9 +593,29 @@ class DateField extends TextField {
 					//$this->attributes['errors']['max'] = t('la date %s est plus récente que la date maximale acceptée (%s).', array($date, $this->attributes['max']));
 				}
 			}
+
+			if( $d->format('d/m/Y H:i:s') == $value )
+				$value = $d->format('Y-m-d H:i:s');
+			else if( $d->format('d/m/Y') == $value )
+				$value = $d->format('Y-m-d');
 		}
 		return true;
 	}
+
+	function dateFr($date){
+		return strftime('%d/%m/%Y %H:%M:%S',strtotime($date));
+	}
+
+	public function frDate2($date, $format='Y-m-d H:i:s'){
+		$d = explode(' ', $date);
+		$days = explode('/', $d[0]);
+
+		$enDate = $days[2] . '-' . $days[1] . '-' . $days[0] . ' ' . $d[1];
+		$dt = new DateTime($enDate);
+
+		return $dt->format($format);
+	}
+
 	public function getSQLField() {
 		$properties['type'] = 'DATE';
 		if( isset($this->attributes['value']) ){
@@ -629,7 +664,7 @@ class DateTimeField extends DateField {
 	
 	public function __construct($attributes=array()) {
 		$this->labels = array('singular' => t('Date et heure'), 'plural' => t('Dates et heures'));
-		$this->attributes = array('id' => 'dateTimeField-'.(++Field::$instanceID));
+		$this->attributes = array('id' => 'dateTimeField-'.(++Field::$instanceID), 'formatWrite' => 'Y-m-d H:i:s');
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
@@ -639,9 +674,9 @@ class DateTimeField extends DateField {
 		return $attrs;
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		if( !isset($this->attributes['format']) ){
-			$this->attributes['format'] = __('Y-m-d H:i:s');
+			$this->attributes['format'] = __('d/m/Y H:i:s');
 		}
 		return parent::validate($value);
 	}
@@ -659,6 +694,7 @@ class DateTimeField extends DateField {
 /**
  * class TimeField extends DateField
  * 
+ * 
  * A time field (H:i:s by defult)
  * 
  * ```php
@@ -674,7 +710,7 @@ class TimeField extends DateField {
 	
 	public function __construct($attributes) {
 		$this->labels = array('singular' => t('Heure'), 'plural' => t('Heures'));
-		$this->attributes = array('id' => 'dateTimeField-'.(++Field::$instanceID));
+		$this->attributes = array('id' => 'dateTimeField-'.(++Field::$instanceID), 'formatWrite' => 'H:i:s');
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
@@ -684,7 +720,7 @@ class TimeField extends DateField {
 		return $attrs;
 	}
 
-	public function validate($value){
+	public function validate(&$value){
 		if( !isset($this->attributes['format']) ){
 			$this->attributes['format'] = 'H:i:s';
 		}
@@ -722,7 +758,12 @@ class SelectField extends Field {
 		$this->attributes = array('id' => 'selectField-'.(++Field::$instanceID));
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
-	public function validate($value){
+
+	public function filter(&$value){
+
+	}
+
+	public function validate(&$value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
 		if( isset($this->attributes['required']) && trim($value) === '' ){
 			//$instance['errors']['required'] = t('le champ %s est requis', array($this->attributes['label']));
