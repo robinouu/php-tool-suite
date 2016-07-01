@@ -1,6 +1,10 @@
 <?php
 /**
- * SQL Databases
+ * SQL Operations
+ * 
+ * This package handles SQL operations on MySQL databases.
+ * 
+ * 
  * @package php-tool-suite
  * @subpackage SQL
  */
@@ -17,7 +21,11 @@ function sql_dump($str){
 }
 
 /**
- * Connects to an SQL database using PDO, or return the current PDO object if already connected
+ * Connects to an SQL database using PDO, or returns the current PDO object if already connected
+ * ```php
+ * sql_connect(array('db' => 'cms'));
+ * ```
+ * &nbsp;
  * @param array $options The connection options
  * <ul>
  * 	<li>host string The host. '127.0.0.1' by default.</li>
@@ -124,6 +132,13 @@ function sql_use_db($name){
 
 /**
  * Queries the database.
+ * 
+ * ```php
+ * sql_query('SELECT COUNT(id) FROM users WHERE username = ?', array('Georges'));
+ * ```
+ * 
+ * The prepared values are automatically quoted correctly.
+ * 
  * @param string $query The query string to execute on the current database.
  * @param array $values The values to prepare. See 
  * @param int $fetchMode The PDO fetch mode. Default to PDO::FETCH_ASSOC.
@@ -172,7 +187,10 @@ function sql_last_id() {
  * Inserts a row in database.
  * @param string $table The table name where to insert data. It will automatically be prefixed.
  * @param array $fields An associative array containing the data to insert
- * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
+ * ```php
+ * array('column1' => 'value1', 'column2' => 'value2');
+ * ```
+ * &nbsp;
  * @return boolean TRUE if the data has been inserted in the table. FALSE otherwise.
  * @subpackage SQL
  */
@@ -198,7 +216,11 @@ function sql_insert($table, $fields) {
  * Updates rows in database.
  * @param string $table The table name where to insert data. It will automatically be prefixed.
  * @param array $fields An associative array containing the columns to update
- * <pre><code>array('column1' => 'value1', 'column2' => 'value2')</code></pre>
+ * ```php
+ * array('column1' => 'value1', 'column2' => 'value2');
+ * ```
+ * &nbsp;
+ * 
  * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
  * @subpackage SQL
@@ -802,7 +824,28 @@ function sql_get($table, $options = array()){
 	return $res;
 }
 
-
+/**
+ * Imports a CSV file into database
+ * 
+ * ```php
+ * sql_import_csv(array('table' => 'datas', 'filename' => '/home/user/public_html/datas/datas.csv'));
+ * ```
+ * 
+ * &nbsp;
+ * 
+ * @param array $options 
+ * <ul>
+ * <li>charset : 'utf8' by default</li>
+ * <li>columns : an array of columns to register, or null if you want all of them</li>
+ * <li>lineStarting : a delimiter for line starting</li>
+ * <li>lineEnding : a delimiter for line ending</li>
+ * <li>fieldEnclosing : a delimiter for field enclosing</li>
+ * <li>fieldEscaping : a delimiter for field escaping</li>
+ * <li>fieldEnding : a delimiter for field ending</li>
+ * <li>ignoreLines : number of lines to ignore</li>
+ * </ul>
+ * @return type
+ */
 function sql_import_csv($options) {
 	$sql = sql_connect();
 	$options = array_merge(array(

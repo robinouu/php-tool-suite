@@ -1,10 +1,36 @@
 <?php
 /**
- * Variables and cookies
- *
- * Generic variable accessors.
- * You can use paths to access a particular variable, like the equivalent 'foo/bar' and array('foo', 'bar') parameters.
- * Handle cookie variables, session variables and generic arrays.
+ * Variables (global, session, cookie)
+ * 
+ * Variables in PHP Tool Suite are handled globally through :
+ * ```php
+ * var_set('run', true);
+ * ```
+ * 
+ * You can pass a subkey to your data collection like this :
+ * ```php
+ * var_set('db', array('host' => 'localhost'));
+ * var_set('db/host', '127.0.0.1');
+ * ```
+ * 
+ * To get a variable value : 
+ * ```php
+ * $dbHost = var_get('db/host', 'localhost');  // returns 'localhost' if 'db/host' has not been found in data.
+ * ```
+ * 
+ * If you want to make the variable persistent between requests : 
+ * ```php
+ * session_var_set('is_logged', true);
+ * session_var_get('is_logged');
+ * ```
+ * 
+ * If you want to set cookie variables :
+ * ```php
+ * cookie_var_set(array('name' => 'remember_me', 'value' => true));
+ * cookie_var_get(array('name' => 'remember_be'));
+ * ```
+ * 
+ * Variables will be passed to each function globally, so you won't have issues with data synchronization or passing values between function through the code.
  * 
  * @package php-tool-suite
  * @subpackage Variables
@@ -12,7 +38,11 @@
 
 plugin_require(array('array', 'crypto'));
 
-/* Scoped global variables */
+/**
+ * Gets the global vars array
+ * @return array The global vars array.
+ * @subpackage Variables
+ */
 function &vars() {
 	static $vars = array();
 	return $vars;

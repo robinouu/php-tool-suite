@@ -1,6 +1,19 @@
 <?php
 /**
  * Internationalization
+ * 
+ * An example of website internationalization :
+ * ```php
+ * // We set the website locale to the user preferred locale (defined in the browser)
+ * if( current_locale() == '' ){
+ *   set_locale(preferred_locale());
+ * }
+ * // We load PHP translations :
+ * $frData = explode(PHP_EOL, file_get_contents(dirname(__FILE__).'/fr.php'));
+ * load_translations(array('translations' => $frData))
+ * ```
+ * &nbsp;
+ * 
  * @package php-tool-suite
  * @subpackage I18n
  */

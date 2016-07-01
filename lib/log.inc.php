@@ -1,6 +1,12 @@
 <?php
 /**
- * Logger
+ * Logging system
+ * 
+ * PHP Tool Suite logging system is flexible, you just have to register for the current log handlers (that are basically callable methods)
+ * and use log_var to log an information into the loggers.
+ * 
+ * PTS comes with one default logger that logs to the standard output.
+ * 
  * @package php-tool-suite
  * @subpackage Logging
  */

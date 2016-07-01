@@ -1,6 +1,9 @@
 <?php
 /**
- * Request
+ * HTTP Requests
+ * 
+ * PHP Tool Suite handles routing of request through multiple utility methods.
+ * 
  * @package php-tool-suite
  * @subpackage HTTP request
  */
