@@ -7,6 +7,19 @@
  * 
  * PTS comes with one default logger that logs to the standard output.
  * 
+ * But you can define a new file logger
+ * 
+ * ```php
+ * log_add_handler('fileLogger', function ($data) {
+ * 	file_put_contents(date('Y-m-d').'.log', date('H:i:s') . ' - '  . $data, FILE_APPEND);
+ * });
+ * ```
+ * 
+ * You then just use the log_var method as you want
+ * 
+ * ```php log_var('foo', 'bar', array('foo', 'bar'), 5, 5E19, function () { return false; }, false); ```
+ * &nbsp;
+ * 
  * @package php-tool-suite
  * @subpackage Logging
  */

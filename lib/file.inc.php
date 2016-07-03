@@ -1,9 +1,40 @@
 <?php
 /**
- * File
+ * You can write CSV, INI or JSON data files with these methods :
+ * 
  * @package php-tool-suite
  * @subpackage File operations
  */
+
+/**
+ * Loads an INI configuration from file
+ * @param string $filename 
+ * @return The parsed INI file.
+ */
+function ini_load($filename){
+	return parse_ini_file($filename, true);
+}
+
+/**
+ * Saves an INI configuration in file.
+ * Supports for sections. 
+ * @param string $filename 
+ * @param array $data 
+ * @return TRUE if the file has been written to the disk, FALSE otherwise.
+ */
+function ini_save($filename, $data=array()){
+    $res = array();
+    foreach($data as $key => $val)
+    {
+        if(is_array($val))
+        {
+            $res[] = "[$key]";
+            foreach($val as $skey => $sval) $res[] = "$skey = ".(is_numeric($sval) ? $sval : '"'.$sval.'"');
+        }
+        else $res[] = "$key = ".(is_numeric($val) ? $val : '"'.$val.'"');
+    }
+	return file_put_contents($file, implode("\r\n", $res));
+}
 
 /**
  * Loads a JSON object from file

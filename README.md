@@ -25,6 +25,7 @@ in order to load wanted modules.
 <p>Essential packages :</p>
 <ul>
 	<li><a href="https://github.com/robinouu/php-tool-suite/wiki/Variables">Variables</a></li>
+	<li><a href="https://github.com/robinouu/php-tool-suite/wiki/Events">Events</a></li>
 	<li><a href="https://github.com/robinouu/php-tool-suite/wiki/Fields">Fields</a></li>
 	<li><a href="https://github.com/robinouu/php-tool-suite/wiki/Data-models">Data models</a></li>
 	<li><a href="https://github.com/robinouu/php-tool-suite/wiki/HTTP-response">Routing</a></li>

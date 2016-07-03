@@ -1,6 +1,31 @@
 <?php
 /**
- * Response
+ * HTTP Responses
+ * 
+ * Routing is the act of redirecting an HTTP url when matching a specific route.
+ * You can use the 'route' method to match one like this :
+ * 
+ * ```php
+ * route('/products/(.*)', function ($req) {
+ * 	$slug = $req[1];
+ *  [...]
+ * });
+ * ```
+ * 
+ * If you want to catch the case when no route have been found.
+ * 
+ * ```php
+ * response_noroute(function() {
+ * 	response_code(404);
+ * });
+ * ```
+ * 
+ * Or simply redirects to another URL :
+ *  
+ * ```php
+ * redirect('/products');
+ * ```
+ * &nbsp;
  * @package php-tool-suite
  * @subpackage HTTP response
  */

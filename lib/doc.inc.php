@@ -3,6 +3,7 @@
  * This package can manage the process of generating a PHP documentation from phpDoc syntax convention.
  * 
  * So, you can create a minimal documentation from this code :
+ * 
  * ```php
  * $doc = doc_from_dir("src");
  *	foreach( $doc as $element ){
@@ -80,6 +81,7 @@ function doc_from_file($filepath) {
 			}
 
 			$nextMethodStr = substr($fileContent, strlen($m[0]) + $m[1]);
+			$nextMethodStr = substr($nextMethodStr, 0, strpos($nextMethodStr, '/**'));
 			
 			if( preg_match('/function\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/', $nextMethodStr, $mFunc) ){
 				$token['function'] = $mFunc[1];

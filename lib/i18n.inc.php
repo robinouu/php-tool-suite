@@ -9,8 +9,9 @@
  *   set_locale(preferred_locale());
  * }
  * // We load PHP translations :
- * $frData = explode(PHP_EOL, file_get_contents(dirname(__FILE__).'/fr.php'));
- * load_translations(array('translations' => $frData))
+ * $lang = current_lang();
+ * $translations = json_decode(file_get_contents(dirname(__FILE__).'/'.$lang.'.json'), true);
+ * load_translations(array('translations' => $translations));
  * ```
  * &nbsp;
  * 

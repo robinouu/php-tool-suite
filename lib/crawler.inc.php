@@ -1,6 +1,18 @@
 <?php
 /**
- * Crawler
+ * This package maintains a suitable crawler for your needs.
+ * You can get the result of an URL using crawler\_get\_url and crawler\_post\_url for basic operations.
+ * 
+ * Advanced browsing of website can also be done using crawler\_get\_page\_info and crawler\_crawl\_site
+ * 
+ * An example of a website crawler :
+ * 
+ * ```php
+ * crawler_crawl_site('http://www.wikipedia.com', function ($route, $page){
+ * 	print $route . ' : ' . $page['title'] . "<br />";
+ * });
+ * ```
+ * &nbsp;
  * @package php-tool-suite
  * @subpackage Crawler
  */

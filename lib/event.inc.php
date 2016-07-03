@@ -34,6 +34,7 @@ plugin_require(array('var'));
  * 	return 'a';
  * }, 1);
  * ```
+ * 
  * You can also pass multiple variables to your callback.
  * 
  * @param string $name The event name.
@@ -85,20 +86,22 @@ function event_get($name = null, $priority = null){
  * 
  * ```php
  * on('error', function ($err) { print '[Error] ' . $err; die; })
- * trigger('error', 'Division by zero.');
+ * trigger('error', 'Division by zero.')
  * ```
  * 
- * Callbacks are sorted by ascendant priority (from -PHP_INT_MAX to PHP_INT_MAX), and stacked by calling order.
- * 
- * @param string $name The event name.
- * @param mixed $args Arbitrary arguments that will be passed to each callback
- * @return mixed Hook result values are merged like this :
+ * Event results are merged like this :
  * <ul>
  * 	<li>Strings are concatenated each other.</li>
  * 	<li>Numeric values are added each other.</li>
  *  <li>Boolean values use the AND logical operation.</li>
  *  <li>Arrays use recursive merging</li>
  * </ul>
+ * 
+ * Callbacks are sorted by ascendant priority (from -PHP_INT_MAX to PHP_INT_MAX), and stacked by calling order.
+ * 
+ * @param string $name The event name.
+ * @param mixed $args Arbitrary arguments that will be passed to each callback
+ * @return mixed The merged result of the callbacks called.
  * @subpackage Events
  */
 function trigger($name, $args = null) {
@@ -140,7 +143,6 @@ function trigger($name, $args = null) {
  * 
  * ```php
  * on('error', $errFunc = function () { }, 1);
- * 
  * off('error', null, 1);
  * off('error', $errorFunc);
  * off('error');

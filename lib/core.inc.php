@@ -5,7 +5,24 @@
  * @subpackage Core
  */
 
+# Install PSR-0-compatible class autoloader
+/*spl_autoload_register(function($class){
+	$prefix = var_get('core/namespace', '');
+	$base_dir = __DIR__ . var_get('core/libPath', '');
 
+	$len = strlen($prefix);
+	if( strncmp($prefix, $class, $len) ){
+		return;
+	}
+
+	$class_name = substr($class, $len);
+
+	$file = $base_dir . str_replace('\\', '/', $class_name) . '.php';
+	if( file_exists($file) ){
+		require $file;
+	}
+ });
+*/
 function timer_start(){
 	return microtime(true);
 }

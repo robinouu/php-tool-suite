@@ -35,6 +35,7 @@ abstract class Field {
 
 	/**
 	 * Gets the field caption
+	 * 
 	 * @return string the field name (or label if not empty)
  	 * @subpackage Fields
 	 */
@@ -78,7 +79,7 @@ abstract class Field {
 /**
  * Class TextField extends Field
  * 
- * A <textarea> field :
+ * A textarea field :
  * ```php
  * $message = new TextField(array('name' => 'message', 'maxlength' => -1));
  * ```
@@ -195,6 +196,9 @@ class TextField extends Field {
 
 }
 
+/**
+ * TextAreaField
+ */
 class TextAreaField extends TextField {
 	
 	public function __construct($attributes=array()) {
@@ -639,7 +643,37 @@ class DateField extends TextField {
  * 
  * @subpackage Fields
  */
-class RelationField extends NumberField {
+class RelationField extends SelectField {
+	public function getHTMLTag(){
+		$attrs = $this->getHTMLAttributes();
+		$attrs['type'] = 'hidden';
+		
+		if( !isset($this->attributes['sqlPrefix']) )
+			$this->attributes['sqlPrefix'] = '';
+
+		$modelModel = new Model('model');
+		$model_fields = $modelModel->select('f.*')->using('fields', 'f')->where('model.slug='.sql_quote($this->attributes['name']))->limit(1)->get();
+		$db = array($this->attributes['data'] => array('fields' => array()));
+
+		if( $model_fields ){
+			$db[$this->attributes['data']]['fields'][$model_fields['slug']] = model_field_to_field($model_fields);
+		}
+		
+		$s = new Schema($db);
+		$dataModel = $s->getModel($this->attributes['data']);
+		$prefix = var_get('sql/prefix');
+		var_set('sql/prefix', $this->attributes['sqlPrefix']);
+		$data = $dataModel->get();
+		var_set('sql/prefix', $prefix);
+
+		$options = '';
+		foreach ($data as $d) {
+			$name = isset($d['name']) ? $d['name'] : $d['id'];
+			$options .= tag('option', $name, array('value' => $d['id']));
+		}
+		return tag('select', $options, array('name' => $this->attributes['name'], 'id' => $this->attributes['id']));
+	}
+
 	public function getSQLField(){
 		$properties['type'] = 'INT';
 		$properties['relation'] = true;
@@ -741,7 +775,7 @@ class TimeField extends DateField {
 /**
  * class SelectField extends DateField
  * 
- * A field that contains a <select /> list of selection.
+ * A field that contains a list of selection.
  * 
  * ```php
  * $lang = new SelectField(array('name' => 'lang', 'datas' => array('en', 'fr')));

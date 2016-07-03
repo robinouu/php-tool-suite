@@ -22,9 +22,8 @@ function sql_dump($str){
 
 /**
  * Connects to an SQL database using PDO, or returns the current PDO object if already connected
- * ```php
- * sql_connect(array('db' => 'cms'));
- * ```
+ * 
+ * ```php sql_connect(array('db' => 'cms')); ```
  * &nbsp;
  * @param array $options The connection options
  * <ul>
@@ -133,9 +132,7 @@ function sql_use_db($name){
 /**
  * Queries the database.
  * 
- * ```php
- * sql_query('SELECT COUNT(id) FROM users WHERE username = ?', array('Georges'));
- * ```
+ * ```php sql_query('SELECT COUNT(id) FROM users WHERE username = ?', array('Georges')); ```
  * 
  * The prepared values are automatically quoted correctly.
  * 
@@ -537,13 +534,15 @@ function sql_table_exists($table) {
  * <ul>
  * 	<li>name string The table to create. It will automatically be prefixed.</li>
  * 	<li>hasID boolean If set to TRUE, an 'id' primary column with auto-increment behaviour will be inserted at the beginning of the table. TRUE by default.</li>
- * 	<li>columns array The columns to add to the table. Example : <pre><code>array('username VARCHAR(255) NOT NULL UNIQUE');</code></pre></li>
+ * 	<li>columns array The columns to add to the table. Example : ```php array('username VARCHAR(255) NOT NULL UNIQUE'); ```</li>
  * 	<li>primaryKeys array An array of column names to use for primary keys.</li>
  * 	<li>foreignKeys array An array of foreign keys. Example :
- *  <pre><code>array(
+ *  ```php
+ * array(
  *		'user_id' => 'user(id)',
  * 		'news_id' => array('name' => 'FK_news_ref', 'ref' => 'news(id)')
- *	);</pre></code></li>
+ *	);```
+ * </li>
  * 	<li>collation string The collation to use. 'utf8_bin' by default.</li>
  * 	<li>engine string The engine to use. 'InnoDB' is used by default or when foreign keys have been set.</li>
  * </ul>
