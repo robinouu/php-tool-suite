@@ -80,7 +80,7 @@ function sql_connect($options = array()) {
 }
 
 /**
- * Disconnects from the SQL connection started with sql_connect()
+ * Disconnects from the SQL connection started with sql\_connect()
  * @return boolean TRUE if the connection has been unset. FALSE otherwise.
  * @subpackage SQL
  */
@@ -138,7 +138,7 @@ function sql_use_db($name){
  * 
  * @param string $query The query string to execute on the current database.
  * @param array $values The values to prepare. See 
- * @param int $fetchMode The PDO fetch mode. Default to PDO::FETCH_ASSOC.
+ * @param int $fetchMode The PDO fetch mode. Default to PDO::FETCH\_ASSOC.
  * @return mixed The actual result of the query, or a boolean result if $fetchMode is NULL.
  * @subpackage SQL
  */
@@ -218,7 +218,7 @@ function sql_insert($table, $fields) {
  * ```
  * &nbsp;
  * 
- * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
+ * @param string $where An optional SQL filter. You can use sql\_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
  * @subpackage SQL
  */
@@ -259,7 +259,7 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
 /**
  * Deletes rows from database.
  * @param string $table The table name where to delete data. It will automatically be prefixed.
- * @param string $where An optional SQL filter. You can use sql_logic() to prepare your conditions.
+ * @param string $where An optional SQL filter. You can use sql\_logic() to prepare your conditions.
  * @return boolean TRUE if the data has been delete from the table. FALSE otherwise.
  * @subpackage SQL
  */
