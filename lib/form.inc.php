@@ -48,4 +48,14 @@ function form_token_validate($tokenName, $timeout = 300, $csrf = null) {
 	}
 	return FALSE;
 }
+
+/**
+ * Crud doit avoir la possibilité d'afficher un formulaire
+ * avec sous-données (dans un select) ou ajouter nouvelle
+ * 
+ * Les erreurs sont renvoyées en PHP ou un état de succès de l'ajout/édition du formulaire
+ * 
+ * Une validation et un enregistrement des données est faite en SQL.
+ * Un trigger est fait avant validation et après validation 
+ * /
 ?>
