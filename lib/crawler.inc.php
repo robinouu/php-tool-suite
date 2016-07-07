@@ -37,6 +37,7 @@ function crawler_get_url($url, $headers = array()){
 		return null;
 	}
 
+	$isSSL = server_is_secure();
 	if( substr($url, 0, 5) == 'https' ){
 		$isSSL = true;
 	}
@@ -83,10 +84,14 @@ function crawler_post_url($url, $datas){
 
 	$datasStr = '';
 	foreach ($datas as $k => $d) {
-		$datasStr .= $k.'='.urlencode($d).'&';
+		if( is_array($d) ){	
+			foreach ($d as $vd) {
+				$datasStr .= $k.'='.urlencode($vd).'&';
+			}
+		}else
+			$datasStr .= $k.'='.urlencode($d).'&';
 	}
 	$datasStr = rtrim($datasStr, '&');
-
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -131,7 +136,7 @@ function crawler_load_sitemap($sitemapURL, $maxPages = 20) {
 	$content = crawler_get_url($sitemapURL);
 	$urls = array();
 
-	$base_url = url_website($checkDomain);
+	$base_url = url_website($sitemapURL);
 	if( $content ){
 
 		$sitemap = @simplexml_load_string($content);
@@ -203,12 +208,14 @@ function crawler_get_page_info($url){
 	$page['internal_links'] = array();
 
 //	$content = strip_tags($content, '<html>,<body>,<p>,<div>,<a>');
+	plugin_require('html');
 	$dom = dom($content);
 	
 	if( !$dom ){
 		return $page;
 	}
-	
+
+	$page['dom'] = $dom;
 	foreach ($dom->find('a') as $link) {
 		$link->href = htmlspecialchars($link->href);
 
@@ -343,4 +350,86 @@ function crawler_crawl_site($siteFirstLevelDomain, $callbackFoundURL) {
 
 	$site['pages'][] = $page;
 	return $site;
+}
+
+
+
+function crawler_crawl_web($options=array()){
+
+	$options = array_merge(array(
+		'startDomain' => 'https://www.wikipedia.org',
+		'dataPath' => 'data/',
+		'dumpRate' => 10,
+		'onPageContent' => null,
+		'onBrowseDomain' => null,
+		'onDump'=> null,
+	), $options);
+
+	$nbDomains = 0;
+
+	touch($options['dataPath'].'domains.json');
+	touch($options['dataPath'].'domainsVisited.json');
+
+	if( !isset($domainsToVisit) || sizeof($domainsToVisit) === 0 ){
+		$domainsToVisit = json_decode(file_get_contents($options['dataPath'].'domains.json'), true);
+		$domainsToVisit = (array)$domainsToVisit;
+		if( !sizeof($domainsToVisit) ){
+			$domainsToVisit[] = $options['startDomain'];
+		}
+	}
+
+	if( !isset($domainsVisited) || sizeof($domainsVisited) === 0 ){
+		$domainsVisited = json_decode(file_get_contents($options['dataPath'].'domainsVisited.json'), true);
+		$domainsVisited = (array)$domainsVisited;
+	}
+
+	while (1) {	
+
+		$copyDomains = $domainsToVisit;
+		$newDomains = array();
+
+		foreach ($copyDomains as $key => $domain) {
+			
+			if( is_callable($options['onBrowseDomain']) ){
+				$browse = $options['onBrowseDomain']($domain);
+				if( !$browse ){
+					continue;
+				}
+			}
+			$domainsVisited[] = $domain;
+			unset($domainsToVisit[$key]);
+
+			$page = crawler_get_page_info($domain);
+			$back = true;
+			if( is_callable($options['onPageContent']) ){
+				$back = $options['onPageContent']($domain, $page);
+			}
+			if( sizeof($page['external_links']) ){
+				assoc_array_shuffle($page['external_links']);
+				$newDomains = array_merge($newDomains, $page['external_links']);
+			}
+
+			if( $nbDomains % $options['dumpRate'] === 0 || $nbDomains == 0 ) {
+				print 'dumping...';
+
+				if( is_callable($options['onDump']) ){
+					$options['onDump']($newDomains);
+				}
+
+				$domainsToVisit = array_merge($domainsToVisit, $newDomains);
+				$domainsToVisit = array_unique($domainsToVisit);
+				$newDomains = array();
+
+				file_put_contents($options['dataPath'].'domains.json', json_encode($domainsToVisit));
+				file_put_contents($options['dataPath'].'domainsVisited.json', json_encode($domainsVisited));
+
+				print 'done' . PHP_EOL;
+			}
+
+			// soulage le serveur
+			sleep(0.01);
+			++$nbDomains;
+		}
+	}
+
 }
