@@ -295,6 +295,13 @@ function p($content, $attrs = array()){
 	return paragraph($content, $attrs);
 }
 
+function b($content){
+	return '<strong>'.$content.'</strong>';
+}
+
+function i($content){
+	return '<em>'.$content.'</em>';
+}
 
 function btn($tag, $label, $attrs = array()) {
 	$attrs = array_merge(array('class'=> 'btn'), $attrs);
