@@ -13,6 +13,12 @@ In your PHP code, type for example :
 require_once(dirname(__FILE__)."/lib/core.inc.php");
 ```
 
+You can also download the .phar file and include it : 
+```php
+require_once("pts.phar");
+```
+
+<h2>Configuration</h2>
 It loads the minimum library requirement. Then you can use :
 ```php
 plugin_require(array("i18n", "request", "response"));
