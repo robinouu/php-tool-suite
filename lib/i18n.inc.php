@@ -222,6 +222,10 @@ function t($str, $args = array()){
 		$tData = var_get('i18n/translationData');
 		if( isset($tData->versions[$str]) ){
 			$translated = $tData->versions[$str];
+			if( trim($translated) ){
+				return $translated;
+			}
+			return $str;
 		}
 	}
 	if( sizeof($args) ){
@@ -240,3 +244,24 @@ if( !function_exists('__') ){
 	}
 }
 
+
+function translations_from_dir($dir){
+	$filenames = glob($dir.'/*');
+	$translations = array();
+
+
+	browse_recursive($dir, function ($filename) use(&$translations){
+		$content = file_get_contents($filename);
+		$backslash = '\\';
+		$pattern = <<< PATTERN
+#__\((["'])((?:{$backslash}{$backslash}?+.)*)?{$backslash}1\)#
+PATTERN;
+		if( preg_match_all('#__\(\'([^\\\'|\\\']*)\'\)#ui', $content, $m) ){
+			for( $i = 0; $i < sizeof($m[1]); ++$i){
+				$v = trim($m[1][$i]) ? $m[1][$i] : '';
+				$translations[] = ($v);
+			}
+		}
+	});
+	return $translations;
+}
