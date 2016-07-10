@@ -644,40 +644,25 @@ class DateField extends TextField {
  * @subpackage Fields
  */
 class RelationField extends SelectField {
+	public function getHTMLAttributes(){
+		$attrs = parent::getHTMLAttributes();
+//		$attrs['']
+		return $attrs;
+	}
 	public function getHTMLTag(){
 		$attrs = $this->getHTMLAttributes();
-		$attrs['type'] = 'hidden';
-		
-		if( !isset($this->attributes['sqlPrefix']) )
-			$this->attributes['sqlPrefix'] = '';
-
-		$modelModel = new Model('model');
-		$model_fields = $modelModel->select('f.*')->using('fields', 'f')->where('model.slug='.sql_quote($this->attributes['name']))->limit(1)->get();
-		$db = array($this->attributes['data'] => array('fields' => array()));
-
-		if( $model_fields ){
-			$db[$this->attributes['data']]['fields'][$model_fields['slug']] = model_field_to_field($model_fields);
-		}
-		
-		$s = new Schema($db);
-		$dataModel = $s->getModel($this->attributes['data']);
-		$prefix = var_get('sql/prefix');
-		var_set('sql/prefix', $this->attributes['sqlPrefix']);
-		$data = $dataModel->get();
-		var_set('sql/prefix', $prefix);
-
-		$options = '';
-		foreach ($data as $d) {
-			$name = isset($d['name']) ? $d['name'] : $d['id'];
-			$options .= tag('option', $name, array('value' => $d['id']));
-		}
-		return tag('select', $options, array('name' => $this->attributes['name'], 'id' => $this->attributes['id']));
+		//	$attrs['type'] = 'hidden';
+		return parent::getHTMLTag();
 	}
 
 	public function getSQLField(){
 		$properties['type'] = 'INT';
 		$properties['relation'] = true;
 		return $properties;
+	}
+
+	public function validate(&$value){
+		return TRUE;
 	}
 }
 
@@ -818,7 +803,7 @@ class SelectField extends Field {
 			$attrs['id'] = $this->attributes['id'];
 		}
 		if( isset($this->attributes['name']) ){
-			$attrs['name'] = $this->attributes['name'];
+			$attrs['name'] = $this->attributes['name'].'[]';
 		}
 		if( isset($this->attributes['readonly']) && $this->attributes['readonly'] === true ){
 			$attrs['readonly'] = 'readonly';
@@ -832,6 +817,9 @@ class SelectField extends Field {
 		}
 		if( isset($this->attributes['hidden']) && $this->attributes['hidden'] === true ) {
 			$attrs['type'] = 'hidden';
+		}
+		if( isset($this->attributes['hasMany']) && $this->attributes['hasMany'] ) {
+			$attrs['multiple'] = 'multiple';
 		}
 		return $attrs;
 	}
