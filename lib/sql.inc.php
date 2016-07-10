@@ -700,6 +700,16 @@ function sql_remove_column($tableName, $column){
 	return sql_query($query, array(), null);
 }
 
+function sql_add_fk($tableName, $fkName, $refTable, $refColumn){
+	$query = 'ALTER TABLE ' . sql_quote(var_get('sql/prefix').$tableName, true) . ' ADD CONSTRAINT ' . sql_quote($fkName, true) . ' FOREIGN KEY ('.sql_quote($fkName, true).') REFERENCES ' . sql_quote($refTable, true) . '(' . sql_quote($refColumn, true) . ')';
+	return sql_query($query, array(), null);
+}
+
+function sql_drop_fk($tableName, $fkName){
+	$query = 'ALTER TABLE ' . sql_quote(var_get('sql/prefix').$tableName, true) . ' DROP FOREIGN KEY ' . sql_quote($fkName, true);
+	return sql_query($query, array(), null);		
+}
+
 function sql_alter_table($table, $options = array()) {
 
 	$inject = array();
