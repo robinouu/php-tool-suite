@@ -148,11 +148,11 @@ class Schema {
 								'id_' . $attrs['data'] . ' int(11) NOT NULL'
 							),
 							'foreignKeys' => array(
-								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $prefix . $tableName.'(id)'),
-								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
+								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => var_get('sql/prefix', '').$tableName.'(id)'),
+								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => var_get('sql/prefix', '').$attrs['data'].'(id)')
 							)
 						);
-					}else{
+					}elseif( isset($attrs['data']) ) {
 						$manyTable[] = array(
 							'name' => $manyTableName,
 							'hasID' => false,
@@ -162,8 +162,8 @@ class Schema {
 							),
 							'primaryKeys' => array('id_' . $tableName . ',id_' . $attrs['data']),
 							'foreignKeys' => array(
-								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => $tableName.'(id)'),
-								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => $attrs['data'].'(id)')
+								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => var_get('sql/prefix', '').$tableName.'(id)'),
+								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => var_get('sql/prefix', '').$attrs['data'].'(id)')
 							)
 						);
 					}
@@ -341,9 +341,10 @@ class Model {
 		$html = '';
 		$fields = $this->getFields();
 		foreach( $fields as $fieldName => $field ){
-			if( !$field || !in_array($fieldName, array_keys($fieldsToDisplay)) ){
+			if( !$field || !in_array($fieldName, $fieldsToDisplay) ){
 				continue;
 			}
+
 			$field->attributes['name'] = $fieldName;
 			if( !isset($field->attributes['value']) ){
 				$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
