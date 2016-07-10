@@ -61,23 +61,26 @@ function route($route = '/', $callback = null, $verbs = null){
 function response_route($route = '/', $callback = null, $verbs = null){
 	
 	plugin_require('request');
-	$path = request_route();
 
+	$path = request_route();
 	if( is_string($verbs) ){
 		$verbs = array($verbs);
 	}
+
 	if( (is_null($verbs) || in_array($_SERVER['REQUEST_METHOD'], $verbs)) && preg_match("#^" . $route . "$#ui", $path, $m) ){
 
-		ob_start();
-		$callback($m);
-		$content = ob_get_contents();
-		ob_end_clean();
-		
-		print $content;
+		on('routing', function () use ($callback, $m) {
+			ob_start();
+			$callback($m);
+			$content = ob_get_contents();
+			ob_end_clean();
+			print $content;
+		});
 
 		var_set('routeFound', true);
 		return true;
 	}
+
 	return false;
 }
 
