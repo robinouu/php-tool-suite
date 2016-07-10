@@ -121,7 +121,7 @@ function trigger($name, $args = null) {
 		// Merge back args
 		$value = call_user_func_array($callback, $args);
 		if( is_array($value) ){
-			$backValue = is_null($backValue) ? $value : (is_array($backValue) ? array_merge($backValue, $value) : array_merge_recursive(array($backValue), $value));
+			$backValue = is_null($backValue) ? $value : (is_array($backValue) ? array_merge_recursive($backValue, $value) : array_merge_recursive(array($backValue), $value));
 		}elseif( is_string($value) ){
 			$backValue = (is_string($backValue) ? $backValue : '') . $value;
 		}elseif( is_integer($value) ){
