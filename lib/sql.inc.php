@@ -222,7 +222,7 @@ function sql_insert($table, $fields) {
  * @return boolean TRUE if the data has been updated in the table. FALSE otherwise.
  * @subpackage SQL
  */
-function sql_update($table, $fields = array(), $where = null, $join = null) {
+function sql_update($table, $fields = array(), $where = null, $join = null, $limit = null, $offset = null) {
 	$sql = sql_connect();
 	if( !$sql ){
 		return false;
@@ -244,13 +244,21 @@ function sql_update($table, $fields = array(), $where = null, $join = null) {
 	if( $join ){
 		if( is_string($join) ){
 			$query .= ' ' . $join;
-		}elseif( is_array($options['join']) ){
+		}elseif( is_array($join) ){
 			$query .= ' ' . sql_join($join, $table);
 		}
 	}
 
 	$query .= !$where ? '' : ' WHERE ' . sql_logic($where);
-	
+
+	// LIMIT CLAUSE
+	if( !is_null($limit) ){
+		$query .= ' LIMIT ' . (int)$limit;
+		if( !is_null($offset) ){
+			$query .= ' OFFSET ' . (int)$offset;
+		}
+	}
+
 	sql_dump($query);
 
 	$q = $sql->prepare($query . ';');
@@ -442,9 +450,9 @@ function sql_join($joins, $table = ''){
 			'columnLeft' => 'id',
 			'columnRight' => $table,
 			'type' => 'INNER JOIN'), $join);
-		$query .= ' ' . $join['type'] . ' ' . sql_quote($join['tableRight'], true) . ($join['aliasRight'] ?  ' ' . sql_quote($join['aliasRight'], true) : '') .
-			' ON ' . ($join['aliasRight'] ? sql_quote($join['aliasRight'], true) : sql_quote($join['tableRight'], true)) . '.' . sql_quote($join['columnRight'], true) .
-			' = ' . ($join['aliasLeft'] ? sql_quote($join['aliasLeft'], true) : sql_quote($join['tableLeft'], true)) . '.' . sql_quote($join['columnLeft'], true);
+		$query .= ' ' . $join['type'] . ' ' . sql_quote(var_get('sql/prefix').$join['tableRight'], true) . ($join['aliasRight'] ?  ' ' . sql_quote($join['aliasRight'], true) : '') .
+			' ON ' . ($join['aliasRight'] ? sql_quote($join['aliasRight'], true) : sql_quote(var_get('sql/prefix').$join['tableRight'], true)) . '.' . sql_quote($join['columnRight'], true) .
+			' = ' . ($join['aliasLeft'] ? sql_quote($join['aliasLeft'], true) : sql_quote(var_get('sql/prefix').$join['tableLeft'], true)) . '.' . sql_quote($join['columnLeft'], true);
 	}
 	return ltrim($query);
 }

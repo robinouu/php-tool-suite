@@ -25,9 +25,13 @@ plugin_require(array('i18n', 'html'));
  * Field abstract class
  * @subpackage Fields
  */
-abstract class Field {
+abstract class Field extends Widget {
 
 	static protected $instanceID = 0;
+
+	public function __construct($html=''){
+		parent::__construct($html);
+	}
 
 	public $attributes = array(
 		'name' => 'fields[]',
@@ -74,6 +78,11 @@ abstract class Field {
 	abstract public function getSQLField();
 
 	abstract public function filter(&$value);
+
+	public function toHTML(){
+		$html = parent::toHTML();
+		return $html . Model::renderFields(array($this));
+	}
 }
 
 /**
@@ -92,6 +101,7 @@ abstract class Field {
 class TextField extends Field {
 	
 	public function __construct($attributes=array()) {
+		parent::__construct('');
 		$this->label = array('singular' => __('Texte'), 'plural' => __('Textes'));
 		$this->attributes = array('id' => 'textField-'.(++Field::$instanceID));
 		$this->attributes = array_merge($this->attributes, $attributes);
@@ -133,6 +143,11 @@ class TextField extends Field {
 		}
 		if( isset($this->attributes['hidden']) && $this->attributes['hidden'] === true ) {
 			$attrs['type'] = 'hidden';
+		}
+		if( isset($this->attributes['data']) && is_array($this->attributes['data']) ){
+			foreach ($this->attributes['data'] as $key => $value) {
+				$attrs['data-'.$key] = $value;
+			}
 		}
 		
 		return $attrs;
@@ -202,6 +217,7 @@ class TextField extends Field {
 class TextAreaField extends TextField {
 	
 	public function __construct($attributes=array()) {
+		parent::__construct();
 		$this->labels = array('singular' => __('Texte sur plusieurs lignes'), 'plural' => __('Textes sur plusieur lignes'));
 		$this->attributes = array('id' => 'numberField-'.(++Field::$instanceID), 'maxlength' => -1);
 		$this->attributes = array_merge($this->attributes, $attributes);
@@ -234,6 +250,7 @@ class TextAreaField extends TextField {
 class NumberField extends TextField {
 	
 	public function __construct($attributes=array()) {
+		parent::__construct();
 		$this->labels = array('singular' => __('Nombre entier'), 'plural' => __('Nombres entiers'));
 		$this->attributes = array('id' => 'numberField-'.(++Field::$instanceID));
 		$this->attributes = array_merge($this->attributes, $attributes);
@@ -242,7 +259,8 @@ class NumberField extends TextField {
 	public function validate(&$value){
 		parent::getHTMLAttributes();
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
-		if( !is_int($value) ){
+
+		if( !is_numeric($value) ){
 			trigger('error', array('context' => $name, 'rule' => 'is_int'));
 			return false;
 			//$instance['errors']['invalid'] = t('le champ %s n\'est pas un nombre entier', array($instance['label']));
@@ -266,6 +284,7 @@ class NumberField extends TextField {
 
 	public function getHTMLTag(){
 		$attrs = $this->getHTMLAttributes();
+		$attrs['type'] = 'number';
 		if( isset($this->attributes['minValue']) ){
 			$attrs['min'] = $this->attributes['minValue'];
 		}
@@ -322,8 +341,9 @@ class NumberField extends TextField {
 class BooleanField extends Field {
 
 	public function __construct($attributes=array()) {
+		parent::__construct();
 		$this->labels = array('singular' => __('Booléen'), 'plural' => __('Booléens'));
-		$this->attributes = array('id' => 'booleanField-'.(++Field::$instanceID), 'label_position' => 'wrap');
+		$this->attributes = array('id' => 'booleanField-'.(++Field::$instanceID), 'label_position' => 'wrap', 'value' => 1);
 		$this->attributes = array_merge($this->attributes, $attributes);
 	}
 
@@ -332,10 +352,7 @@ class BooleanField extends Field {
 	}
 
 	public function getHTMLAttributes(){
-		$attrs = array('type' => 'text');
-		if( isset($this->attributes['value']) ){
-			$attrs['value'] = $this->attributes['value'];
-		}
+		$attrs = array('type' => 'text');	
 		if( isset($this->attributes['id']) ){
 			$attrs['id'] = $this->attributes['id'];
 		}
@@ -363,6 +380,12 @@ class BooleanField extends Field {
 		}
 		if( isset($this->attributes['hidden']) && $this->attributes['hidden'] === true ) {
 			$attrs['type'] = 'hidden';
+		}
+
+		if( isset($this->attributes['data']) && is_array($this->attributes['data']) ){
+			foreach ($this->attributes['data'] as $key => $value) {
+				$attrs['data-'.$key] = $value;
+			}
 		}
 		return $attrs;
 	}
@@ -396,7 +419,7 @@ class BooleanField extends Field {
 
 	public function validate(&$value){
 		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
-		if( !is_bool($value) ){
+		if( !in_array($value, array(0, 1)) ){
 			//$instance['errors']['invalid'] = t('le champ %s n\'est pas un booléen');
 			trigger('error', array('context' => $name, 'rule' => 'is_bool'));
 		}else{
@@ -431,6 +454,7 @@ class BooleanField extends Field {
 class PasswordField extends TextField {
 	
 	public function __construct($attributes=array()) {
+		parent::__construct();
 		$this->labels = array('singular' => __('Mot de passe'), 'plural' => __('Mots de passe'));
 		$this->attributes = array('id' => 'passwordField-'.(++Field::$instanceID));
 		$this->attributes = array_merge($this->attributes, $attributes);
@@ -459,6 +483,7 @@ class PasswordField extends TextField {
 class EmailField extends TextField {
 	
 	public function __construct($attributes=array()) {
+		parent::__construct();
 		$this->labels = array('singular' => __('Email'), 'plural' => __('Emails'));
 		$this->attributes = array('id' => 'passwordField-'.(++Field::$instanceID));
 		$this->attributes = array_merge($this->attributes, $attributes);
@@ -630,6 +655,105 @@ class DateField extends TextField {
 	}
 }
 
+
+/**
+ * class SelectField extends DateField
+ * 
+ * A field that contains a list of selection.
+ * 
+ * ```php
+ * $lang = new SelectField(array('name' => 'lang', 'datas' => array('en', 'fr')));
+ * ```
+ * 
+ * Attributes : 
+ * datas : An associative array of key/value pairs or a simple array.
+ * 
+ * @subpackage Fields
+ */
+class SelectField extends Field {
+	
+	public function __construct($attributes) {
+		parent::__construct();
+		$this->labels = array('singular' => t('Sélection'), 'plural' => t('Sélections'));
+		$this->attributes = array('id' => 'selectField-'.(++Field::$instanceID));
+		$this->attributes = array_merge($this->attributes, $attributes);
+	}
+
+	public function filter(&$value){
+
+	}
+
+	public function validate(&$value){
+		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
+		if( isset($this->attributes['required']) && trim($value) === '' ){
+			//$instance['errors']['required'] = t('le champ %s est requis', array($this->attributes['label']));
+			trigger('error', array('context' => $name, 'rule' => 'required'));
+			return false;
+		}elseif( !in_array($value, array_keys($this->attributes['datas'])) ){
+			trigger('error', array('context' => $name, 'rule' => 'invalid'));
+			return false;
+			//$instance['errors']['invalid'] = t('la valeur %s ne fait pas parti de la liste de sélection.', array($select));
+		}else{
+			return true;
+		}
+	}
+	public function getHTMLAttributes(){
+		$attrs = array();//parent::getHTMLAttributes();
+		if( isset($this->attributes['id']) ){
+			$attrs['id'] = $this->attributes['id'];
+		}
+		if( isset($this->attributes['name']) ){
+			$attrs['name'] = $this->attributes['name'];
+		}
+		if( isset($this->attributes['readonly']) && $this->attributes['readonly'] === true ){
+			$attrs['readonly'] = 'readonly';
+			$attrs['aria-readonly'] = 'true';
+		}
+		if( isset($this->attributes['required']) && $this->attributes['required'] === true ){
+			$attrs['aria-required'] = 'true';
+		}
+		if( isset($this->attributes['disabled']) && $this->attributes['disabled'] === true ) {
+			$attrs['disabled'] = $this->attributes['disabled'];
+		}
+		if( isset($this->attributes['hidden']) && $this->attributes['hidden'] === true ) {
+			$attrs['type'] = 'hidden';
+		}
+		if( isset($this->attributes['hasMany']) && $this->attributes['hasMany'] ) {
+			$attrs['multiple'] = 'multiple';
+			$attrs['name'] .= '[]';
+		}
+		if( isset($this->attributes['data']) && is_array($this->attributes['data']) ){
+			foreach ($this->attributes['data'] as $key => $value) {
+				$attrs['data-'.$key] = $value;
+			}
+		}
+		return $attrs;
+	}
+
+	public function getHTMLTag(){
+		$attrs = $this->getHTMLAttributes();
+		$content = '';
+		if( isset($this->attributes['datas']) ){
+			foreach ($this->attributes['datas'] as $key => $value) {
+				$optAttrs = array('value' => $key);
+				if( isset($this->attributes['value']) && $this->attributes['value'] == $key ){
+					$optAttrs['selected'] = 'selected';
+				}
+				$content .= tag('option', $value, $optAttrs);
+			}
+		}
+		return tag('select', $content, $attrs);
+	}
+
+	public function getSQLField(){
+		$properties['type'] = 'VARCHAR(255)';
+		if( isset($this->attributes['value']) ){
+			$properties['default'] = $this->attributes['value'];
+		}
+		return $properties;
+	}
+}
+
 /**
  * class RelationField extends NumberField
  * 
@@ -756,89 +880,30 @@ class TimeField extends DateField {
 	}
 }
 
-
-/**
- * class SelectField extends DateField
- * 
- * A field that contains a list of selection.
- * 
- * ```php
- * $lang = new SelectField(array('name' => 'lang', 'datas' => array('en', 'fr')));
- * ```
- * 
- * Attributes : 
- * datas : An associative array of key/value pairs or a simple array.
- * 
- * @subpackage Fields
- */
-class SelectField extends Field {
-	
-	public function __construct($attributes) {
-		$this->labels = array('singular' => t('Sélection'), 'plural' => t('Sélections'));
-		$this->attributes = array('id' => 'selectField-'.(++Field::$instanceID));
-		$this->attributes = array_merge($this->attributes, $attributes);
-	}
-
-	public function filter(&$value){
-
-	}
-
-	public function validate(&$value){
-		$name = isset($this->attributes['label']) ? $this->attributes['label'] : $this->attributes['name'];
-		if( isset($this->attributes['required']) && trim($value) === '' ){
-			//$instance['errors']['required'] = t('le champ %s est requis', array($this->attributes['label']));
-			trigger('error', array('context' => $name, 'rule' => 'required'));
-			return false;
-		}elseif( !in_array($value, array_keys($this->attributes['datas'])) ){
-			trigger('error', array('context' => $name, 'rule' => 'invalid'));
-			return false;
-			//$instance['errors']['invalid'] = t('la valeur %s ne fait pas parti de la liste de sélection.', array($select));
-		}else{
-			return true;
-		}
-	}
+class FileField extends TextField {
 	public function getHTMLAttributes(){
-		$attrs = array();//parent::getHTMLAttributes();
-		if( isset($this->attributes['id']) ){
-			$attrs['id'] = $this->attributes['id'];
-		}
-		if( isset($this->attributes['name']) ){
-			$attrs['name'] = $this->attributes['name'].'[]';
-		}
-		if( isset($this->attributes['readonly']) && $this->attributes['readonly'] === true ){
-			$attrs['readonly'] = 'readonly';
-			$attrs['aria-readonly'] = 'true';
-		}
-		if( isset($this->attributes['required']) && $this->attributes['required'] === true ){
-			$attrs['aria-required'] = 'true';
-		}
-		if( isset($this->attributes['disabled']) && $this->attributes['disabled'] === true ) {
-			$attrs['disabled'] = $this->attributes['disabled'];
-		}
-		if( isset($this->attributes['hidden']) && $this->attributes['hidden'] === true ) {
-			$attrs['type'] = 'hidden';
-		}
-		if( isset($this->attributes['hasMany']) && $this->attributes['hasMany'] ) {
-			$attrs['multiple'] = 'multiple';
-		}
+		$attrs = parent::getHTMLAttributes();
+		$attrs['type'] = 'file';
+		if( isset($this->attributes['maxlength']) )
+			$attrs['maxlength'] = $this->attributes['maxlength'];
 		return $attrs;
 	}
-
 	public function getHTMLTag(){
 		$attrs = $this->getHTMLAttributes();
-		$content = '';
-		if( $this->attributes['datas'] ){
-			foreach ($this->attributes['datas'] as $key => $value) {
-				$optAttrs = array('value' => $key);
-				if( isset($this->attributes['value']) && $this->attributes['value'] == $key ){
-					$optAttrs['selected'] = 'selected';
-				}
-				$content .= tag('option', $value, $optAttrs);
-			}
-		}
-		return tag('select', $content, $attrs);
+		return tag('input', '', $attrs, true);
 	}
-
+	public function validate(&$value) {
+		if( $value['name'] == '' ) return true;
+		$value['name'] = basename($value['name']);
+		$ext = substr($value['name'], strrpos($value['name'], '.'));
+		if( !isset($this->attributes['filename']) ){
+			$value['name'] = uniqid().$ext;
+		}else{
+			$value['name'] = $this->attributes['filename'] . $ext;
+		}
+		return move_uploaded_file($value['tmp_name'], (isset($this->attributes['uploadDir']) ? $this->attributes['uploadDir'] . '/' : 'uploads/').$value['name']);
+		return true;
+	}
 	public function getSQLField(){
 		$properties['type'] = 'VARCHAR(255)';
 		if( isset($this->attributes['value']) ){
@@ -848,3 +913,115 @@ class SelectField extends Field {
 	}
 }
 
+class CodeField extends Field {
+	public function __construct($attributes=array()) {
+		parent::__construct();
+		$this->labels = array('singular' => t('Code'), 'plural' => t('Codes'));
+		$this->attributes = array('id' => 'codeField-'.(++Field::$instanceID), 'language' => 'PHP');
+		$this->attributes = array_merge($this->attributes, $attributes);
+		$this->styles['codeField'] = stylesheet(array(), '
+.field-code {
+	width : 100%;
+	position: relative;
+	height: 250px;
+}
+.field-code .codeField {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+}
+.field-code + textarea {
+	display : none;
+}
+		');
+
+		$this->scripts['aceEditor'] = javascript(array('charset' => 'utf-8', 'src' => '/js/ace/ace.js'));
+		$this->scripts['aceEditorLT'] = javascript(array('src' => '/js/ace/ext-language_tools.js'));
+
+		$this->scripts['codeField'] = javascript(array(), '
+			var editors = {};
+
+			function loadCodeField(el, cb){
+
+				var id = el.attr("id");
+				var textarea = el.find("+ textarea");
+				var editor = ace.edit(id);
+				editor.getSession().setValue(textarea.val());
+				editor.getSession().on("change", function(){
+				  	textarea.val(editor.getSession().getValue());
+
+				});
+
+				if (typeof(cb) != "undefined"){
+					editor.on("input", function(){
+			  			cb(editor);
+					});
+				}
+
+				editors[id] = editor;
+				
+				editor.setTheme("ace/theme/monokai");
+				editor.getSession().setMode("ace/mode/php");
+
+				ace.require("ace/ext/language_tools");
+				editor.setOptions({
+				    enableBasicAutocompletion: true
+				});
+
+				var staticWordCompleter = {
+				    getCompletions: function(editor, session, pos, prefix, callback) {
+				        var wordList = ["php", "new", "class", "function", "static"];
+
+				        $(".className").each(function(){
+				        	wordList.push($(this).text());
+				        });
+				        $(".methodName").each(function(){
+				        	wordList.push($(this).text());
+				        });
+
+				        callback(null, wordList.map(function(word) {
+				            return {
+				                caption: word,
+				                value: word,
+				                meta: "static"
+				            };
+				        }));
+
+				    }
+				}
+				editor.completers = [staticWordCompleter];
+				editor.$blockScrolling = Infinity;
+			}
+				
+			function loadCodeFields(target, cb){
+				$(".field-code", target).each(function (){
+					loadCodeField($(this), cb);
+				});
+			};
+
+		');
+	}
+	public function filter(&$value) {
+
+	}
+	public function getHTMLAttributes(){
+		$attrs = array();
+		return $attrs;
+	}
+	public function getHTMLTag(){
+		$attrs = $this->getHTMLAttributes();
+		return '<div class="field field-code" id="'.$this->attributes['id'].'"></div><textarea name="'.$this->attributes['name'].'">'.htmlentities($this->attributes['value']).'</textarea>';
+	}
+	public function validate(&$value) {
+		return true;
+	}
+	public function getSQLField(){
+		$properties['type'] = 'TEXT';
+		if( isset($this->attributes['value']) ){
+			$properties['default'] = $this->attributes['value'];
+		}
+		return $properties;
+	}
+}

@@ -7,6 +7,37 @@
 
 plugin_require(array('event', 'sanitize'));
 
+class Widget {
+	public $children = array();
+	public function __construct($html=''){
+		$this->html = $html;
+		$this->styles = array();
+		$this->scripts = array();
+	}
+	protected function toHTML(){
+		return $this->html;
+	}
+	public function render(){
+		$html = '';
+		if( isset($this->before) ){
+			$html .= $this->before;
+		}
+		$html .= $this->toHTML();
+		foreach ($this->children as $widg) {
+			$html .= $widg->render();
+		}
+		if( isset($this->after) ){
+			$html .= $this->after;
+		}
+		return $html;
+	}
+	protected function browseChildren($callback){
+		foreach ($this->children as $widg) {
+			$callback($widg);
+			$widg->browseChildren($callback);
+		}
+	}
+}
 /**
  * Parse an HTML string into DOM.
  * It's just a wrapper around the <a href="http://simplehtmldom.sourceforge.net/" target="_blank">simplehtmldom</a> string parser.
@@ -28,12 +59,14 @@ function dom($html) {
  * 		<link rel="stylesheet" type="text/css" src="jquery.min.css" />
  * @subpackage HTML
  */
-function stylesheet($attrs){
+function stylesheet($attrs, $content=''){
 	$attrs = array_merge(array(
 		'media' => 'screen,projection,tv',
 		'rel' => 'stylesheet',
 		'href' => ''
 	), $attrs);
+	if( empty($attrs['href']) )
+		return tag('style', $content, array('type' => 'text/css'));
 	return tag('link', '', $attrs, true);
 }
 
@@ -105,6 +138,7 @@ function html5($args) {
 		),
 		'lang' => current_lang(),
 		'body' => '',
+		'bodyAttrs' => array(),	
 		'stylesheets' => $stylesheets_str,
 		'scripts' => $scripts_str
 	), $args);

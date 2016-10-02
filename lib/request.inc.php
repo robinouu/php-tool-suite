@@ -28,12 +28,15 @@ function request_route() {
  */
 function request_url() {
 	$url = var_get('request/url', '');
-	if( !$url && isset($_SERVER['SERVER_NAME'])){
-		$strUrl = server_is_secure() ? 'https://' : 'http://';
-		if (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != '80') {
-			$strUrl .= $_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'].$_SERVER['REQUEST_URI'];
+	$serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '';
+	$serverPort = isset($_SERVER['SERVER_PORT']) ? $_SERVER['SERVER_PORT'] : '';
+	$serverURI = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+	if( !$url ){
+		$strUrl = is_server_secure() ? 'https://' : 'http://';
+		if ($serverPort != '80') {
+			$strUrl .= $serverName.':'.$serverPort.$serverURI;
 		} else {
-			$strUrl .= $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+			$strUrl .= $serverName.$serverURI;
 		}
 		var_set('request/url', $url = parse_url($strUrl));
 	}

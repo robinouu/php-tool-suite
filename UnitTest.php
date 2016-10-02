@@ -9,22 +9,22 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		
 		// Is secured server connection ?
 		unset($_SERVER['HTTPS']);
-		$this->assertEquals(server_is_secure(), false);
+		$this->assertEquals(is_server_secure(), false);
 
 		$_SERVER['HTTPS'] = 'off';
-		$this->assertEquals(server_is_secure(), false);
+		$this->assertEquals(is_server_secure(), false);
 
 		$_SERVER['HTTPS'] = 'OFF';
-		$this->assertEquals(server_is_secure(), false);
+		$this->assertEquals(is_server_secure(), false);
 
 		$_SERVER['HTTPS'] = 'on';
-		$this->assertEquals(server_is_secure(), true);
+		$this->assertEquals(is_server_secure(), true);
 
 		$_SERVER['HTTPS'] = 'not_empty_or_off';
-		$this->assertEquals(server_is_secure(), true);
+		$this->assertEquals(is_server_secure(), true);
 
 		$_SERVER['SERVER_PORT'] = 443;
-		$this->assertEquals(server_is_secure(), true);
+		$this->assertEquals(is_server_secure(), true);
 
 		// Are guid uniques ?
 		$this->assertNotEquals(guid(), guid());
@@ -413,119 +413,6 @@ class MinimalTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($emailField->validate($value));
 
 		print 'done' . "\r\n";
-	}
-
-	public function test_model() {
-		plugin_require('model');
-
-		$sql = sql_connect(array('db' => 'datas'));
-		sql_delete_tables();
-
-		$models = array(
-			'account' => array(
-				'fields' => array(
-					'email' => new EmailField(),
-					'password' => new PasswordField()
-				)
-			),
-			'person' => array(
-				'fields' => array(
-					'firstname' => new TextField(),
-					'lastname' => new TextField(),
-					'accounts' => new RelationField(array('data' => 'account', 'hasMany' => true))
-				)
-			),
-			'ingredient' => array(
-				'fields' => array(
-					'name' => new TextField(),
-					'type' => new SelectField(array('datas' => array('fish', 'meat', '...')))
-				)
-			),
-			'recipe' => array(
-				'fields' => array(
-					'name' => new TextField(),
-					'authors' => new RelationField(array('data' => 'person', 'hasMany' => true)),
-					'ingredients' => new RelationField(array('data' => 'ingredient', 'hasMany' => true))
-				)
-			)
-		);
-
-		$schema = new Schema($models);
-		$this->assertTrue($schema->generateTables());
-
-		$recipe = new Model('recipe');
-		$recipe->insert(array(
-			'name' => 'salmon pasta',
-			'authors' => array(
-				'firstname' => 'Jon',
-				'lastname' => 'Silver',
-				'accounts' => array(
-					'email' => 'jon.silver@gmail.com',
-					'password' => 'password'
-				)
-			),
-			'ingredients' => array(
-				array('name' => 'Salmon', 'type' => 'fish'),
-				array('name' => 'Pasta', 'type' => 'starchy')
-			)
-		))->insert(array(
-			'name' => 'another recipe',
-			'authors' => array(
-				array(
-					'firstname' => 'Georges',
-					'lastname' => 'Lucas',
-					'accounts' => array(1)
-				),
-				1,
-				array(
-					'firstname' => 'Lucie',
-					'lastname' => 'France',
-					'accounts' => array(1)
-				)
-			),
-			'ingredients' => array('name' => 'Truite', 'type' => 'fish')
-		))->commit();
-
-		$this->assertEquals(sizeof($recipe->get()), 2);
-		$recipe->reset();
-		$this->assertTrue(is_assoc_array($recipe->limit(1)->get()));
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors')->get()), 4);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors.accounts')->get()), 4);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->where(array('id = %d' => 1))->get()), 1);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors')->where(array('authors.id = %d' => 1))->get()), 2);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors.accounts', 'accounts')->where(array('accounts.id = %d' => 1))->groupBy('id')->get()), 2);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('authors.accounts', 'accounts')->groupBy(array('recipe.id', 'accounts.id'))->get()), 2);
-		$recipe->reset();
-		$this->assertEquals(sizeof($recipe->using('ingredients')->get()), 3);
-
-		$recipe->reset();
-
-		
-		$recipe->replace('', array(
-			'name' => 'Trout with almonds',
-		))->where('recipe.id = 2')->commit();
-
-		$recipe->replace('ingredients', array(
-			'name' => 'Almond',
-			'type' => 'fruit'
-		))->where('recipe.id = 2')->commit();
-		/*
-		$recipe->replace('authors', array(
-			'accounts' => array(1, 1)
-		))->where('recipe.id = 2')->commit();
-*/
-		$recipe->reset();
-		$recipe->delete('authors.accounts')->delete('authors')->delete('ingredients')->delete()->commit();
-		$this->assertFalse($recipe->get());
-	
 	}
 
 	public function test_cache() {
