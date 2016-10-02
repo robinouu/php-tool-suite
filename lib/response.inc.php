@@ -71,7 +71,16 @@ function response_route($route = '/', $callback = null, $verbs = null){
 
 		on('routing', function () use ($callback, $m) {
 			ob_start();
-			$callback($m);
+			if( is_callable($callback) ){
+				$callback($m);
+			}elseif( is_string($callback) ){
+				$callback = include($callback);
+				if( is_callable($callback) ){
+					$callback($m);
+				}else{
+					print (string)$callback;
+				}
+			}
 			$content = ob_get_contents();
 			ob_end_clean();
 			print $content;
