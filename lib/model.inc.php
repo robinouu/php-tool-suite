@@ -8,6 +8,39 @@ require_once(dirname(__FILE__).'/core.inc.php');
 
 plugin_require(array('field', 'sql'));
 
+class DataModel {
+	public $schema;
+	public $tableName;
+	public function __construct($tableName, $fields=array()){
+		$this->tableName = $tableName;
+		$this->schema = new Schema($t=array($tableName => array('fields' => $fields)));
+	}
+	public function where($filters){
+		return sql_where($filters);
+	}
+	public function insert($values, $where){
+		return sql_insert($this->tableName, $values, $where);
+	}
+	public function join($fieldName){
+		$field = $this->schema->getField($fieldName);
+		return sql_join(array('tableRight' => $field['data'], $this->tableName));
+	}
+	public function getAll($options=array()){
+		return sql_get($this->tableName, $options);
+	}
+	public function get($options){
+		return sql_get($this->tableName, $options);
+	}
+	public function truncate(){
+		return $this->schema->truncateTables();
+	}
+	public function generate(){
+		return $this->schema->generateTables();
+	}
+	public function destroy(){
+		return $this->schema->destroyTables();
+	}
+}
 /**
  * 
  * Schemas are the way to modelize datas and relation between them.
@@ -160,7 +193,7 @@ class Schema {
 								'id_' . $tableName . ' int(11) NOT NULL',
 								'id_' . $attrs['data'] . ' int(11) NOT NULL'
 							),
-							'primaryKeys' => array('id_' . $tableName . ',id_' . $attrs['data']),
+							//'primaryKeys' => array('id_' . $tableName . ',id_' . $attrs['data']),
 							'foreignKeys' => array(
 								'id_' . $tableName => array('name' => 'FK_id_' . $manyTableName . '_' . $tableName, 'ref' => var_get('sql/prefix', '').$tableName.'(id)'),
 								'id_' . $attrs['data'] => array('name' => 'FK_id_' . $manyTableName . '_' . $attrs['data'], 'ref' => var_get('sql/prefix', '').$attrs['data'].'(id)')
@@ -318,6 +351,7 @@ class Model {
 		}
 		$value = $field->attributes['value'];
 		$field->filter($value);
+
 		$field->attributes['value'] = $value;
 		if( isset($field->attributes['label_position']) ){
 			if ( $field->attributes['label_position'] == 'before' )
@@ -325,7 +359,6 @@ class Model {
 			elseif ( $field->attributes['label_position'] == 'wrap' )
 				return tag('label', $field->getHTMLTag() . $labelName, array('for' => $field->attributes['id']));
 		}
-
 		return $html . $field->getHTMLTag();
 	}
 
@@ -341,7 +374,7 @@ class Model {
 		$html = '';
 		$fields = $this->getFields();
 		foreach( $fields as $fieldName => $field ){
-			if( !$field || !in_array($fieldName, $fieldsToDisplay) ){
+			if( !in_array($fieldName, $fieldsToDisplay) ){
 				continue;
 			}
 
@@ -364,6 +397,35 @@ class Model {
 		return $html;
 	}
 
+	static public function renderFields($fields){
+		$html = '';
+		foreach( $fields as $fieldName => $field ){
+			
+			if( is_string($fieldName) )
+				$field->attributes['name'] = $fieldName;
+
+			if( !isset($field->attributes['value']) ){
+
+				$field->attributes['value'] = isset($_REQUEST[$field->attributes['name']]) ? $_REQUEST[$field->attributes['name']] : null;
+				
+				$value = $field->attributes['value'];
+				$field->filter($value);
+				$field->attributes['value'] = $value;
+			}
+
+			$label = tag('label', $labelName = isset($field->attributes['label']) ? $field->attributes['label'] : ucfirst($field->attributes['name']), array('for' => $field->attributes['id']));
+			if( isset($field->attributes['label_position']) ){
+				if ( $field->attributes['label_position'] == 'before' )
+					$html .= $field->getHTMLTag() . $label;
+				elseif ( $field->attributes['label_position'] == 'wrap' )
+					$html .= tag('label', $field->getHTMLTag() . $labelName, array('for' => $field->attributes['id']));
+			}else{
+				$html .= $label . $field->getHTMLTag();
+			}
+		}
+		return $html;
+	}
+
 	/**
 	 * Sets CRUD routes for the model.
 	 * 
@@ -372,7 +434,7 @@ class Model {
 	 *   <li>'route' : the prefix to add to CRUD routes</li>
 	 *   <li>'method' : the CRUD form method</li>
 	 *   <li>'sqlPrefix' : a sql prefix to use for the model</li>
-	 * </ul>
+1	 * </ul>
 	 * 
 	 * The routes generated are :
 	 * <ul><li>/model/create</li>
@@ -417,11 +479,14 @@ class Model {
 				on('error', function ($e) use(&$errors, $fieldName){
 					$errors[$fieldName] = $e;
 				});
+
 				$v = isset($formVars[$fieldName]) ? $formVars[$fieldName] : null;
+			
 				$validated = $validated && ($t = $field->validate($v));
 				$formVars[$fieldName] = $v;
 				off('error');
 			}
+
 
 			if( $validated && sizeof($formVars) ){
 
@@ -485,9 +550,19 @@ class Model {
 
 				$prefix = var_get('sql/prefix');
 				var_set('sql/prefix', $prefix . $options['sqlPrefix']);
-				$self->reset()->where('id IN ('.implode($ids, ',') . ')')->delete()->commit();
-				var_set('sql/prefix', $prefix);
 
+				$fields = $this->getFields();
+				foreach( $fields as $fieldName => &$f ){
+
+					$type = $f->getSQLField();
+					$isRelationField = isset($type['relation']) && $type['relation'];
+
+					if( $isRelationField ) {
+						$mModel = new Model($f->attributes['data']);
+						$ids = $self->using($fieldName)->delete($fieldName)->where(var_get('sql/prefix').$this->modelName.'.id IN ('.implode($ids, ', ').')')->commit();
+					}
+					$self->reset()->where('id IN ('.implode($ids, ',') . ')')->delete()->commit();
+				}
 				print json_encode(array('success' => true));
 			}else{
 				print json_encode(array('success' => false));
@@ -642,7 +717,7 @@ class Model {
 					$this->aliases[$usingModelName] = $usingKey;
 				}
 			
-				$hasID = isset($usingModelField->attributes['hasID']) && $usingModelField->attributes['hasID'];
+				$hasID = true;//isset($usingModelField->attributes['hasID']) && $usingModelField->attributes['hasID'];
 				$this->join(array(
 					'type' => $hasID ? 'INNER JOIN' : 'LEFT OUTER JOIN',
 					'tableLeft' => isset($this->aliases[$parentModelName]) ? $this->aliases[$parentModelName] : $parentTableName,
@@ -749,8 +824,13 @@ class Model {
 	 * @return Model The model
  	 * @subpackage Data models
 	 */
-	public function insert(array $data) {
-		$this->insertions[] = $data;
+	public function insert(array $data, $modelPath='') {
+		if( isset($this->aliases[$modelPath]) ){
+			$modelPath = explode('.', $this->aliases[$modelPath]);
+		}else{
+			$modelPath = $this->getModelPath($modelPath);
+		}
+		$this->insertions[] = array($modelPath, $data);
 		return $this;
 	}
 
@@ -810,7 +890,7 @@ class Model {
 		if( sizeof($this->insertions) ){
 			$this->inserted_ids = array();
 			foreach ($this->insertions as $index => $insertion) {
-			 	$this->doInsertion(null, $insertion);
+			 	$this->doInsertion($insertion[0], $insertion[1]);
 		 	}
 		}
 		$this->reset();
@@ -861,15 +941,14 @@ class Model {
 			if( $usingModelField->attributes['hasMany'] ){
 				$tableToDelete = $parentTableName . '_' . $columnName;
 				$idName = 'id_' . $usingTableName;
-				$options['select'] = sql_quote($tableToDelete, true) . '.' . sql_quote('id_' . $usingModelName, true) . ' AS id';
+				$options['select'] = sql_quote(var_get('sql/prefix').$tableToDelete, true) . '.' . sql_quote('id_' . $usingModelName, true) . ' AS id';
 			}else{
 				$tableToDelete = $usingTableName;
-				$options['select'] = sql_quote($usingTableName, true) . '.`id` AS id';
+				$options['select'] = sql_quote(var_get('sql/prefix').$usingTableName, true) . '.`id` AS id';
 			}
 		}else{
 			$options['select'] = sql_quote(var_get('sql/prefix').$tableName, true) . '.`id` AS id';
 		}
-
 		//$options['table'] = $tableToDelete;
 		$tmp_ids = sql_get($tableName, $options);
 		if( $tmp_ids ){
@@ -948,19 +1027,20 @@ class Model {
 		}
 
 		
+		sql_insert($tableName, $datas);
+		$id = sql_last_id();
 
-		if( sizeof($datas) ){
-			sql_insert($tableName, $datas);
-			$id = sql_last_id();
+/*		if( sizeof($datas) ){
 		}else{
 			$options = $this->prepareGet($tableName);
 			$options['select'] = 'id';
 			$options['join'] = '';	
 			$id = sql_get($tableName, $options);
 			$id = $id[0]['id'];
+			var_dump($options);
 		}
 
-		if( sizeof($relations_ids) ){
+*/		if( sizeof($relations_ids) ){
 			foreach( $relations_ids as $fieldName => $relation_ids ) {
 				$this->inserted_ids[$fieldName] = array();
 				foreach ($relation_ids as $relation_id) {
@@ -1003,4 +1083,8 @@ class Model {
 			sql_update(Model::getTableName($endModelName), $datas, 'id IN (' . implode(', ', $ids) . ')');
 		}
 	}	
+
+	public function getName(){
+		return $this->modelName;
+	}
 };
