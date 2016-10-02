@@ -195,3 +195,16 @@ function inet_server($options = array()) {
 		return false;
 	}
 }
+
+function whois($check, $whois_server="whois.ovh.com"){
+	return inet_client(array(
+		'host' => $whois_server,
+		'port' => 43,
+		'onInit' => function (&$socket) use ($check) {
+			inet_write($socket, $check.PHP_EOL);
+		},
+		'onData' => function ($data){
+			print nl2br($data);
+		}
+	));
+}

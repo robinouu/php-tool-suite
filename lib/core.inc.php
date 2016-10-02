@@ -96,8 +96,12 @@ function plugin_require($subpackages = null) {
  * @return boolean TRUE if a secured connection is active. FALSE otherwhise
  * @subpackage Core
  */
-function server_is_secure() {
+function is_server_secure() {
 	return (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+}
+
+function is_windows_os(){
+	return (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
 }
 
 /**
