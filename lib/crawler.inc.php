@@ -85,8 +85,8 @@ function crawler_post_url($url, $datas){
 	$datasStr = '';
 	foreach ($datas as $k => $d) {
 		if( is_array($d) ){	
-			foreach ($d as $vd) {
-				$datasStr .= $k.'='.urlencode($vd).'&';
+			foreach ($d as $vk => $vd) {
+				$datasStr .= $k.'['.$vk.']='.urlencode($vd).'&';
 			}
 		}else
 			$datasStr .= $k.'='.urlencode($d).'&';
